@@ -5,14 +5,12 @@ namespace Syntax
 
 open State unitInterval
 
-variable {Variable : Type}
+variable (Variable : Type)
 
-def LocationExpression := (State Variable) → Option ℕ
+def ValueExp := (Stack Variable) → Option ℕ
 
-def ValueExpression := (State Variable) → Option ℚ
+def BoolExp := (Stack Variable) → Option Bool
 
-def BooleanExpression := (State Variable) → Option Bool
-
-def ProbabilisticExpression := (State Variable) → Option I
+def ProbExp := (Stack Variable) → Option I
 
 end Syntax

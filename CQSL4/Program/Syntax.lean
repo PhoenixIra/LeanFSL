@@ -5,20 +5,23 @@ namespace Syntax
 
 open unitInterval
 
-variable (Variable : Type)
+variable (Vars : Type)
 
 inductive Program where
   | skip : Program
-  | val_assign : Variable → ValueExpression → Program
-  | loc_assign : Variable → LocationExpression → Program
-  | manipulate : LocationExpression → ValueExpression → Program
-  | lookup : Variable → LocationExpression → Program
-  | catch_and_set: LocationExpression → ValueExpression → ValueExpression → Program
-  | allocate: Variable → ℕ → Program
-  | free: LocationExpression → Program
+  | terminated : Program
+  | error : Program
+  | valAssign : Vars → (ValueExp Vars) → Program
+  | manipulate : (ValueExp Vars) → (ValueExp Vars) → Program
+  | lookup : Vars → (ValueExp Vars) → Program
+  | compareAndSet:
+    (ValueExp Vars) → (ValueExp Vars) → (ValueExp Vars) → Program
+  | allocate: Vars → ℕ → Program
+  | free: (ValueExp Vars) → Program
   | sequential: Program → Program → Program
-  | probabilistic_choice: ProbabilisticExpression → Program → Program → Program
-  | conditional_choice: BooleanExpression → Program → Program → Program
-  | loop: BooleanExpression → Program → Program
+  | probabilisticChoice:
+    (ProbExp Vars) → Program → Program → Program
+  | conditionalChoice: (BoolExp Vars) → Program → Program → Program
+  | loop: (BoolExp Vars) → Program → Program
 
 end Syntax
