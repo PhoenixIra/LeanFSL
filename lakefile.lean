@@ -7,6 +7,7 @@ package «CQSL4» where
     ⟨`pp.unicode.fun, true⟩, -- pretty-prints `fun a ↦ b`
     ⟨`pp.proofs.withType, false⟩
   ]
+  moreLinkArgs := #["-L./.lake/packages/LeanCopilot/.lake/build/lib", "-lctranslate2"]
   -- add any additional package configuration options here
 
 require mathlib from git

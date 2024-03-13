@@ -1,4 +1,5 @@
 import Mathlib.Data.Rat.Defs
+import Mathlib.Data.Set.Finite
 
 namespace State
 
@@ -13,9 +14,10 @@ structure State (Variable : Type) where
 
 variable {Var : Type}
 
+
 noncomputable def substituteStack
     (s : State Var) (v : Var) (q : ℚ) : State Var :=
-  ⟨fun v' => if v = v' then some q else s.stack v', s.heap⟩
+  ⟨fun v' => if v = v' then some q else s.stack v',s.heap⟩
 
 noncomputable def substituteHeap
     (s : State Var) (l : ℕ) (q : ℚ) : State Var :=
@@ -24,8 +26,6 @@ noncomputable def substituteHeap
 noncomputable def removeLocationHeap
     (s : State Var) (l : ℕ) : State Var :=
   ⟨s.stack, fun l' => if l = l' then none else s.heap l'⟩
-
-
 
 noncomputable def isNotAlloc
     (s : State Var) (l : ℕ) (n : ℕ): Prop :=
