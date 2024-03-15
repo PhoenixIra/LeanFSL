@@ -23,5 +23,6 @@ inductive Program where
     (ProbExp Vars) → Program → Program → Program
   | conditionalChoice: (BoolExp Vars) → Program → Program → Program
   | loop: (BoolExp Vars) → Program → Program
+  | concurrent: Program → Program → Program
 
 end Syntax
