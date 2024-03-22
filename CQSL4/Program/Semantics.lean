@@ -13,8 +13,8 @@ variable {Variable : Type}
 inductive Action where
   | deterministic : Action
   | allocation : ℕ → Action
-  | concurrencyLeft : Action → Action
-  | concurrencyRight : Action → Action
+  | concurrentLeft : Action → Action
+  | concurrentRight : Action → Action
 
 /-- Skip always succeeds with the same state. -/
 @[simp]
@@ -136,7 +136,7 @@ noncomputable def loopSmallStepSemantics (e : BoolExp Variable) (c : Program Var
   fun s a c' s' => match c' with
   | error => ite_one_zero (a = Action.deterministic ∧ s = s' ∧ e s.stack = none)
   | terminated => ite_one_zero (a = Action.deterministic ∧ s = s' ∧ e s.stack = some false)
-  | c' => ite_one_zero (c' = sequential c (loop e c) ∧ s = s' ∧ e s.stack = some true )
+  | c' => ite_one_zero (a = Action.deterministic ∧ c' = sequential c (loop e c) ∧ s = s' ∧ e s.stack = some true )
 
 noncomputable def programSmallStepSemantics :
     (Program Variable) → (State Variable) →
@@ -154,16 +154,17 @@ noncomputable def programSmallStepSemantics :
   | conditionalChoice e c₁ c₂ => conditionalChoiceSmallStepSemantics e c₁ c₂
   | loop e c => loopSmallStepSemantics e c
   | sequential terminated c₂ => fun s a c s' => ite_one_zero (a = Action.deterministic ∧ s=s' ∧ c = c₂)
-  | sequential c₁ c₂ => fun s a c s' => match c with
-    | sequential c₁' c₂' => if c₂ = c₂' then (programSmallStepSemantics c₁ s a c₁' s') else 0
-    | _ => 0
+  | sequential c₁ c₂ => fun s a c s' =>
+    if let sequential c₁' c₂' := c then
+      if c₂ = c₂' then (programSmallStepSemantics c₁ s a c₁' s') else 0
+    else 0
   | concurrent terminated terminated => fun s a c s' => ite_one_zero (c = terminated ∧ a = Action.deterministic ∧ s = s')
-  | concurrent c₁ c₂ => fun s a c s' => match c with
-    | concurrent c₁' c₂' => match a with
-      | Action.concurrencyLeft a => if c₂ = c₂' then programSmallStepSemantics c₁ s a c₁' s' else 0
-      | Action.concurrencyRight a => if c₁ = c₁' then programSmallStepSemantics c₂ s a c₂' s' else 0
+  | concurrent c₁ c₂ => fun s a c s' =>
+    if let concurrent c₁' c₂' := c then match a with
+      | Action.concurrentLeft a => if c₂ = c₂' then programSmallStepSemantics c₁ s a c₁' s' else 0
+      | Action.concurrentRight a => if c₁ = c₁' then programSmallStepSemantics c₂ s a c₂' s' else 0
       | _ => 0
-    | _ => 0
+    else 0
 
 
 
@@ -181,8 +182,9 @@ def enabledAction : (Program Variable) → (State Variable) → Set Action
   | probabilisticChoice _ _ _, _    => { Action.deterministic }
   | conditionalChoice _ _ _, _      => { Action.deterministic }
   | loop _ _, _                     => { Action.deterministic }
-  | concurrent c₁ c₂, s             => { Action.concurrencyLeft a  | a ∈ enabledAction c₁ s }
-                                     ∪ { Action.concurrencyRight a | a ∈ enabledAction c₂ s }
+  | concurrent c₁ c₂, s             => if c₁ = terminated ∧ c₂ = terminated then { Action.deterministic } else
+                                       { Action.concurrentLeft a | a ∈ enabledAction c₁ s }
+                                     ∪ { Action.concurrentRight a | a ∈ enabledAction c₂ s }
 
 
 
@@ -190,116 +192,132 @@ theorem zero_probability_of_not_enabledAction (a : Action) (h : ¬ a ∈ enabled
     ∀ c', ∀ s', programSmallStepSemantics c s a c' s' = 0 := by
   intro c' s'
 
-  -- split
-  induction c with
+  induction c generalizing c' a with
   | terminated => unfold programSmallStepSemantics; simp only [Pi.zero_apply]
   | error => unfold programSmallStepSemantics; simp only [Pi.zero_apply]
+
   | skip =>
     unfold programSmallStepSemantics skipSmallStepSemantics
     rw[ite_one_zero_neg]; simp only [not_and_or]; exact Or.inr <| Or.inl h
+
   | valAssign v e =>
-    rw[enabledAction, Set.mem_singleton_iff] at h
+    rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, valAssignSmallStepSemantics]
     split
     pick_goal 3; rfl
     all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
   | manipulate e e' =>
-    rw[enabledAction, Set.mem_singleton_iff] at h
+    rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, manipulateSmallStepSemantics]
     split
     pick_goal 3; rfl
     all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
   | lookup v e =>
-    rw[enabledAction, Set.mem_singleton_iff] at h
+    rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, lookupSmallStepSemantics]
     split
     pick_goal 3; rfl
     all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
   | compareAndSet v e_l e_v e_n =>
-    rw[enabledAction, Set.mem_singleton_iff] at h
+    rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, compareAndSetSmallStepSemantics]
     split
     pick_goal 3; rfl
     all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
-  | allocate v n => sorry
   | free v n =>
-    rw[enabledAction, Set.mem_singleton_iff] at h
+    rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, freeSmallStepSemantics]
     split
     pick_goal 3; rfl
     all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
-  | sequential c₁ c₂ ih₁ ih₂ => sorry
+  | conditionalChoice e c₁ c₂ _ _ =>
+    rw [enabledAction, Set.mem_singleton_iff] at h
+    simp only [programSmallStepSemantics, conditionalChoiceSmallStepSemantics]
+    split
+    all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
+  | loop e c _ =>
+    rw [enabledAction, Set.mem_singleton_iff] at h
+    simp only [programSmallStepSemantics, loopSmallStepSemantics]
+    split
+    all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
+
   | probabilisticChoice e c₁ c₂ _ _ =>
-    rw[enabledAction, Set.mem_singleton_iff] at h
+    rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, probabilisticChoiceSmallStepSemantics]
     split
     · rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h
     · rw [if_neg]; intro h'; exact h h'.left
-  | conditionalChoice e c₁ c₂ _ _ =>
-    rw[enabledAction, Set.mem_singleton_iff] at h
-    simp only [programSmallStepSemantics, conditionalChoiceSmallStepSemantics]
-    split
-    all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
-  | loop e c ih =>
-    rw[enabledAction, Set.mem_singleton_iff] at h
-    simp only [programSmallStepSemantics, loopSmallStepSemantics]
-    split
-    all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
-  | concurrent c₁ c₂ ih₁ ih₂ => sorry
+
+  | allocate v n =>
+    simp only [enabledAction, Set.mem_setOf_eq, not_exists, not_and] at h
+    simp only [programSmallStepSemantics, allocateSmallStepSemantics]
+    rw [ite_one_zero_neg]
+    simp only [not_exists, not_and]
+    intro x h_act _ h_nalloc
+    exfalso
+    exact h x h_act h_nalloc
+
+  | sequential c₁ c₂ ih₁ _ =>
+    cases eq_or_ne c₁ terminated with
+    | inl h_eq =>
+      simp only [h_eq, programSmallStepSemantics]
+      rw [ite_one_zero_neg]; simp only [not_and]
+      intro h_a _
+      simp only [enabledAction, if_pos h_eq, Set.mem_singleton_iff] at h
+      exfalso
+      exact h h_a
+    | inr h_ne =>
+      simp only [programSmallStepSemantics]
+      cases c' with
+      | sequential c₁' c₂' =>
+        simp only [ite_eq_right_iff]
+        intro _
+        simp only [enabledAction, if_neg h_ne] at h
+        exact ih₁ a h c₁'
+      | _ => simp only [ite_eq_right_iff]
+
+  | concurrent c₁ c₂ ih₁ ih₂ =>
+    by_cases h_term : c₁ = terminated ∧ c₂ = terminated
+    · simp only [h_term.left, h_term.right, programSmallStepSemantics]
+      rw [ite_one_zero_neg]
+      simp only [not_and]
+      intro _ h_a
+      rw [enabledAction, if_pos h_term, Set.mem_singleton_iff] at h
+      exfalso
+      exact h h_a
+    · rw [enabledAction, if_neg h_term] at h
+      simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_exists, not_and] at h
+      let ⟨h_left, h_right⟩ := h; clear h
+      rw [programSmallStepSemantics]
+      pick_goal 2
+      · intro h₁ h₂; exact h_term ⟨h₁, h₂⟩
+      · cases c' with
+        | concurrent c₁' c₂' =>
+          cases a with
+          | concurrentLeft a =>
+            simp only
+            by_cases h_a : a ∈ enabledAction c₁ s
+            · exfalso
+              exact h_left a h_a rfl
+            · cases eq_or_ne c₂ c₂' with
+              | inl h_eq₂ =>
+                rw [if_pos h_eq₂]
+                exact ih₁ a h_a c₁'
+              | inr h_ne => exact if_neg h_ne
+          | concurrentRight a =>
+            simp only
+            by_cases h_a : a ∈ enabledAction c₂ s
+            · exfalso
+              exact h_right a h_a rfl
+            · cases eq_or_ne c₁ c₁' with
+              | inl h_eq₁ =>
+                rw [if_pos h_eq₁]
+                exact ih₂ a h_a c₂'
+              |inr h_ne => exact if_neg h_ne
+          | _ => simp only
+        | _ => simp only
 
 
-
-  -- allocation
-  -- pick_goal 6
-  -- · unfold allocateSmallStepSemantics
-  --   rw[ite_one_zero_neg]
-  --   simp only [not_exists, not_and]
-  --   intro n h_a h_terminating h_not_alloc
-  --   rw [isNotAlloc_def] at h_not_alloc
-
-
-
-
-  --   rw[ite_one_zero_neg]
-  --   simp only [not_and_or]
-  --   exact Or.inr <| Or.inl h
-  -- }
-  -- · {
-
-  --   simp only [skipSmallStepSemantics, valAssignSmallStepSemantics, manipulateSmallStepSemantics,
-  --     lookupSmallStepSemantics, compareAndSetSmallStepSemantics, allocateSmallStepSemantics,
-  --     freeSmallStepSemantics, probabilisticChoiceSmallStepSemantics, conditionalChoiceSmallStepSemantics,
-  --     loopSmallStepSemantics]
-  --   rw[ite_one_zero_neg]
-  --   simp only [not_and_or]
-  --   exact Or.inr <| Or.inl h
-  -- }
-  -- | valAssign _ _ => {
-  --   rw[enabledAction, Set.mem_singleton_iff] at h
-  --   unfold programSmallStepSemantics valAssignSmallStepSemantics
-  --   split
-  --   · rw[ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h
-  --   · rw[ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h
-  --   · rfl
-  -- }
-  -- | manipulate _ _ => {
-  --   rw[enabledAction, Set.mem_singleton_iff] at h
-  --   unfold programSmallStepSemantics manipulateSmallStepSemantics
-  --   split
-  --   · rw[ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h
-  --   · rw[ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h
-  --   · rfl
-  -- | lookup _ _ => {
-  --   rw[enabledAction, Set.mem_singleton_iff] at h
-  --   unfold programSmallStepSemantics manipulateSmallStepSemantics
-  --   split
-  --   · rw[ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h
-  --   · rw[ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h
-  --   · rfl
-  -- }
-
-  -- }
-  -- | _ => sorry
 
 
 end Semantics
