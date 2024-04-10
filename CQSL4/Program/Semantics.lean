@@ -25,7 +25,7 @@ noncomputable def skipSmallStepSemantics :
 /-- valAssign succeeds if the expression is well-defined and the resulting state has changed.
     valAssign fails if the expression is not well-defined and the state remains unchanged. -/
 @[simp]
-noncomputable def valAssignSmallStepSemantics (v : Variable) (e : ValueExp Variable) :
+noncomputable def assignSmallStepSemantics (v : Variable) (e : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | terminated => ite_one_zero (a = Action.deterministic ∧
@@ -90,7 +90,7 @@ noncomputable def compareAndSetSmallStepSemantics (v : Variable) (e_loc e_cmp e_
 noncomputable def allocateSmallStepSemantics (v : Variable) (n : ℕ) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' =>
-    ite_one_zero (∃ m, a = Action.allocation m ∧ c = terminated ∧ isNotAlloc s m n
+    ite_one_zero (c = terminated ∧ ∃ m, a = Action.allocation m ∧ isNotAlloc s m n
       ∧ substituteStack (substituteHeap s m n) v m = s')
 
 /-- free succeeds if the expression is well-defined and the location is up to n positions allocated.
@@ -143,13 +143,13 @@ noncomputable def programSmallStepSemantics :
     Action → (Program Variable) → (State Variable) → I
   | error => 0
   | terminated => 0
-  | skip => skipSmallStepSemantics
-  | valAssign v e => valAssignSmallStepSemantics v e
+  | skip' => skipSmallStepSemantics
+  | assign v e => assignSmallStepSemantics v e
   | manipulate e_loc e_val => manipulateSmallStepSemantics e_loc e_val
   | lookup v e => lookupSmallStepSemantics v e
   | compareAndSet v e_loc e_cmp e_val => compareAndSetSmallStepSemantics v e_loc e_cmp e_val
   | allocate v n => allocateSmallStepSemantics v n
-  | free e n => freeSmallStepSemantics e n
+  | free' e n => freeSmallStepSemantics e n
   | probabilisticChoice e c₁ c₂ => probabilisticChoiceSmallStepSemantics e c₁ c₂
   | conditionalChoice e c₁ c₂ => conditionalChoiceSmallStepSemantics e c₁ c₂
   | loop e c => loopSmallStepSemantics e c
@@ -166,18 +166,16 @@ noncomputable def programSmallStepSemantics :
       | _ => 0
     else 0
 
-
-
 def enabledAction : (Program Variable) → (State Variable) → Set Action
   | terminated, _                   => ∅
   | error, _                        => ∅
-  | skip, _                         => { Action.deterministic }
-  | valAssign _ _, _                => { Action.deterministic }
+  | skip', _                        => { Action.deterministic }
+  | assign _ _, _                   => { Action.deterministic }
   | manipulate _ _, _               => { Action.deterministic }
   | lookup _ _, _                   => { Action.deterministic }
   | compareAndSet _ _ _ _, _        => { Action.deterministic }
   | allocate _ n, s                 => { a | ∃ m, a = Action.allocation m ∧ isNotAlloc s m n }
-  | free _ _, _                     => { Action.deterministic }
+  | free' _ _, _                    => { Action.deterministic }
   | sequential c₁ _, s              => if c₁ = terminated then { Action.deterministic } else enabledAction c₁ s
   | probabilisticChoice _ _ _, _    => { Action.deterministic }
   | conditionalChoice _ _ _, _      => { Action.deterministic }
@@ -186,23 +184,21 @@ def enabledAction : (Program Variable) → (State Variable) → Set Action
                                        { Action.concurrentLeft a | a ∈ enabledAction c₁ s }
                                      ∪ { Action.concurrentRight a | a ∈ enabledAction c₂ s }
 
-
-
-theorem zero_probability_of_not_enabledAction (a : Action) (h : ¬ a ∈ enabledAction c s):
-    ∀ c', ∀ s', programSmallStepSemantics c s a c' s' = 0 := by
-  intro c' s'
+theorem zero_probability_of_not_enabledAction {a : Action} (h : ¬ a ∈ enabledAction c s)
+    (c' : Program Variable) (s' : State Variable) :
+    programSmallStepSemantics c s a c' s' = 0 := by
 
   induction c generalizing c' a with
   | terminated => unfold programSmallStepSemantics; simp only [Pi.zero_apply]
   | error => unfold programSmallStepSemantics; simp only [Pi.zero_apply]
 
-  | skip =>
+  | skip' =>
     unfold programSmallStepSemantics skipSmallStepSemantics
     rw[ite_one_zero_neg]; simp only [not_and_or]; exact Or.inr <| Or.inl h
 
-  | valAssign v e =>
+  | assign v e =>
     rw [enabledAction, Set.mem_singleton_iff] at h
-    simp only [programSmallStepSemantics, valAssignSmallStepSemantics]
+    simp only [programSmallStepSemantics, assignSmallStepSemantics]
     split
     pick_goal 3; rfl
     all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
@@ -224,7 +220,7 @@ theorem zero_probability_of_not_enabledAction (a : Action) (h : ¬ a ∈ enabled
     split
     pick_goal 3; rfl
     all_goals (rw [ite_one_zero_neg]; simp only [not_and_or]; exact Or.inl h)
-  | free v n =>
+  | free' v n =>
     rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, freeSmallStepSemantics]
     split
@@ -253,7 +249,7 @@ theorem zero_probability_of_not_enabledAction (a : Action) (h : ¬ a ∈ enabled
     simp only [programSmallStepSemantics, allocateSmallStepSemantics]
     rw [ite_one_zero_neg]
     simp only [not_exists, not_and]
-    intro x h_act _ h_nalloc
+    intro _ x h_act h_nalloc
     exfalso
     exact h x h_act h_nalloc
 
@@ -273,7 +269,7 @@ theorem zero_probability_of_not_enabledAction (a : Action) (h : ¬ a ∈ enabled
         simp only [ite_eq_right_iff]
         intro _
         simp only [enabledAction, if_neg h_ne] at h
-        exact ih₁ a h c₁'
+        exact ih₁ h c₁'
       | _ => simp only [ite_eq_right_iff]
 
   | concurrent c₁ c₂ ih₁ ih₂ =>
@@ -302,7 +298,7 @@ theorem zero_probability_of_not_enabledAction (a : Action) (h : ¬ a ∈ enabled
             · cases eq_or_ne c₂ c₂' with
               | inl h_eq₂ =>
                 rw [if_pos h_eq₂]
-                exact ih₁ a h_a c₁'
+                exact ih₁ h_a c₁'
               | inr h_ne => exact if_neg h_ne
           | concurrentRight a =>
             simp only
@@ -312,7 +308,7 @@ theorem zero_probability_of_not_enabledAction (a : Action) (h : ¬ a ∈ enabled
             · cases eq_or_ne c₁ c₁' with
               | inl h_eq₁ =>
                 rw [if_pos h_eq₁]
-                exact ih₂ a h_a c₂'
+                exact ih₂ h_a c₂'
               |inr h_ne => exact if_neg h_ne
           | _ => simp only
         | _ => simp only
