@@ -30,22 +30,41 @@ lemma ite_unit_def_of_ne {P : Prop} {i j : I} (h_ne : i ≠ j):
       exact Not.imp h_ne h
     · intro h; exact ite_unit_neg i j h
 
-noncomputable def ite_one_zero (P : Prop) : I := ite_unit P 1 0
+noncomputable def iteOneZero (P : Prop) : I := ite_unit P 1 0
 
-lemma ite_one_zero_pos {P : Prop} (h : P) : ite_one_zero P = 1 := by
-  unfold ite_one_zero
+lemma iteOneZero_pos {P : Prop} (h : P) : iteOneZero P = 1 := by
+  unfold iteOneZero
   exact ite_unit_pos 1 0 h
 
-lemma ite_one_zero_neg {P : Prop} (h : ¬P) : ite_one_zero P = 0 := by
-  unfold ite_one_zero
+lemma iteOneZero_neg {P : Prop} (h : ¬P) : iteOneZero P = 0 := by
+  unfold iteOneZero
   exact ite_unit_neg 1 0 h
 
-lemma ite_one_def {P : Prop} : ite_one_zero P = 1 ↔ P := by
-  unfold ite_one_zero
+lemma iteOneZero_eq_one_def {P : Prop} : iteOneZero P = 1 ↔ P := by
+  unfold iteOneZero
   exact (ite_unit_def_of_ne <| Ne.symm zero_ne_one).1
 
-lemma ite_zero_def {P : Prop} : ite_one_zero P = 0 ↔ ¬ P := by
-  unfold ite_one_zero
+lemma iteOneZero_eq_zero_def {P : Prop} : iteOneZero P = 0 ↔ ¬ P := by
+  unfold iteOneZero
   exact (ite_unit_def_of_ne <| Ne.symm zero_ne_one).2
+
+lemma iteOneZero_def {P :Prop} : iteOneZero P = i ↔ i = 0 ∧ ¬ P ∨ i = 1 ∧ P := by
+  apply Iff.intro
+  · intro h
+    by_cases h_p : P
+    · apply Or.inr
+      rw [iteOneZero_pos h_p] at h
+      apply And.intro h.symm
+      exact h_p
+    · apply Or.inl
+      rw [iteOneZero_neg h_p] at h
+      apply And.intro h.symm
+      exact h_p
+  · intro h
+    cases h with
+    | inl h => rw [iteOneZero_neg h.right]; exact h.left.symm
+    | inr h => rw [iteOneZero_pos h.right]; exact h.left.symm
+
+
 
 end unitInterval

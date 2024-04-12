@@ -1,20 +1,20 @@
 import CQSL4.Program.Semantics
 
-open Syntax Program Notation Semantics unitInterval Set State
+open Syntax Program Notation Semantics unitInterval Set State Classical
 
 theorem skip_eq_one_iff : programSmallStepSemantics `[Program| skip] s a c' s' = 1
     ↔ c' = `[Program| ↓] ∧ a = Action.deterministic ∧ s = s' := by
   apply Iff.intro
   · intro h
-    rw [programSmallStepSemantics, skipSmallStepSemantics, ite_one_def] at h
+    rw [programSmallStepSemantics, skipSmallStepSemantics, iteOneZero_eq_one_def] at h
     exact h
   · intro h
-    rw [programSmallStepSemantics, skipSmallStepSemantics, ite_one_def]
+    rw [programSmallStepSemantics, skipSmallStepSemantics, iteOneZero_eq_one_def]
     exact h
 
 theorem skip_mem_zero_one : programSmallStepSemantics `[Program| skip] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, skipSmallStepSemantics,
-    mem_insert_iff, mem_singleton_iff, ite_one_def, ite_zero_def, ← imp_iff_not_or, imp_self]
+    mem_insert_iff, mem_singleton_iff, iteOneZero_eq_one_def, iteOneZero_eq_zero_def, ← imp_iff_not_or, imp_self]
   trivial
 
 theorem terminated_eq_zero : programSmallStepSemantics `[Program| ↓] s a c' s' = 0 := by
@@ -30,17 +30,17 @@ theorem assign_eq_one_iff : programSmallStepSemantics `[Program| v ≔ e] s a c'
         ∧ ((e s.stack) = none ∨ s.stack v = none)) := by
   rw [programSmallStepSemantics, assignSmallStepSemantics]
   cases c' with
-  | terminated => simp only [ne_eq, true_and, false_and, or_false, ite_one_def]
-  | error => simp only [ne_eq, false_and, true_and, false_or, ite_one_def]
+  | terminated => simp only [ne_eq, true_and, false_and, or_false, iteOneZero_eq_one_def]
+  | error => simp only [ne_eq, false_and, true_and, false_or, iteOneZero_eq_one_def]
   | _ => simp only [zero_ne_one, ne_eq, false_and, or_self]
 
 theorem assign_mem_zero_one : programSmallStepSemantics `[Program| v ≔ e] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, assignSmallStepSemantics]
   cases c' with
   | terminated => simp only [ne_eq, mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   | error => simp only [mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   | _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
 theorem manipulate_eq_one_iff : programSmallStepSemantics `[Program| e_loc *≔ e_val] s a c' s' = 1
@@ -53,17 +53,17 @@ theorem manipulate_eq_one_iff : programSmallStepSemantics `[Program| e_loc *≔ 
   rw [programSmallStepSemantics, manipulateSmallStepSemantics]
   cases c' with
   | terminated => simp only [ne_eq, true_and, false_and, or_false,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
-  | error => simp only [ite_one_def, ne_eq, false_and, true_and, false_or]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
+  | error => simp only [iteOneZero_eq_one_def, ne_eq, false_and, true_and, false_or]
   | _ => simp only [zero_ne_one, ne_eq, false_and, or_self]
 
 theorem manipulate_mem_zero_one : programSmallStepSemantics `[Program| e_loc *≔ e_val] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, manipulateSmallStepSemantics]
   cases c' with
   | terminated => simp only [ne_eq, mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   | error => simp only [mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   | _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
 theorem lookup_eq_one_iff : programSmallStepSemantics `[Program| v ≔* e] s a c' s' = 1
@@ -76,17 +76,17 @@ theorem lookup_eq_one_iff : programSmallStepSemantics `[Program| v ≔* e] s a c
   rw [programSmallStepSemantics, lookupSmallStepSemantics]
   cases c' with
   | terminated => simp only [ne_eq, true_and, false_and, or_false,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
-  | error => simp only [ite_one_def, ne_eq, false_and, true_and, false_or]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
+  | error => simp only [iteOneZero_eq_one_def, ne_eq, false_and, true_and, false_or]
   | _ => simp only [zero_ne_one, ne_eq, false_and, or_self]
 
 theorem lookup_mem_zero_one : programSmallStepSemantics `[Program| v ≔* e] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, lookupSmallStepSemantics]
   cases c' with
   | terminated => simp only [ne_eq, mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   | error => simp only [mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   | _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
 theorem compareAndSet_eq_one_iff : programSmallStepSemantics `[Program| v ≔ cas (e_loc, e_cmp, e_val)] s a c' s' = 1
@@ -103,8 +103,8 @@ theorem compareAndSet_eq_one_iff : programSmallStepSemantics `[Program| v ≔ ca
   rw [programSmallStepSemantics, compareAndSetSmallStepSemantics]
   cases c' with
   | terminated => simp only [ne_eq, true_and, false_and, or_false,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
-  | error => simp only [ite_one_def, ne_eq, false_and, true_and, false_or]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
+  | error => simp only [iteOneZero_eq_one_def, ne_eq, false_and, true_and, false_or]
   | _ => simp only [zero_ne_one, ne_eq, false_and, or_self]
 
 theorem compareAndSet_mem_zero_one :
@@ -112,9 +112,9 @@ theorem compareAndSet_mem_zero_one :
   rw [programSmallStepSemantics, compareAndSetSmallStepSemantics]
   cases c' with
   | terminated => simp only [ne_eq, mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   | error => simp only [mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   | _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
 theorem allocate_eq_one_iff : programSmallStepSemantics `[Program| v ≔ alloc n] s a c' s' = 1
@@ -122,16 +122,16 @@ theorem allocate_eq_one_iff : programSmallStepSemantics `[Program| v ≔ alloc n
       ∧ substituteStack (substituteHeap s m n) v m = s') := by
   rw [programSmallStepSemantics, allocateSmallStepSemantics]
   cases c' with
-  | terminated => simp only [true_and, ite_one_def]
-  | _ => simp only [false_and, and_false, exists_const, ite_one_def]
+  | terminated => simp only [true_and, iteOneZero_eq_one_def]
+  | _ => simp only [false_and, and_false, exists_const, iteOneZero_eq_one_def]
 
 theorem allocate_mem_zero_one :
     programSmallStepSemantics `[Program| v ≔ alloc n] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, allocateSmallStepSemantics]
   cases c' with
   | terminated => simp only [ne_eq, mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
-  | _ => simp only [false_and, and_false, exists_const, mem_insert_iff, ite_zero_def,
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
+  | _ => simp only [false_and, and_false, exists_const, mem_insert_iff, iteOneZero_eq_zero_def,
     not_false_eq_true, mem_singleton_iff, true_or]
 
 theorem free_eq_one_iff : programSmallStepSemantics `[Program| free(e, n)] s a c' s' = 1
@@ -142,8 +142,8 @@ theorem free_eq_one_iff : programSmallStepSemantics `[Program| free(e, n)] s a c
   rw [programSmallStepSemantics, freeSmallStepSemantics]
   cases c' with
   | terminated => simp only [ne_eq, true_and, false_and, or_false,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
-  | error => simp only [ite_one_def, ne_eq, false_and, true_and, false_or]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
+  | error => simp only [iteOneZero_eq_one_def, ne_eq, false_and, true_and, false_or]
   | _ => simp only [zero_ne_one, ne_eq, false_and, or_self]
 
 theorem free_mem_zero_one :
@@ -151,15 +151,38 @@ theorem free_mem_zero_one :
   rw [programSmallStepSemantics, freeSmallStepSemantics]
   cases c' with
   | terminated => simp only [ne_eq, mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   | error => simp only [mem_insert_iff, mem_singleton_iff,
-    ite_zero_def, ite_one_def, ← imp_iff_not_or, imp_self]
+    iteOneZero_eq_zero_def, iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   | _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
-theorem probabilisticChoice_iff_left_of_ne :
-    programSmallStepSemantics (Program.probabilisticChoice e_p c₁ c₂) s a c' s' = i
-    ↔ (c' = `[Program| ↓] ∧ a = Action.deterministic ∧
-      ∃ l, e s.stack = some l ∧ isAlloc s l n ∧ freeHeap s l n = s')
-    ∨ (c' = `[Program| ↯] ∧ a = Action.deterministic ∧ s = s'
-    ∧ (e s.stack = none ∨ ∃ l, e s.stack = some l ∧ ¬isAlloc s l n)) := by
-  sorry
+theorem probabilisticChoice_iff_left_of_eq_left (h_c : c₁ = c') (h_i : 0 ≠ i ∧ i ≠ 1):
+    programSmallStepSemantics (Program.probabilisticChoice e c₁ c₂) s a c' s' = i
+    ↔ c' ≠ `[Program| ↯] ∧ s = s' ∧ a = Action.deterministic ∧ e s.stack = some i := by
+  rw [programSmallStepSemantics, probabilisticChoiceSmallStepSemantics]
+  cases c' with
+  | error =>
+    simp only [iteOneZero_def]
+    apply Iff.intro
+    · intro h
+      cases h with
+      | inl h => exfalso; exact h_i.left h.left.symm
+      | inr h => exfalso; exact h_i.right h.left
+    · intro h
+      exact (h.left rfl).elim
+  | skip' =>
+    simp only [ne_eq, not_false_eq_true]
+    apply Iff.intro
+    · intro h
+      apply And.intro trivial
+      by_cases h' : a = Action.deterministic ∧ s = s'
+      · rw [if_pos h'] at h
+        have : ∃ j, e s.stack = j := by use e s.stack
+        let ⟨j, h_j⟩ := this; clear this
+        rw [h_j] at h
+        cases j with
+        | none => simp only at h; exfalso; exact h_i.left h
+        | some j =>
+          simp only at h
+          sorry
+        ·
