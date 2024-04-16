@@ -44,11 +44,12 @@ syntax term " ≔ " "cas" "(" term " , " term " , " term ")" : program
 syntax term " ≔ alloc " term : program
 syntax "free" "(" term " , " term ")": program
 syntax program ";" program : program
-syntax program " [ " term " ] " program : program
-syntax " if " term " then " program " else " program : program
+syntax " pif " term " then " program " else " program " end " : program
+syntax " if " term " then " program " else " program " end ": program
 syntax " while " term " begin " program " end " : program
 syntax program "||" program : program
 syntax "(" program ")" : program
+syntax "[" term "]" : program
 
 syntax "`[Program| " program "]" : term
 
@@ -63,13 +64,15 @@ macro_rules
   | `(`[Program| $l:term ≔ alloc $r:term]) => `(Program.allocate $l $r)
   | `(`[Program| free ( $a:term , $b:term )]) => `(Program.free' $a $b)
   | `(`[Program| $l ; $r]) => `(Program.sequential `[Program| $l] `[Program| $r])
-  | `(`[Program| $l [$p:term] $r]) => `(Program.probabilisticChoice $p `[Program| $l] `[Program| $r])
-  | `(`[Program| if $b:term then $l:program else $r:program]) =>
+  | `(`[Program| pif $p:term then $l else $r end]) => `(Program.probabilisticChoice $p `[Program| $l] `[Program| $r])
+  | `(`[Program| if $b:term then $l:program else $r:program end]) =>
     `(Program.conditionalChoice $b `[Program| $l] `[Program| $r])
   | `(`[Program| while $b:term begin $c end]) => `(Program.loop $b `[Program| $c])
   | `(`[Program| $l || $r]) => `(Program.concurrent `[Program| $l] `[Program| $r])
   | `(`[Program| ($a:program)]) => `(`[Program| $a])
+  | `(`[Program| [$a:term]]) => `($a)
 
-
+example := `[Program| skip ; skip ; if λ _ => true then "x" ≔ λ _ => 5 else skip end ; skip ]
+example (e : ProbExp Variable) (c₁ c₂ : Program Variable) := `[Program| pif e then [c₁] else [c₂] end]
 
 end Notation

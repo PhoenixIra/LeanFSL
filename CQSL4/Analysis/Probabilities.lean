@@ -4,6 +4,24 @@ namespace unitInterval
 
 open Classical
 
+lemma eq_zero_iff_sym_eq_one : σ x = 1 ↔ x = 0 := by
+  apply Iff.intro
+  · intro h
+    rw [← unitInterval.symm_zero] at h
+    exact symm_bijective.injective h
+  · intro h
+    rw [h]
+    exact symm_zero
+
+lemma eq_one_iff_sym_eq_zero : σ x = 0 ↔ x = 1 := by
+  apply Iff.intro
+  · intro h
+    rw [← unitInterval.symm_one] at h
+    exact symm_bijective.injective h
+  · intro h
+    rw [h]
+    exact symm_one
+
 noncomputable def ite_unit (P : Prop) (i j : I) : I := if P then i else j
 
 lemma ite_unit_pos {P : Prop} (i j : I) (h : P) : ite_unit P i j = i := by

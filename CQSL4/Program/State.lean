@@ -5,7 +5,7 @@ namespace State
 
 open Rat Classical
 
-def Stack (Variable : Type) : Type := Variable → Option ℚ
+def Stack (Variable : Type) : Type := Variable → ℚ
 def Heap : Type := ℕ → Option ℚ
 
 structure State (Variable : Type) where
@@ -17,7 +17,7 @@ variable {Var : Type}
 
 noncomputable def substituteStack
     (s : State Var) (v : Var) (q : ℚ) : State Var :=
-  ⟨fun v' => if v = v' then some q else s.stack v',s.heap⟩
+  ⟨fun v' => if v = v' then q else s.stack v',s.heap⟩
 
 theorem substituteStack_heap {s : State Var} {v : Var} {q : ℚ} :
     (substituteStack s v q).heap = s.heap := by
@@ -26,7 +26,7 @@ theorem substituteStack_heap {s : State Var} {v : Var} {q : ℚ} :
 
 theorem substituteStack_stack {s : State Var} {v : Var} {q : ℚ} :
     (∀ v', v ≠ v' → (substituteStack s v q).stack v' = s.stack v')
-    ∧ (∀ v', v = v' → (substituteStack s v q).stack v' = some q) := by
+    ∧ (∀ v', v = v' → (substituteStack s v q).stack v' = q) := by
   apply And.intro
   · intro v' h_ne
     exact (if_neg h_ne)

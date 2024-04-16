@@ -7,10 +7,10 @@ open State unitInterval
 
 variable (Variable : Type)
 
-def ValueExp := (Stack Variable) → Option ℕ
+def ValueExp := (Stack Variable) → ℕ
 
-def BoolExp := (Stack Variable) → Option Bool
+def BoolExp := (Stack Variable) → Bool
 
-def ProbExp := (Stack Variable) → Option I
+def ProbExp := (Stack Variable) → I
 
 end Syntax

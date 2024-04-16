@@ -28,10 +28,7 @@ noncomputable def skipSmallStepSemantics :
 noncomputable def assignSmallStepSemantics (v : Variable) (e : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
-  | terminated => iteOneZero (a = Action.deterministic ∧
-    ∃ val, (e s.stack) = some val ∧ s.stack v ≠ none ∧ substituteStack s v val = s')
-  | error => iteOneZero (a = Action.deterministic ∧ s = s'
-    ∧ ((e s.stack) = none ∨ s.stack v = none))
+  | terminated => iteOneZero (a = Action.deterministic ∧ substituteStack s v (e s.stack) = s')
   | _ => 0
 
 /-- manipulate succeeds if the expressions are well-defined and an allocated location. It changes
@@ -41,12 +38,8 @@ noncomputable def manipulateSmallStepSemantics (e_loc e_val : ValueExp Variable)
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | terminated => iteOneZero (a = Action.deterministic ∧
-      ∃ l, e_loc s.stack = some l ∧ s.heap l ≠ none ∧
-      ∃ val, e_val s.stack = some val ∧ substituteHeap s l val = s')
-  | error =>iteOneZero (a = Action.deterministic ∧ s = s'
-      ∧ (e_loc s.stack = none
-      ∨ (∃ l, e_loc s.stack = some l ∧ s.heap l = none)
-      ∨ e_val s.stack = none))
+      s.heap (e_loc s.stack) ≠ none ∧ substituteHeap s (e_loc s.stack) (e_val s.stack) = s')
+  | error =>iteOneZero (a = Action.deterministic ∧ s = s' ∧ s.heap (e_loc s.stack) = none)
   | _ => 0
 
 /-- lookup succeeds if the expression is well-defined and an allocated location is looked up.
@@ -57,11 +50,8 @@ noncomputable def lookupSmallStepSemantics (v : Variable) (e : ValueExp Variable
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | terminated => iteOneZero ( a = Action.deterministic ∧
-      ∃ l, e s.stack = some l ∧ s.stack v ≠ none ∧
-      ∃ val, s.heap l = some val ∧ substituteStack s v val = s' )
-  | error => iteOneZero ( a = Action.deterministic ∧ s = s'
-      ∧ (e s.stack = none ∨ s.stack v = none
-      ∨ ∃ l, e s.stack = some l ∧ s.heap l = none))
+      ∃ val, s.heap (e s.stack) = some val ∧ substituteStack s v val = s' )
+  | error => iteOneZero ( a = Action.deterministic ∧ s = s' ∧ s.heap (e s.stack) = none)
   | _ => 0
 
 /-- compareAndSet succeeds if all expressions are well-defined and the location is allocated.
@@ -72,16 +62,11 @@ noncomputable def lookupSmallStepSemantics (v : Variable) (e : ValueExp Variable
 noncomputable def compareAndSetSmallStepSemantics (v : Variable) (e_loc e_cmp e_val : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
-  | terminated => iteOneZero ( a = Action.deterministic ∧
-      ∃ l, e_loc s.stack = some l ∧ ∃ cmp, e_cmp s.stack = some cmp
-      ∧ ∃ new_val, e_val s.stack = some new_val
-      ∧ ∃ old_val, s.heap l = some old_val ∧ s.stack v ≠ none
-      ∧ ((old_val = cmp ∧ substituteStack (substituteHeap s l new_val) v 1 = s')
-        ∨ old_val ≠ cmp ∧ substituteStack s v 0 = s'))
-  | error => iteOneZero (a = Action.deterministic ∧ s = s'
-      ∧ (e_loc s.stack = none
-      ∨ e_cmp s.stack = none ∨ e_val s.stack = none
-      ∨ ∃ l, e_loc s.stack = some l ∧ s.heap l = none))
+  | terminated => iteOneZero ( a = Action.deterministic
+      ∧ ∃ old_val, s.heap (e_loc s.stack) = some old_val
+      ∧ ((old_val = e_cmp s.stack ∧ substituteStack (substituteHeap s (e_loc s.stack) (e_val s.stack)) v 1 = s')
+        ∨ old_val ≠ e_cmp s.stack ∧ substituteStack s v 0 = s'))
+  | error => iteOneZero (a = Action.deterministic ∧ s = s' ∧ s.heap (e_loc s.stack) = none)
   | _ => 0
 
 /-- allocate succeeds if the location m and n spaces afterwards are allocated and sets the values
@@ -99,10 +84,10 @@ noncomputable def allocateSmallStepSemantics (v : Variable) (n : ℕ) :
 noncomputable def freeSmallStepSemantics (e : ValueExp Variable) (n : ℕ) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
-  | terminated => iteOneZero (a = Action.deterministic ∧
-    ∃ l, e s.stack = some l ∧ isAlloc s l n ∧ freeHeap s l n = s')
+  | terminated => iteOneZero (a = Action.deterministic
+    ∧ isAlloc s (e s.stack) n ∧ freeHeap s (e s.stack) n = s')
   | error => iteOneZero (a = Action.deterministic ∧ s = s'
-    ∧ (e s.stack = none ∨ ∃ l, e s.stack = some l ∧ ¬isAlloc s l n))
+    ∧ ¬isAlloc s (e s.stack) n)
   | _ => 0
 
 /-- probabilisticChoice succeeds if the expression is well-defined and picks one program with the given probability.
@@ -110,24 +95,22 @@ noncomputable def freeSmallStepSemantics (e : ValueExp Variable) (n : ℕ) :
 @[simp]
 noncomputable def probabilisticChoiceSmallStepSemantics (e : ProbExp Variable) (c₁ c₂ : Program Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
-  fun s a c s' => match c with
-  | error => iteOneZero (a = Action.deterministic ∧ s = s' ∧ e s.stack = none)
-  | c => if a = Action.deterministic ∧ s = s' then if let some i := e s.stack then
+  fun s a c s' =>
+    if a = Action.deterministic ∧ s = s' then
       if c₁ = c ∧ c₂ = c then 1
-      else if c₁ = c then i
-      else if c₂ = c then σ i
+      else if c₁ = c then e s.stack
+      else if c₂ = c then σ (e s.stack)
       else 0
-    else 0 else 0
+    else 0
 
 /-- conditionalChoice succeeds if the expression is well-defined and picks the first if it is true and else the second.
     conditionalChoice fails if the epxression is not well-defined. -/
 @[simp]
 noncomputable def conditionalChoiceSmallStepSemantics (e : BoolExp Variable) (c₁ c₂ : Program Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
-  fun s a c s' => match c with
-  | error => iteOneZero (a = Action.deterministic ∧ s = s' ∧ e s.stack = none)
-  | c => iteOneZero (a = Action.deterministic ∧ s = s'
-    ∧ (e s.stack = some true ∧ c₁ = c ∨ e s.stack = some false ∧ c₂ = c ))
+  fun s a c s' =>
+    iteOneZero (a = Action.deterministic ∧ s = s'
+      ∧ (e s.stack ∧ c₁ = c ∨ ¬ e s.stack ∧ c₂ = c))
 
 /-- loopy Program that succeeds with terminated program if the loop condition is false,
     loops one more if the loop condition is true and errors if an expression is not well-defined-/
@@ -135,9 +118,10 @@ noncomputable def conditionalChoiceSmallStepSemantics (e : BoolExp Variable) (c�
 noncomputable def loopSmallStepSemantics (e : BoolExp Variable) (c : Program Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c' s' => match c' with
-  | error => iteOneZero (a = Action.deterministic ∧ s = s' ∧ e s.stack = none)
-  | terminated => iteOneZero (a = Action.deterministic ∧ s = s' ∧ e s.stack = some false)
-  | c' => iteOneZero (a = Action.deterministic ∧ c' = sequential c (loop e c) ∧ s = s' ∧ e s.stack = some true )
+  | terminated => iteOneZero (a = Action.deterministic
+    ∧ s = s' ∧ ¬ e s.stack)
+  | c' => iteOneZero (a = Action.deterministic
+    ∧ c' = sequential c (loop e c) ∧ s = s' ∧ e s.stack)
 
 noncomputable def programSmallStepSemantics :
     (Program Variable) → (State Variable) →
@@ -201,8 +185,8 @@ theorem zero_probability_of_not_enabledAction {a : Action} (h : ¬ a ∈ enabled
     rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, assignSmallStepSemantics]
     split
-    pick_goal 3; rfl
-    all_goals (rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h)
+    pick_goal 2; rfl
+    rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h
   | manipulate e e' =>
     rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, manipulateSmallStepSemantics]
@@ -230,8 +214,7 @@ theorem zero_probability_of_not_enabledAction {a : Action} (h : ¬ a ∈ enabled
   | conditionalChoice e c₁ c₂ _ _ =>
     rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, conditionalChoiceSmallStepSemantics]
-    split
-    all_goals (rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h)
+    rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h
   | loop e c _ =>
     rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, loopSmallStepSemantics]
@@ -241,9 +224,8 @@ theorem zero_probability_of_not_enabledAction {a : Action} (h : ¬ a ∈ enabled
   | probabilisticChoice e c₁ c₂ _ _ =>
     rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, probabilisticChoiceSmallStepSemantics]
-    split
-    · rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h
-    · rw [if_neg]; intro h'; exact h h'.left
+    simp only [ite_eq_right_iff, and_imp]
+    intro h'; exfalso; exact h h'
 
   | allocate v n =>
     simp only [enabledAction, Set.mem_setOf_eq, not_exists, not_and] at h
