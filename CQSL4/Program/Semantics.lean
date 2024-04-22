@@ -20,7 +20,7 @@ inductive Action where
 @[simp]
 noncomputable def skipSmallStepSemantics :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
-  fun s a c s' => iteOneZero (c = terminated ∧ a = Action.deterministic ∧ s = s')
+  fun s a c s' => iteOneZero (c = `[Prog| ↓] ∧ a = Action.deterministic ∧ s = s')
 
 /-- valAssign succeeds if the expression is well-defined and the resulting state has changed.
     valAssign fails if the expression is not well-defined and the state remains unchanged. -/
@@ -28,7 +28,7 @@ noncomputable def skipSmallStepSemantics :
 noncomputable def assignSmallStepSemantics (v : Variable) (e : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
-  | terminated => iteOneZero (a = Action.deterministic ∧ substituteStack s v (e s.stack) = s')
+  | `[Prog| ↓] => iteOneZero (a = Action.deterministic ∧ substituteStack s v (e s.stack) = s')
   | _ => 0
 
 /-- manipulate succeeds if the expressions are well-defined and an allocated location. It changes
@@ -37,9 +37,9 @@ noncomputable def assignSmallStepSemantics (v : Variable) (e : ValueExp Variable
 noncomputable def manipulateSmallStepSemantics (e_loc e_val : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
-  | terminated => iteOneZero (a = Action.deterministic ∧
+  | `[Prog| ↓] => iteOneZero (a = Action.deterministic ∧
       s.heap (e_loc s.stack) ≠ none ∧ substituteHeap s (e_loc s.stack) (e_val s.stack) = s')
-  | error =>iteOneZero (a = Action.deterministic ∧ s = s' ∧ s.heap (e_loc s.stack) = none)
+  | `[Prog| ↯] =>iteOneZero (a = Action.deterministic ∧ s = s' ∧ s.heap (e_loc s.stack) = none)
   | _ => 0
 
 /-- lookup succeeds if the expression is well-defined and an allocated location is looked up.
@@ -49,9 +49,9 @@ noncomputable def manipulateSmallStepSemantics (e_loc e_val : ValueExp Variable)
 noncomputable def lookupSmallStepSemantics (v : Variable) (e : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
-  | terminated => iteOneZero ( a = Action.deterministic ∧
+  | `[Prog| ↓] => iteOneZero ( a = Action.deterministic ∧
       ∃ val, s.heap (e s.stack) = some val ∧ substituteStack s v val = s' )
-  | error => iteOneZero ( a = Action.deterministic ∧ s = s' ∧ s.heap (e s.stack) = none)
+  | `[Prog| ↯] => iteOneZero ( a = Action.deterministic ∧ s = s' ∧ s.heap (e s.stack) = none)
   | _ => 0
 
 /-- compareAndSet succeeds if all expressions are well-defined and the location is allocated.
@@ -62,11 +62,11 @@ noncomputable def lookupSmallStepSemantics (v : Variable) (e : ValueExp Variable
 noncomputable def compareAndSetSmallStepSemantics (v : Variable) (e_loc e_cmp e_val : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
-  | terminated => iteOneZero ( a = Action.deterministic
+  | `[Prog| ↓] => iteOneZero ( a = Action.deterministic
       ∧ ∃ old_val, s.heap (e_loc s.stack) = some old_val
       ∧ ((old_val = e_cmp s.stack ∧ substituteStack (substituteHeap s (e_loc s.stack) (e_val s.stack)) v 1 = s')
         ∨ old_val ≠ e_cmp s.stack ∧ substituteStack s v 0 = s'))
-  | error => iteOneZero (a = Action.deterministic ∧ s = s' ∧ s.heap (e_loc s.stack) = none)
+  | `[Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s' ∧ s.heap (e_loc s.stack) = none)
   | _ => 0
 
 /-- allocate succeeds if the location m and n spaces afterwards are allocated and sets the values
@@ -75,7 +75,7 @@ noncomputable def compareAndSetSmallStepSemantics (v : Variable) (e_loc e_cmp e_
 noncomputable def allocateSmallStepSemantics (v : Variable) (n : ℕ) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' =>
-    iteOneZero (c = terminated ∧ ∃ m, a = Action.allocation m ∧ isNotAlloc s m n
+    iteOneZero (c = `[Prog| ↓] ∧ ∃ m, a = Action.allocation m ∧ isNotAlloc s m n
       ∧ substituteStack (substituteHeap s m n) v m = s')
 
 /-- free succeeds if the expression is well-defined and the location is up to n positions allocated.
@@ -84,9 +84,9 @@ noncomputable def allocateSmallStepSemantics (v : Variable) (n : ℕ) :
 noncomputable def freeSmallStepSemantics (e : ValueExp Variable) (n : ℕ) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
-  | terminated => iteOneZero (a = Action.deterministic
+  | `[Prog| ↓] => iteOneZero (a = Action.deterministic
     ∧ isAlloc s (e s.stack) n ∧ freeHeap s (e s.stack) n = s')
-  | error => iteOneZero (a = Action.deterministic ∧ s = s'
+  | `[Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
     ∧ ¬isAlloc s (e s.stack) n)
   | _ => 0
 
@@ -118,69 +118,67 @@ noncomputable def conditionalChoiceSmallStepSemantics (e : BoolExp Variable) (c�
 noncomputable def loopSmallStepSemantics (e : BoolExp Variable) (c : Program Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c' s' => match c' with
-  | terminated => iteOneZero (a = Action.deterministic
+  | `[Prog| ↓] => iteOneZero (a = Action.deterministic
     ∧ s = s' ∧ ¬ e s.stack)
   | c' => iteOneZero (a = Action.deterministic
-    ∧ c' = sequential c (loop e c) ∧ s = s' ∧ e s.stack)
+    ∧ c' = `[Prog| [[c]] ; while e begin [[c]] end] ∧ s = s' ∧ e s.stack)
 
 noncomputable def programSmallStepSemantics :
     (Program Variable) → (State Variable) →
     Action → (Program Variable) → (State Variable) → I
-  | error => 0
-  | terminated => 0
-  | skip' => skipSmallStepSemantics
-  | assign v e => assignSmallStepSemantics v e
-  | manipulate e_loc e_val => manipulateSmallStepSemantics e_loc e_val
-  | lookup v e => lookupSmallStepSemantics v e
-  | compareAndSet v e_loc e_cmp e_val => compareAndSetSmallStepSemantics v e_loc e_cmp e_val
-  | allocate v n => allocateSmallStepSemantics v n
-  | free' e n => freeSmallStepSemantics e n
-  | probabilisticChoice e c₁ c₂ => probabilisticChoiceSmallStepSemantics e c₁ c₂
-  | conditionalChoice e c₁ c₂ => conditionalChoiceSmallStepSemantics e c₁ c₂
-  | loop e c => loopSmallStepSemantics e c
-  | sequential terminated c₂ => fun s a c s' => iteOneZero (a = Action.deterministic ∧ s=s' ∧ c = c₂)
-  | sequential c₁ c₂ => fun s a c s' =>
-    if let sequential c₁' c₂' := c then
+  | `[Prog| ↯] => 0
+  | `[Prog| ↓] => 0
+  | `[Prog| skip] => skipSmallStepSemantics
+  | `[Prog| v ≔ e] => assignSmallStepSemantics v e
+  | `[Prog| e_loc *≔ e_val] => manipulateSmallStepSemantics e_loc e_val
+  | `[Prog| v ≔* e] => lookupSmallStepSemantics v e
+  | `[Prog| v ≔ cas(e_loc, e_cmp, e_val)] => compareAndSetSmallStepSemantics v e_loc e_cmp e_val
+  | `[Prog| v ≔ alloc(n)] => allocateSmallStepSemantics v n
+  | `[Prog| free(e,n)] => freeSmallStepSemantics e n
+  | `[Prog| pif e then [[c₁]] else [[c₂]] end] => probabilisticChoiceSmallStepSemantics e c₁ c₂
+  | `[Prog| if e then [[c₁]] else [[c₂]] end] => conditionalChoiceSmallStepSemantics e c₁ c₂
+  | `[Prog| while e begin [[c]] end] => loopSmallStepSemantics e c
+  | `[Prog| ↓ ; [[c₂]]] => fun s a c s' => iteOneZero (a = Action.deterministic ∧ s=s' ∧ c = c₂)
+  | `[Prog| [[c₁]] ; [[c₂]]] => fun s a c s' =>
+    if let `[Prog| [[c₁']] ; [[c₂']]] := c then
       if c₂ = c₂' then (programSmallStepSemantics c₁ s a c₁' s') else 0
     else 0
-  | concurrent terminated terminated => fun s a c s' => iteOneZero (c = terminated ∧ a = Action.deterministic ∧ s = s')
-  | concurrent c₁ c₂ => fun s a c s' =>
-    if let concurrent c₁' c₂' := c then match a with
+  | `[Prog| ↓ || ↓] => fun s a c s' => iteOneZero (c = `[Prog| ↓] ∧ a = Action.deterministic ∧ s = s')
+  | `[Prog| [[c₁]] || [[c₂]]] => fun s a c s' =>
+    if let `[Prog| [[c₁']] || [[c₂']]] := c then match a with
       | Action.concurrentLeft a => if c₂ = c₂' then programSmallStepSemantics c₁ s a c₁' s' else 0
       | Action.concurrentRight a => if c₁ = c₁' then programSmallStepSemantics c₂ s a c₂' s' else 0
       | _ => 0
     else 0
 
 def enabledAction : (Program Variable) → (State Variable) → Set Action
-  | terminated, _                   => ∅
-  | error, _                        => ∅
-  | skip', _                        => { Action.deterministic }
-  | assign _ _, _                   => { Action.deterministic }
-  | manipulate _ _, _               => { Action.deterministic }
-  | lookup _ _, _                   => { Action.deterministic }
-  | compareAndSet _ _ _ _, _        => { Action.deterministic }
-  | allocate _ n, s                 => { a | ∃ m, a = Action.allocation m ∧ isNotAlloc s m n }
-  | free' _ _, _                    => { Action.deterministic }
-  | sequential c₁ _, s              => if c₁ = terminated then { Action.deterministic } else enabledAction c₁ s
-  | probabilisticChoice _ _ _, _    => { Action.deterministic }
-  | conditionalChoice _ _ _, _      => { Action.deterministic }
-  | loop _ _, _                     => { Action.deterministic }
-  | concurrent c₁ c₂, s             => if c₁ = terminated ∧ c₂ = terminated then { Action.deterministic } else
-                                       { Action.concurrentLeft a | a ∈ enabledAction c₁ s }
-                                     ∪ { Action.concurrentRight a | a ∈ enabledAction c₂ s }
+  | `[Prog| ↓], _                => ∅
+  | `[Prog| ↯], _                => ∅
+  | `[Prog| skip], _             => { Action.deterministic }
+  | `[Prog| _ ≔ _], _            => { Action.deterministic }
+  | `[Prog| _ *≔ _], _           => { Action.deterministic }
+  | `[Prog| _ ≔* _], _           => { Action.deterministic }
+  | `[Prog| _ ≔ cas(_, _, _)], _ => { Action.deterministic }
+  | `[Prog| _ ≔ alloc(n)], s     => { a | ∃ m, a = Action.allocation m ∧ isNotAlloc s m n }
+  | `[Prog| free(_,_)], _        => { Action.deterministic }
+  | `[Prog| [[c₁]] ; [[_]]], s   => if c₁ = `[Prog| ↓] then { Action.deterministic } else enabledAction c₁ s
+  | `[Prog| pif _ then [[_]] else [[_]] end], _   => { Action.deterministic }
+  | `[Prog| if _ then [[_]] else [[_]] end], _    => { Action.deterministic }
+  | `[Prog| while _ begin [[_]] end], _           => { Action.deterministic }
+  | `[Prog| [[c₁]] || [[c₂]]], s
+    => if c₁ = `[Prog| ↓] ∧ c₂ = `[Prog| ↓] then { Action.deterministic } else
+      { Action.concurrentLeft a | a ∈ enabledAction c₁ s } ∪ { Action.concurrentRight a | a ∈ enabledAction c₂ s }
 
 theorem zero_probability_of_not_enabledAction {a : Action} (h : ¬ a ∈ enabledAction c s)
     (c' : Program Variable) (s' : State Variable) :
     programSmallStepSemantics c s a c' s' = 0 := by
 
   induction c generalizing c' a with
-  | terminated => unfold programSmallStepSemantics; simp only [Pi.zero_apply]
-  | error => unfold programSmallStepSemantics; simp only [Pi.zero_apply]
-
+  | terminated => simp only [programSmallStepSemantics, Pi.zero_apply]
+  | error => simp only [programSmallStepSemantics, Pi.zero_apply]
   | skip' =>
-    unfold programSmallStepSemantics skipSmallStepSemantics
+    simp only [programSmallStepSemantics, skipSmallStepSemantics]
     rw[iteOneZero_neg]; simp only [not_and_or]; exact Or.inr <| Or.inl h
-
   | assign v e =>
     rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, assignSmallStepSemantics]
@@ -199,18 +197,32 @@ theorem zero_probability_of_not_enabledAction {a : Action} (h : ¬ a ∈ enabled
     split
     pick_goal 3; rfl
     all_goals (rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h)
-  | compareAndSet v e_l e_v e_n =>
+    | compareAndSet v e_l e_v e_n =>
+      rw [enabledAction, Set.mem_singleton_iff] at h
+      simp only [programSmallStepSemantics, compareAndSetSmallStepSemantics]
+      split
+      pick_goal 3; rfl
+      all_goals (rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h)
+    | free' v n =>
+      rw [enabledAction, Set.mem_singleton_iff] at h
+      simp only [programSmallStepSemantics, freeSmallStepSemantics]
+      split
+      pick_goal 3; rfl
+      all_goals (rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h)
+    | allocate v n =>
+      simp only [enabledAction, Set.mem_setOf_eq, not_exists, not_and] at h
+      simp only [programSmallStepSemantics, allocateSmallStepSemantics]
+      rw [iteOneZero_neg]
+      simp only [not_exists, not_and]
+      intro _ x h_act h_nalloc
+      exfalso
+      exact h x h_act h_nalloc
+
+  | probabilisticChoice e c₁ c₂ _ _ =>
     rw [enabledAction, Set.mem_singleton_iff] at h
-    simp only [programSmallStepSemantics, compareAndSetSmallStepSemantics]
-    split
-    pick_goal 3; rfl
-    all_goals (rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h)
-  | free' v n =>
-    rw [enabledAction, Set.mem_singleton_iff] at h
-    simp only [programSmallStepSemantics, freeSmallStepSemantics]
-    split
-    pick_goal 3; rfl
-    all_goals (rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h)
+    simp only [programSmallStepSemantics, probabilisticChoiceSmallStepSemantics]
+    simp only [ite_eq_right_iff, and_imp]
+    intro h'; exfalso; exact h h'
   | conditionalChoice e c₁ c₂ _ _ =>
     rw [enabledAction, Set.mem_singleton_iff] at h
     simp only [programSmallStepSemantics, conditionalChoiceSmallStepSemantics]
@@ -221,23 +233,8 @@ theorem zero_probability_of_not_enabledAction {a : Action} (h : ¬ a ∈ enabled
     split
     all_goals (rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h)
 
-  | probabilisticChoice e c₁ c₂ _ _ =>
-    rw [enabledAction, Set.mem_singleton_iff] at h
-    simp only [programSmallStepSemantics, probabilisticChoiceSmallStepSemantics]
-    simp only [ite_eq_right_iff, and_imp]
-    intro h'; exfalso; exact h h'
-
-  | allocate v n =>
-    simp only [enabledAction, Set.mem_setOf_eq, not_exists, not_and] at h
-    simp only [programSmallStepSemantics, allocateSmallStepSemantics]
-    rw [iteOneZero_neg]
-    simp only [not_exists, not_and]
-    intro _ x h_act h_nalloc
-    exfalso
-    exact h x h_act h_nalloc
-
   | sequential c₁ c₂ ih₁ _ =>
-    cases eq_or_ne c₁ terminated with
+    cases eq_or_ne c₁ `[Prog| ↓] with
     | inl h_eq =>
       simp only [h_eq, programSmallStepSemantics]
       rw [iteOneZero_neg]; simp only [not_and]
@@ -256,7 +253,7 @@ theorem zero_probability_of_not_enabledAction {a : Action} (h : ¬ a ∈ enabled
       | _ => simp only [ite_eq_right_iff]
 
   | concurrent c₁ c₂ ih₁ ih₂ =>
-    by_cases h_term : c₁ = terminated ∧ c₂ = terminated
+    by_cases h_term : c₁ = `[Prog| ↓] ∧ c₂ = `[Prog| ↓]
     · simp only [h_term.left, h_term.right, programSmallStepSemantics]
       rw [iteOneZero_neg]
       simp only [not_and]
