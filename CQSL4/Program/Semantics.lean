@@ -138,14 +138,14 @@ noncomputable def programSmallStepSemantics :
   | `[Prog| pif e then [[c₁]] else [[c₂]] end] => probabilisticChoiceSmallStepSemantics e c₁ c₂
   | `[Prog| if e then [[c₁]] else [[c₂]] end] => conditionalChoiceSmallStepSemantics e c₁ c₂
   | `[Prog| while e begin [[c]] end] => loopSmallStepSemantics e c
-  | `[Prog| ↓ ; [[c₂]]] => fun s a c s' => iteOneZero (a = Action.deterministic ∧ s=s' ∧ c = c₂)
   | `[Prog| [[c₁]] ; [[c₂]]] => fun s a c s' =>
-    if let `[Prog| [[c₁']] ; [[c₂']]] := c then
+    if c₁ = `[Prog| ↓ ] then iteOneZero (a = Action.deterministic ∧ s=s' ∧ c = c₂)
+    else if let `[Prog| [[c₁']] ; [[c₂']]] := c then
       if c₂ = c₂' then (programSmallStepSemantics c₁ s a c₁' s') else 0
     else 0
-  | `[Prog| ↓ || ↓] => fun s a c s' => iteOneZero (c = `[Prog| ↓] ∧ a = Action.deterministic ∧ s = s')
   | `[Prog| [[c₁]] || [[c₂]]] => fun s a c s' =>
-    if let `[Prog| [[c₁']] || [[c₂']]] := c then match a with
+    if c₁ = `[Prog| ↓] ∧ c₂ = `[Prog| ↓] then iteOneZero (c = `[Prog| ↓] ∧ a = Action.deterministic ∧ s = s')
+    else if let `[Prog| [[c₁']] || [[c₂']]] := c then match a with
       | Action.concurrentLeft a => if c₂ = c₂' then programSmallStepSemantics c₁ s a c₁' s' else 0
       | Action.concurrentRight a => if c₁ = c₁' then programSmallStepSemantics c₂ s a c₂' s' else 0
       | _ => 0
@@ -236,64 +236,66 @@ theorem zero_probability_of_not_enabledAction {a : Action} (h : ¬ a ∈ enabled
   | sequential c₁ c₂ ih₁ _ =>
     cases eq_or_ne c₁ `[Prog| ↓] with
     | inl h_eq =>
-      simp only [h_eq, programSmallStepSemantics]
-      rw [iteOneZero_neg]; simp only [not_and]
-      intro h_a _
-      simp only [enabledAction, if_pos h_eq, Set.mem_singleton_iff] at h
-      exfalso
+      simp only [programSmallStepSemantics, h_eq]
+      rw [iteOneZero_neg]; simp only [↓reduceIte]
+      rw [h_eq, enabledAction] at h; simp only [↓reduceIte, Set.mem_singleton_iff] at h
+      rintro ⟨h_a, _⟩
       exact h h_a
     | inr h_ne =>
+      rw [enabledAction, if_neg h_ne] at h
+      specialize ih₁ h
       simp only [programSmallStepSemantics]
-      cases c' with
-      | sequential c₁' c₂' =>
-        simp only [ite_eq_right_iff]
-        intro _
-        simp only [enabledAction, if_neg h_ne] at h
-        exact ih₁ h c₁'
-      | _ => simp only [ite_eq_right_iff]
+      split
+      case inl h_term => exact (h_ne h_term).elim
+      case inr _ =>
+        split
+        case h_1 h_term _ c₁' c₂' =>
+          split
+          case inl h_c₁ => exact ih₁ c₁'
+          case inr h_c₁ => rfl
+        case h_2 _ => rfl
 
   | concurrent c₁ c₂ ih₁ ih₂ =>
-    by_cases h_term : c₁ = `[Prog| ↓] ∧ c₂ = `[Prog| ↓]
-    · simp only [h_term.left, h_term.right, programSmallStepSemantics]
+    rw [enabledAction] at h
+    split at h
+    case inl h_term =>
+      simp only [programSmallStepSemantics, h_term.left, h_term.right, and_self, ↓reduceIte]
       rw [iteOneZero_neg]
       simp only [not_and]
       intro _ h_a
-      rw [enabledAction, if_pos h_term, Set.mem_singleton_iff] at h
-      exfalso
-      exact h h_a
-    · rw [enabledAction, if_neg h_term] at h
+      rw [Set.mem_singleton_iff] at h
+      exact (h h_a).elim
+    case inr h_term =>
       simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_exists, not_and] at h
       let ⟨h_left, h_right⟩ := h; clear h
-      rw [programSmallStepSemantics]
-      pick_goal 2
-      · intro h₁ h₂; exact h_term ⟨h₁, h₂⟩
-      · cases c' with
-        | concurrent c₁' c₂' =>
-          cases a with
-          | concurrentLeft a =>
-            simp only
-            by_cases h_a : a ∈ enabledAction c₁ s
-            · exfalso
-              exact h_left a h_a rfl
-            · cases eq_or_ne c₂ c₂' with
-              | inl h_eq₂ =>
-                rw [if_pos h_eq₂]
-                exact ih₁ h_a c₁'
-              | inr h_ne => exact if_neg h_ne
-          | concurrentRight a =>
-            simp only
-            by_cases h_a : a ∈ enabledAction c₂ s
-            · exfalso
-              exact h_right a h_a rfl
-            · cases eq_or_ne c₁ c₁' with
-              | inl h_eq₁ =>
-                rw [if_pos h_eq₁]
-                exact ih₂ h_a c₂'
-              |inr h_ne => exact if_neg h_ne
-          | _ => simp only
-        | _ => simp only
-
-
-
+      simp only [programSmallStepSemantics]
+      split
+      case inl h_term' => exact (h_term h_term').elim
+      case inr _ =>
+      split
+      case h_1 _ c₁' c₂' =>
+        split
+        case h_1 _ a =>
+          split
+          case inl h_c₂ =>
+            have : a ∉ enabledAction c₁ s := by {
+              intro h
+              specialize h_left a h
+              simp only [not_true_eq_false] at h_left
+            }
+            exact ih₁ this c₁'
+          case inr => rfl
+        case h_2 _ a =>
+          split
+          case inl h_c₂ =>
+            have : a ∉ enabledAction c₂ s := by {
+              intro h
+              specialize h_right a h
+              simp only [not_true_eq_false] at h_right
+            }
+            exact ih₂ this c₂'
+          case inr _ => rfl
+        case h_3 _ _ _ => rfl
+      case h_2 => rfl
 
 end Semantics

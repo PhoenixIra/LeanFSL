@@ -54,9 +54,13 @@ lemma iteOneZero_pos {P : Prop} (h : P) : iteOneZero P = 1 := by
   unfold iteOneZero
   exact ite_unit_pos 1 0 h
 
+lemma iteOneZero_true : iteOneZero True = 1 := iteOneZero_pos True.intro
+
 lemma iteOneZero_neg {P : Prop} (h : ¬P) : iteOneZero P = 0 := by
   unfold iteOneZero
   exact ite_unit_neg 1 0 h
+
+lemma iteOneZero_false : iteOneZero False = 0 := iteOneZero_neg (fun h => h.elim)
 
 lemma iteOneZero_eq_one_def {P : Prop} : iteOneZero P = 1 ↔ P := by
   unfold iteOneZero
