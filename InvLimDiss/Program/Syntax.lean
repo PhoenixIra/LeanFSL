@@ -1,6 +1,10 @@
-import CQSL4.Program.Expressions
+import InvLimDiss.Program.Expressions
 import Mathlib.Topology.UnitInterval
 import Lean.PrettyPrinter.Delaborator
+
+/-
+This file contains definitions and notation for program syntax
+-/
 
 namespace Syntax
 

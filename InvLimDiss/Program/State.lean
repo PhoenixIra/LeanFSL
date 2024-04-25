@@ -1,6 +1,10 @@
 import Mathlib.Data.Rat.Defs
 import Mathlib.Data.Set.Finite
 
+/-
+This file contains definitions and lemmas about program states, i.e. stack-heap pairs.
+-/
+
 namespace State
 
 open Rat Classical
@@ -11,6 +15,10 @@ def Heap : Type := ℕ → Option ℚ
 structure State (Variable : Type) where
   stack : Stack Variable
   heap : Heap
+
+def mkState {Variable : Type} (s : Stack Variable) (h : Heap) : State Variable where
+  stack := s
+  heap := h
 
 variable {Var : Type}
 
@@ -415,5 +423,14 @@ theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
       obtain ⟨h_le, h_lt⟩ := h
       rw [h_changed l' h_le h_lt]
       exact freeHeap_change s l n l' h_le h_lt
+
+
+  def disjoint (s s' : Heap) : Prop := ∀ n, s n = none ∨ s' n = none
+
+  def union (s s' : Heap) : Heap := λ n => if let some a := s n then a else s' n
+
+  instance : Union Heap := ⟨union⟩
+
+  def empty_heap : Heap := λ _ => none
 
 end State

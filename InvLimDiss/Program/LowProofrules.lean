@@ -1,5 +1,13 @@
-import CQSL4.Program.Semantics
-import CQSL4.Util
+import InvLimDiss.Program.Semantics
+import InvLimDiss.Util
+
+/-
+This file contains a varity of low level proof rules to ease the use of the
+probability transition function in the program semantics. It mainly rewirtes
+the program semantics in more logical terms
+-/
+
+namespace Semantics
 
 open Syntax Program Notation Semantics unitInterval Set State Classical
 
@@ -792,3 +800,5 @@ theorem concurrent_iff_of_right :
         rintro (⟨_, c₂, h_c', _⟩ | ⟨_, rfl⟩)
         case inl => exact (h_c c₁ c₂ h_c').elim
         case inr => rfl
+
+end Semantics
