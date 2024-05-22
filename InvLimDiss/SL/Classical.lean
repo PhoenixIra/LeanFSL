@@ -1,4 +1,5 @@
 import InvLimDiss.Program.State
+import InvLimDiss.Program.Expressions
 
 /-
 This file contains definitions and lemmas about classical (i.e. Prop) separation logic
@@ -6,7 +7,7 @@ This file contains definitions and lemmas about classical (i.e. Prop) separation
 
 namespace SL
 
-open State
+open State Syntax
 
 variable (Var : Type)
 
@@ -14,7 +15,10 @@ def StateProp := State Var → Prop
 
 def slEmp : StateProp Var := λ ⟨_,h⟩ => h = empty_heap
 
-def slPointsTo (loc : ℕ) (val : ℚ) : StateProp Var := λ ⟨_,h⟩ => h loc = some val
+def slPointsTo (loc : ValueExp Var) (val : ValueExp Var) : StateProp Var :=
+    λ ⟨s,h⟩ => ∃ n : ℕ, n = (loc s) ∧ h n = some (val s)
+
+def slEqual (x y : Var) : StateProp Var := λ ⟨s,_⟩ => s x = s y
 
 def slPure (P : Prop) : StateProp Var := λ _ => P
 

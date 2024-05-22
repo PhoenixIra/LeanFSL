@@ -13,7 +13,7 @@ open State unitInterval
 
 variable (Variable : Type)
 
-def ValueExp := (Stack Variable) → ℕ
+def ValueExp := (Stack Variable) → ℚ
 
 def BoolExp := (Stack Variable) → Bool
 

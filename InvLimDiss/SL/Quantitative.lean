@@ -1,4 +1,5 @@
 import InvLimDiss.Program.State
+import InvLimDiss.Program.Expressions
 import InvLimDiss.Analysis.Probabilities
 
 /-
@@ -7,7 +8,7 @@ This file contains definitions and lemmas about unit valued quantitative separat
 
 namespace QSL
 
-open State unitInterval
+open State unitInterval Syntax
 
 variable (Var : Type)
 
@@ -15,7 +16,11 @@ def StateRV := State Var → I
 
 noncomputable def qslEmp : StateRV Var := λ ⟨_,h⟩ => iteOneZero (h = empty_heap)
 
-noncomputable def qslPointsTo (loc : ℕ) (val : ℚ) : StateRV Var := λ ⟨_,h⟩ => iteOneZero (h loc = some val)
+noncomputable def qslPointsTo (loc : ValueExp Var) (val : ValueExp Var) : StateRV Var :=
+    λ ⟨s,h⟩ => iteOneZero (∃ n : ℕ, n = loc s ∧ h n = some (val s))
+
+noncomputable def qslEqual (x y : Var) : StateRV Var :=
+    λ ⟨s,_⟩ => iteOneZero (s x = s y)
 
 noncomputable def qslPure (P : Prop) : StateRV Var := λ _ => iteOneZero P
 
