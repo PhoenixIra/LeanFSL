@@ -425,12 +425,49 @@ theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
       exact freeHeap_change s l n l' h_le h_lt
 
 
-  def disjoint (s s' : Heap) : Prop := ∀ n, s n = none ∨ s' n = none
+  def disjoint (h₁ h₂ : Heap) : Prop := ∀ n, h₁ n = none ∨ h₂ n = none
 
-  def union (s s' : Heap) : Heap := λ n => if let some a := s n then a else s' n
+  theorem disjoint_symm (h₁ h₂ : Heap) (h : disjoint h₁ h₂) : disjoint h₂ h₁ := fun n => Or.symm (h n)
+
+  theorem disjoint_comm (h₁ h₂ : Heap) : disjoint h₁ h₂ ↔ disjoint h₂ h₁ :=
+    ⟨fun h => disjoint_symm h₁ h₂ h, fun h => disjoint_symm h₂ h₁ h⟩
+
+  def union (h h' : Heap) : Heap := λ n => if let some a := h n then a else h' n
 
   instance : Union Heap := ⟨union⟩
 
-  def empty_heap : Heap := λ _ => none
+  theorem union_comm (h₁ h₂ : Heap) (h : disjoint h₁ h₂) : h₁ ∪ h₂ = h₂ ∪ h₁ := by
+    apply funext
+    intro n
+    simp only [instUnionHeap, union]
+    cases h n
+    case inl h_h₁ =>
+      simp only [h_h₁]
+      cases h₂ n
+      case none => simp only
+      case some => simp only
+    case inr h_h₂ =>
+      simp only [h_h₂]
+      cases h₁ n
+      case none => simp only
+      case some => simp only
+
+  theorem union_assoc (h₁ h₂ h₃ : Heap)  :
+      (h₁ ∪ h₂) ∪ h₃ = h₁ ∪ (h₂ ∪ h₃) := by
+    apply funext
+    intro n
+    simp only [instUnionHeap, union]
+    cases h₁ n
+    case none => simp only
+    case some q => simp only
+
+  def emptyHeap : Heap := λ _ => none
+
+  theorem emptyHeap_disjoint (h : Heap) : disjoint emptyHeap h := fun _ => Or.inl rfl
+
+  theorem emptyHeap_union (h : Heap) : emptyHeap ∪ h = h := by
+  apply funext; intro n; simp only [instUnionHeap, union, emptyHeap]
+
+
 
 end State

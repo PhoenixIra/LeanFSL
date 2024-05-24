@@ -1,5 +1,6 @@
 import InvLimDiss.Program.State
 import InvLimDiss.Program.Expressions
+import Lean.PrettyPrinter
 
 /-
 This file contains definitions and lemmas about classical (i.e. Prop) separation logic
@@ -9,16 +10,18 @@ namespace SL
 
 open State Syntax
 
-variable (Var : Type)
 
-def StateProp := State Var → Prop
+def StateProp (Var : Type) : Type := State Var → Prop
 
-def slEmp : StateProp Var := λ ⟨_,h⟩ => h = empty_heap
+variable {Var : Type}
 
-def slPointsTo (loc : ValueExp Var) (val : ValueExp Var) : StateProp Var :=
+def slEmp : StateProp Var := λ ⟨_,h⟩ => h = emptyHeap
+
+def slPointsTo (loc val : ValueExp Var) : StateProp Var :=
     λ ⟨s,h⟩ => ∃ n : ℕ, n = (loc s) ∧ h n = some (val s)
 
-def slEqual (x y : Var) : StateProp Var := λ ⟨s,_⟩ => s x = s y
+def slEquals (e e' : ValueExp Var) : StateProp Var :=
+    λ ⟨s,_⟩ => e s = e' s
 
 def slPure (P : Prop) : StateProp Var := λ _ => P
 
@@ -37,5 +40,146 @@ def slSepCon (P Q : StateProp Var) : StateProp Var :=
 
 def slSepImp (P Q : StateProp Var) : StateProp Var :=
   λ ⟨s,h⟩ => ∀ h', P ⟨s,h'⟩ → disjoint h h' → Q ⟨s,(h ∪ h')⟩
+
+def slEntailment (P Q : StateProp Var) : Prop := ∀ s, P s → Q s
+
+
+open Lean
+
+declare_syntax_cat sl
+
+syntax "emp" : sl
+syntax term " ↦ " term : sl
+syntax term:51 " = " term:51 : sl
+syntax "[[" term "]]" : sl
+syntax "⌜" term "⌝" : sl
+syntax:max "¬" sl : sl
+syntax:35 sl:36 " ∧ " sl:35 : sl
+syntax:30 sl:31 " ∨ " sl:30 : sl
+syntax:max "∃ " explicitBinders ". " sl : sl
+syntax:max "∀ " explicitBinders ". " sl : sl
+syntax:35 sl:36 " ∗ " sl:35 : sl
+syntax:25 sl:26 " -∗ " sl:25 : sl
+syntax "("sl")" : sl
+
+syntax "[sl| " sl " ]" : term
+syntax "[sl| " sl " ⊢ " sl " ]" : term
+
+syntax "[sl " term " | " sl " ]" : term
+syntax "[sl " term  " | " sl " ⊢ " sl " ]" : term
+
+macro_rules
+  | `(term| [sl| emp]) => `(slEmp)
+  | `(term| [sl| $l:term ↦ $r:term]) => `(slPointsTo $l $r)
+  | `(term| [sl| $l:term = $r:term]) => `(slEquals $l $r)
+  | `(term| [sl| [[$t:term]]]) => `($t)
+  | `(term| [sl| ⌜$t:term⌝]) => `(slPure $t)
+  | `(term| [sl| ¬ $f:sl]) => `(slNot [sl|$f])
+  | `(term| [sl| $l:sl ∧ $r:sl]) => `(slAnd [sl|$l] [sl|$r])
+  | `(term| [sl| $l:sl ∨ $r:sl]) => `(slOr [sl|$l] [sl|$r])
+  | `(term| [sl| ∃ $xs. $f:sl]) => do expandExplicitBinders ``slExists xs (← `([sl|$f]))
+  | `(term| [sl| ∀ $xs. $f:sl]) => do expandExplicitBinders ``slAll xs (← `([sl|$f]))
+  | `(term| [sl| $l:sl ∗ $r:sl]) => `(slSepCon [sl|$l] [sl|$r])
+  | `(term| [sl| $l:sl -∗ $r:sl]) => `(slSepImp [sl|$l] [sl|$r])
+  | `(term| [sl| ($f:sl)]) => `([sl|$f])
+  | `(term| [sl| $l:sl ⊢ $r:sl]) => `(slEntailment [sl|$l] [sl|$r])
+
+  | `(term| [sl $v:term| emp]) => `(@slEmp $v)
+  | `(term| [sl $v:term| $l:term ↦ $r:term]) => `(@slPointsTo $v $l $r)
+  | `(term| [sl $v:term| $l:term = $r:term]) => `(@slEquals $v $l $r)
+  | `(term| [sl $_| [[$t:term]]]) => `($t)
+  | `(term| [sl $v:term| ⌜$t:term⌝]) => `(@slPure $v $t)
+  | `(term| [sl $v:term| ¬ $f:sl]) => `(slNot [sl $v|$f])
+  | `(term| [sl $v:term| $l:sl ∧ $r:sl]) => `(slAnd [sl $v|$l] [sl $v|$r])
+  | `(term| [sl $v:term| $l:sl ∨ $r:sl]) => `(slOr [sl $v|$l] [sl $v|$r])
+  | `(term| [sl $v:term| ∃ $xs. $f:sl]) => do expandExplicitBinders ``slExists xs (← `([sl $v|$f]))
+  | `(term| [sl $v:term| ∀ $xs. $f:sl]) => do expandExplicitBinders ``slAll xs (← `([sl $v|$f]))
+  | `(term| [sl $v:term| $l:sl ∗ $r:sl]) => `(slSepCon [sl $v|$l] [sl $v|$r])
+  | `(term| [sl $v:term| $l:sl -∗ $r:sl]) => `(slSepImp [sl $v|$l] [sl $v|$r])
+  | `(term| [sl $v:term| ($f:sl)]) => `([sl $v|$f])
+  | `(term| [sl $v:term | $l:sl ⊢ $r:sl]) => `(@slEntailment $v [sl|$l] [sl|$r])
+
+open Lean PrettyPrinter Delaborator
+
+@[app_unexpander slEmp]
+def unexpandSlEmp : Unexpander
+  | `($_) => `([sl| emp])
+
+@[app_unexpander slPointsTo]
+def unexpandSlPointsTo : Unexpander
+  | `($_ $l $r) => `([sl| $l:term ↦ $r:term])
+  | _ => throw ()
+
+@[app_unexpander slEquals]
+def unexpandSlEquals : Unexpander
+  | `($_ $l $r) => `([sl| $l:term = $r:term])
+  | _ => throw ()
+
+@[app_unexpander slPure]
+def unexpandSlPure : Unexpander
+  | `($_ $t) => `([sl| ⌜$t:term⌝])
+  | _ => throw ()
+
+@[app_unexpander slNot]
+def unexpandSlNot : Unexpander
+  | `($_ [sl|$t]) => `([sl| ¬ $t])
+  | `($_ $t) => `([sl| ¬ [[$t]]])
+  | _ => throw ()
+
+@[app_unexpander slAnd]
+def unexpandSlAnd : Unexpander
+  | `($_ [sl|$l] [sl|$r]) => `([sl| $l ∧ $r])
+  | `($_ $l [sl|$r]) => `([sl| [[$l]] ∧ $r])
+  | `($_ [sl|$l] $r) => `([sl| $l ∧ [[$r]]])
+  | `($_ $l $r) => `([sl| [[$l]] ∧ [[$r]]])
+  | _ => throw ()
+
+@[app_unexpander slOr]
+def unexpandSlOr : Unexpander
+  | `($_ [sl|$l] [sl|$r]) => `([sl| $l ∨ $r])
+  | `($_ $l [sl|$r]) => `([sl| [[$l]] ∨ $r])
+  | `($_ [sl|$l] $r) => `([sl| $l ∨ [[$r]]])
+  | `($_ $l $r) => `([sl| [[$l]] ∨ [[$r]]])
+  | _ => throw ()
+
+@[app_unexpander slExists]
+def unexpandSlExists : Unexpander
+  | `($_ fun $x:ident => [sl| ∃ $y:ident $[$z:ident]*. $f]) =>
+    `([sl| ∃ $x:ident $y:ident $[$z:ident]*. $f])
+  | `($_ fun $x:ident => [sl|$f:sl]) => `([sl| ∃ $x:ident. $f])
+  | _ => throw ()
+
+@[app_unexpander slAll]
+def unexpandSlAll : Unexpander
+  | `($_ fun $x:ident => [sl| ∀ $y:ident $[$z:ident]*. $f]) =>
+    `([sl| ∀ $x:ident $y:ident $[$z:ident]*. $f])
+  | `($_ fun $x:ident => [sl|$f:sl]) => `([sl| ∀ $x:ident. $f])
+  | _ => throw ()
+
+@[app_unexpander slSepCon]
+def unexpandSlSepCon : Unexpander
+  | `($_ [sl|$l] [sl|$r]) => `([sl| $l ∗ $r])
+  | `($_ $l [sl|$r]) => `([sl| [[$l]] ∗ $r])
+  | `($_ [sl|$l] $r) => `([sl| $l ∗ [[$r]]])
+  | `($_ $l $r) => `([sl| [[$l]] ∗ [[$r]]])
+  | _ => throw ()
+
+@[app_unexpander slSepImp]
+def unexpandSlSepImp : Unexpander
+  | `($_ [sl|$l1 -∗ $l2] [sl|$r]) => `([sl| ($l1 -∗ $l2) -∗ $r])
+  | `($_ [sl|$l1 -∗ $l2] $r) => `([sl| ($l1 -∗ $l2) -∗ [[$r]]])
+  | `($_ [sl|$l] [sl|$r]) => `([sl| $l -∗ $r])
+  | `($_ $l [sl|$r]) => `([sl| [[$l]] -∗ $r])
+  | `($_ [sl|$l] $r) => `([sl| $l -∗ [[$r]]])
+  | `($_ $l $r) => `([sl| [[$l]] -∗ [[$r]]])
+  | _ => throw ()
+
+@[app_unexpander slEntailment]
+def unexpandSlEntail : Unexpander
+  | `($_ [sl|$l] [sl|$r]) => `([sl| $l ⊢ $r])
+  | _ => throw ()
+
+
+example : [sl Var| ∀ (x:ℚ). ¬ emp ∗ emp] = [sl Var| ∃ (x:ℚ). emp -∗ emp -∗ emp] := sorry
 
 end SL

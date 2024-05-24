@@ -11,8 +11,8 @@ namespace Semantics
 
 open Syntax Program Notation Semantics unitInterval Set State Classical
 
-theorem skip_eq_one_iff : programSmallStepSemantics `[Prog| skip] s a c' s' = 1
-    ↔ c' = `[Prog| ↓] ∧ a = Action.deterministic ∧ s = s' := by
+theorem skip_eq_one_iff : programSmallStepSemantics [Prog| skip] s a c' s' = 1
+    ↔ c' = [Prog| ↓] ∧ a = Action.deterministic ∧ s = s' := by
   apply Iff.intro
   · intro h
     rw [programSmallStepSemantics, skipSmallStepSemantics, iteOneZero_eq_one_def] at h
@@ -21,26 +21,26 @@ theorem skip_eq_one_iff : programSmallStepSemantics `[Prog| skip] s a c' s' = 1
     rw [programSmallStepSemantics, skipSmallStepSemantics, iteOneZero_eq_one_def]
     exact h
 
-theorem skip_mem_zero_one : programSmallStepSemantics `[Prog| skip] s a c' s' ∈ ({0, 1} : Set I) := by
+theorem skip_mem_zero_one : programSmallStepSemantics [Prog| skip] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, skipSmallStepSemantics,
     mem_insert_iff, mem_singleton_iff, iteOneZero_eq_one_def, iteOneZero_eq_zero_def, ← imp_iff_not_or, imp_self]
   trivial
 
-theorem terminated_eq_zero : programSmallStepSemantics `[Prog| ↓] s a c' s' = 0 := by
+theorem terminated_eq_zero : programSmallStepSemantics [Prog| ↓] s a c' s' = 0 := by
   simp only [programSmallStepSemantics, Pi.zero_apply]
 
-theorem error_eq_zero : programSmallStepSemantics `[Prog| ↯] s a c' s' = 0 := by
+theorem error_eq_zero : programSmallStepSemantics [Prog| ↯] s a c' s' = 0 := by
   simp only [programSmallStepSemantics, Pi.zero_apply]
 
-theorem assign_eq_one_iff : programSmallStepSemantics `[Prog| v ≔ e] s a c' s' = 1
-    ↔ (c' = `[Prog| ↓] ∧ a = Action.deterministic ∧ substituteStack s v (e s.stack) = s')
+theorem assign_eq_one_iff : programSmallStepSemantics [Prog| v ≔ e] s a c' s' = 1
+    ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic ∧ substituteStack s v (e s.stack) = s')
     := by
   rw [programSmallStepSemantics, assignSmallStepSemantics]
   split
   case h_1 => simp only [iteOneZero_eq_one_def, true_and]
   case h_2 h => simp only [zero_ne_one, false_iff, not_and]; intro h_c; exfalso; exact h h_c
 
-theorem assign_mem_zero_one : programSmallStepSemantics `[Prog| v ≔ e] s a c' s' ∈ ({0, 1} : Set I) := by
+theorem assign_mem_zero_one : programSmallStepSemantics [Prog| v ≔ e] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, assignSmallStepSemantics]
   split
   case h_1 =>
@@ -52,10 +52,10 @@ theorem assign_mem_zero_one : programSmallStepSemantics `[Prog| v ≔ e] s a c' 
     · apply Or.inl; intro _; exact h
   case h_2 _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
-theorem manipulate_eq_one_iff : programSmallStepSemantics `[Prog| e_loc *≔ e_val] s a c' s' = 1
-    ↔ (c' = `[Prog| ↓] ∧ a = Action.deterministic ∧ s.heap (e_loc s.stack) ≠ none
+theorem manipulate_eq_one_iff : programSmallStepSemantics [Prog| e_loc *≔ e_val] s a c' s' = 1
+    ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic ∧ s.heap (e_loc s.stack) ≠ none
         ∧ substituteHeap s (e_loc s.stack) (e_val s.stack) = s')
-      ∨ (c' = `[Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
+      ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
         ∧ s.heap (e_loc s.stack) = none)
     := by
   rw [programSmallStepSemantics, manipulateSmallStepSemantics]
@@ -67,7 +67,7 @@ theorem manipulate_eq_one_iff : programSmallStepSemantics `[Prog| e_loc *≔ e_v
     intro h
     cases h with | inl h => exact h_term h.left | inr h => exact h_err h.left
 
-theorem manipulate_mem_zero_one : programSmallStepSemantics `[Prog| e_loc *≔ e_val] s a c' s' ∈ ({0, 1} : Set I) := by
+theorem manipulate_mem_zero_one : programSmallStepSemantics [Prog| e_loc *≔ e_val] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, manipulateSmallStepSemantics]
   split
   case h_1 => simp only [ne_eq, mem_insert_iff, iteOneZero_eq_zero_def, mem_singleton_iff,
@@ -76,10 +76,10 @@ theorem manipulate_mem_zero_one : programSmallStepSemantics `[Prog| e_loc *≔ e
     iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   case h_3 _ _ _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
-theorem lookup_eq_one_iff : programSmallStepSemantics `[Prog| v ≔* e] s a c' s' = 1
-    ↔ (c' = `[Prog| ↓] ∧ a = Action.deterministic ∧
+theorem lookup_eq_one_iff : programSmallStepSemantics [Prog| v ≔* e] s a c' s' = 1
+    ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic ∧
         ∃ val, s.heap (e s.stack) = some val ∧ substituteStack s v val = s')
-      ∨ (c' = `[Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
+      ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
         ∧ s.heap (e s.stack) = none)
     := by
   rw [programSmallStepSemantics, lookupSmallStepSemantics]
@@ -91,7 +91,7 @@ theorem lookup_eq_one_iff : programSmallStepSemantics `[Prog| v ≔* e] s a c' s
     intro h
     cases h with | inl h => exact h_term h.left | inr h => exact h_err h.left
 
-theorem lookup_mem_zero_one : programSmallStepSemantics `[Prog| v ≔* e] s a c' s' ∈ ({0, 1} : Set I) := by
+theorem lookup_mem_zero_one : programSmallStepSemantics [Prog| v ≔* e] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, lookupSmallStepSemantics]
   split
   case h_1 => simp only [mem_insert_iff, iteOneZero_eq_zero_def, mem_singleton_iff,
@@ -100,12 +100,12 @@ theorem lookup_mem_zero_one : programSmallStepSemantics `[Prog| v ≔* e] s a c'
     iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   case h_3 _ _ _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
-theorem compareAndSet_eq_one_iff : programSmallStepSemantics `[Prog| v ≔ cas (e_loc, e_cmp, e_val)] s a c' s' = 1
-    ↔ (c' = `[Prog| ↓] ∧ a = Action.deterministic
+theorem compareAndSet_eq_one_iff : programSmallStepSemantics [Prog| v ≔ cas (e_loc, e_cmp, e_val)] s a c' s' = 1
+    ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic
       ∧ ∃ old_val, s.heap (e_loc s.stack) = some old_val
         ∧ ((old_val = (e_cmp s.stack) ∧ substituteStack (substituteHeap s (e_loc s.stack) (e_val s.stack)) v 1 = s')
           ∨ old_val ≠ (e_cmp s.stack) ∧ substituteStack s v 0 = s'))
-      ∨ (c' = `[Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
+      ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
         ∧ s.heap (e_loc s.stack ) = none) := by
   rw [programSmallStepSemantics, compareAndSetSmallStepSemantics]
   split
@@ -117,7 +117,7 @@ theorem compareAndSet_eq_one_iff : programSmallStepSemantics `[Prog| v ≔ cas (
     cases h with | inl h => exact h_term h.left | inr h => exact h_err h.left
 
 theorem compareAndSet_mem_zero_one :
-    programSmallStepSemantics `[Prog| v ≔ cas(e_loc, e_cmp , e_val)] s a c' s' ∈ ({0, 1} : Set I) := by
+    programSmallStepSemantics [Prog| v ≔ cas(e_loc, e_cmp , e_val)] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, compareAndSetSmallStepSemantics]
   split
   case h_1 => simp only [ne_eq, mem_insert_iff, iteOneZero_eq_zero_def, mem_singleton_iff,
@@ -126,27 +126,27 @@ theorem compareAndSet_mem_zero_one :
     iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   case h_3 _ _ _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
-theorem allocate_eq_one_iff : programSmallStepSemantics `[Prog| v ≔ alloc n] s a c' s' = 1
-    ↔ (c' = `[Prog| ↓] ∧ ∃ m, a = Action.allocation m ∧ isNotAlloc s m n
+theorem allocate_eq_one_iff : programSmallStepSemantics [Prog| v ≔ alloc n] s a c' s' = 1
+    ↔ (c' = [Prog| ↓] ∧ ∃ m, a = Action.allocation m ∧ isNotAlloc s m n
       ∧ substituteStack (substituteHeap s m n) v m = s') := by
   rw [programSmallStepSemantics, allocateSmallStepSemantics]
   simp only [iteOneZero_eq_one_def]
 
 theorem allocate_mem_zero_one :
-    programSmallStepSemantics `[Prog| v ≔ alloc n] s a c' s' ∈ ({0, 1} : Set I) := by
+    programSmallStepSemantics [Prog| v ≔ alloc n] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, allocateSmallStepSemantics]
   simp only [mem_insert_iff, iteOneZero_eq_zero_def, not_and, not_exists, mem_singleton_iff,
     iteOneZero_eq_one_def]
-  cases eq_or_ne c' `[Prog| ↓] with
+  cases eq_or_ne c' [Prog| ↓] with
   | inl h_c =>
     by_cases h : ∃ m, a = Action.allocation m ∧ isNotAlloc s m n ∧ substituteStack (substituteHeap s m n) v m = s'
     case pos => apply Or.inr; exact ⟨h_c, h⟩
     case neg => apply Or.inl; intro _; simp only [not_exists, not_and] at h; exact h
   | inr h_c => apply Or.inl; intro h; exfalso; exact h_c h
 
-theorem free_eq_one_iff : programSmallStepSemantics `[Prog| free(e, n)] s a c' s' = 1
-    ↔ (c' = `[Prog| ↓] ∧ a = Action.deterministic ∧ isAlloc s (e s.stack ) n ∧ freeHeap s (e s.stack ) n = s')
-    ∨ (c' = `[Prog| ↯] ∧ a = Action.deterministic ∧ s = s' ∧ ¬isAlloc s (e s.stack ) n) := by
+theorem free_eq_one_iff : programSmallStepSemantics [Prog| free(e, n)] s a c' s' = 1
+    ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic ∧ isAlloc s (e s.stack ) n ∧ freeHeap s (e s.stack ) n = s')
+    ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s' ∧ ¬isAlloc s (e s.stack ) n) := by
   rw [programSmallStepSemantics, freeSmallStepSemantics]
   split
   case h_1 _ => simp only [iteOneZero_eq_one_def, true_and, false_and, or_false]
@@ -157,7 +157,7 @@ theorem free_eq_one_iff : programSmallStepSemantics `[Prog| free(e, n)] s a c' s
     cases h with | inl h => exact h_term h.left | inr h => exact h_err h.left
 
 theorem free_mem_zero_one :
-    programSmallStepSemantics `[Prog| free(e, n)] s a c' s' ∈ ({0, 1} : Set I) := by
+    programSmallStepSemantics [Prog| free(e, n)] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, freeSmallStepSemantics]
   split
   case h_1 _ => simp only [ne_eq, mem_insert_iff, mem_singleton_iff,
@@ -167,7 +167,7 @@ theorem free_mem_zero_one :
   case h_3 => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
 theorem probabilisticChoice_eq_zero_iff :
-    programSmallStepSemantics `[Prog| pif e then [[c₁]] else [[c₂]] end] s a c' s' = 0
+    programSmallStepSemantics [Prog| pif e then [[c₁]] else [[c₂]] end] s a c' s' = 0
     ↔ a ≠ Action.deterministic ∨ s ≠ s'
     ∨ a = Action.deterministic ∧ s = s' ∧ c₁ ≠ c' ∧ c₂ ≠ c'
     ∨ a = Action.deterministic ∧ s = s' ∧ c₁ = c' ∧ c₂ ≠ c' ∧ e s.stack = 0
@@ -249,7 +249,7 @@ theorem probabilisticChoice_eq_zero_iff :
     case inr h => exact Or.inr <| Or.inl h
 
 theorem probabilisticChoice_eq_one_iff:
-    programSmallStepSemantics `[Prog| pif e then [[c₁]] else [[c₂]] end] s a c' s' = 1
+    programSmallStepSemantics [Prog| pif e then [[c₁]] else [[c₂]] end] s a c' s' = 1
     ↔ a = Action.deterministic ∧ s = s' ∧ c₁ = c' ∧ c₂ = c'
     ∨ a = Action.deterministic ∧ s = s' ∧ c₁ = c' ∧ c₂ ≠ c' ∧ e s.stack = 1
     ∨ a = Action.deterministic ∧ s = s' ∧ c₁ ≠ c' ∧ c₂ = c' ∧ e s.stack = 0 := by
@@ -298,7 +298,7 @@ theorem probabilisticChoice_eq_one_iff:
         exact h_e
 
 theorem probabilisticChoice_eq_first_iff (h_stack : e s.stack ≠ 0 ∧ e s.stack ≠ 1):
-    programSmallStepSemantics `[Prog| pif e then [[c₁]] else [[c₂]] end] s a c' s' = e s.stack
+    programSmallStepSemantics [Prog| pif e then [[c₁]] else [[c₂]] end] s a c' s' = e s.stack
     ↔ a = Action.deterministic ∧ s = s' ∧ c₁ = c' ∧ c₂ ≠ c'
     ∨ a = Action.deterministic ∧ s = s' ∧ c₁ ≠ c' ∧ c₂ = c' ∧ e s.stack = σ (e s.stack) := by
   rw [programSmallStepSemantics, probabilisticChoiceSmallStepSemantics]
@@ -353,7 +353,7 @@ theorem probabilisticChoice_eq_first_iff (h_stack : e s.stack ≠ 0 ∧ e s.stac
       case inr h => obtain ⟨h_a, h_s, _⟩ := h; exact h_as ⟨h_a, h_s⟩
 
 theorem probabilisticChoice_eq_second_iff (h_stack : e s.stack ≠ 0 ∧ e s.stack ≠ 1):
-    programSmallStepSemantics `[Prog| pif e then [[c₁]] else [[c₂]] end] s a c' s' = σ (e s.stack)
+    programSmallStepSemantics [Prog| pif e then [[c₁]] else [[c₂]] end] s a c' s' = σ (e s.stack)
     ↔ a = Action.deterministic ∧ s = s' ∧ c₁ = c' ∧ c₂ ≠ c' ∧ e s.stack = σ (e s.stack)
     ∨ a = Action.deterministic ∧ s = s' ∧ c₁ ≠ c' ∧ c₂ = c' := by
   rw [programSmallStepSemantics, probabilisticChoiceSmallStepSemantics]
@@ -409,7 +409,7 @@ theorem probabilisticChoice_eq_second_iff (h_stack : e s.stack ≠ 0 ∧ e s.sta
       case inr h => obtain ⟨h_a, h_s, _⟩ := h; exact h_as ⟨h_a, h_s⟩
 
 theorem probabilisticChoice_mem :
-    programSmallStepSemantics `[Prog| pif e then [[c₁]] else [[c₂]] end] s a c' s'
+    programSmallStepSemantics [Prog| pif e then [[c₁]] else [[c₂]] end] s a c' s'
     ∈ ({0, e s.stack, σ (e s.stack), 1} : Set I) := by
   rw [programSmallStepSemantics, probabilisticChoiceSmallStepSemantics]
   simp only [mem_insert_iff, mem_singleton_iff]
@@ -427,12 +427,12 @@ theorem probabilisticChoice_mem :
   case inr h => simp only [zero_ne_one, or_false, true_or]
 
 theorem conditionalChoice_eq_one_iff :
-    programSmallStepSemantics `[Prog| if b then [[c₁]] else [[c₂]] end] s a c' s' = 1
+    programSmallStepSemantics [Prog| if b then [[c₁]] else [[c₂]] end] s a c' s' = 1
     ↔ a = Action.deterministic ∧ s = s' ∧ (b s.stack ∧ c₁ = c' ∨ ¬ b s.stack ∧ c₂ = c') := by
   rw [programSmallStepSemantics, conditionalChoiceSmallStepSemantics, iteOneZero_eq_one_def]
 
 theorem conditionalChoice_mem :
-    programSmallStepSemantics `[Prog| if b then [[c₁]] else [[c₂]] end] s a c' s' ∈ ({0, 1} : Set I) := by
+    programSmallStepSemantics [Prog| if b then [[c₁]] else [[c₂]] end] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, conditionalChoiceSmallStepSemantics]
   simp only [Bool.not_eq_true, mem_insert_iff, iteOneZero_eq_zero_def, mem_singleton_iff,
     iteOneZero_eq_one_def]
@@ -440,10 +440,10 @@ theorem conditionalChoice_mem :
   trivial
 
 theorem loop_eq_one_iff :
-    programSmallStepSemantics `[Prog| while b begin [[c]] end] s a c' s' = 1
+    programSmallStepSemantics [Prog| while b begin [[c]] end] s a c' s' = 1
     ↔ a = Action.deterministic ∧ s = s'
-    ∧ (b s.stack ∧ c' = `[Prog| [[c]] ; while b begin [[c]] end]
-      ∨ ¬ b s.stack ∧ c' = `[Prog| ↓]) := by
+    ∧ (b s.stack ∧ c' = [Prog| [[c]] ; while b begin [[c]] end]
+      ∨ ¬ b s.stack ∧ c' = [Prog| ↓]) := by
   rw [programSmallStepSemantics, loopSmallStepSemantics]
   split
   case h_1 => simp only [Bool.not_eq_true, iteOneZero_eq_one_def, and_false, and_true, false_or]
@@ -460,7 +460,7 @@ theorem loop_eq_one_iff :
       case inr.intro => exfalso; exact h_term h_c'
 
 theorem loop_mem :
-    programSmallStepSemantics `[Prog| while b begin [[c]] end] s a c' s' ∈ ({0, 1} : Set I) := by
+    programSmallStepSemantics [Prog| while b begin [[c]] end] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, loopSmallStepSemantics]
   simp only [Bool.not_eq_true, mem_insert_iff, mem_singleton_iff]
   split
@@ -483,7 +483,7 @@ theorem loop_mem :
       or_false, one_ne_zero, false_or]
     cases eq_or_ne a Action.deterministic with
     | inl h_a =>
-      cases eq_or_ne c' `[Prog| [[c]] ; while b begin [[c]] end] with
+      cases eq_or_ne c' [Prog| [[c]] ; while b begin [[c]] end] with
       | inl h_c =>
         cases eq_or_ne s s' with
         | inl h_s =>
@@ -498,11 +498,11 @@ theorem loop_mem :
 
 
 theorem sequential_iff :
-    programSmallStepSemantics `[Prog| [[c₁]] ; [[c₂]]] s a c' s' = i
-    ↔ (c₁ = `[Prog| ↓] ∧ a = Action.deterministic ∧ s = s' ∧ c' = c₂ ∧ i = 1
-    ∨ c₁ = `[Prog| ↓] ∧ ¬ (a = Action.deterministic ∧ s = s' ∧ c' = c₂) ∧ i = 0)
-    ∨ c₁ ≠ `[Prog| ↓] ∧ (∃ c₁', c' = `[Prog| [[c₁']] ; [[c₂]] ] ∧ programSmallStepSemantics c₁ s a c₁' s' = i)
-    ∨ c₁ ≠ `[Prog| ↓] ∧ ¬ (∃ c₁', c' = `[Prog| [[c₁']] ; [[c₂]] ]) ∧ i = 0 := by
+    programSmallStepSemantics [Prog| [[c₁]] ; [[c₂]]] s a c' s' = i
+    ↔ (c₁ = [Prog| ↓] ∧ a = Action.deterministic ∧ s = s' ∧ c' = c₂ ∧ i = 1
+    ∨ c₁ = [Prog| ↓] ∧ ¬ (a = Action.deterministic ∧ s = s' ∧ c' = c₂) ∧ i = 0)
+    ∨ c₁ ≠ [Prog| ↓] ∧ (∃ c₁', c' = [Prog| [[c₁']] ; [[c₂]] ] ∧ programSmallStepSemantics c₁ s a c₁' s' = i)
+    ∨ c₁ ≠ [Prog| ↓] ∧ ¬ (∃ c₁', c' = [Prog| [[c₁']] ; [[c₂]] ]) ∧ i = 0 := by
   apply Iff.intro
   case mp =>
     intro h
@@ -575,9 +575,9 @@ theorem sequential_iff :
       case h_2 => rfl
 
 theorem concurrent_iff_of_term :
-    programSmallStepSemantics `[Prog| [[c₁]] || [[c₂]]] s Action.deterministic c' s' = i
-    ↔ c₁ = `[Prog| ↓] ∧ c₂ = `[Prog| ↓] ∧ c' = `[Prog| ↓] ∧ s = s' ∧ i = 1
-    ∨ ¬ (c₁ = `[Prog| ↓] ∧ c₂ = `[Prog| ↓] ∧ c' = `[Prog| ↓] ∧ s = s') ∧ i = 0 := by
+    programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s Action.deterministic c' s' = i
+    ↔ c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] ∧ c' = [Prog| ↓] ∧ s = s' ∧ i = 1
+    ∨ ¬ (c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] ∧ c' = [Prog| ↓] ∧ s = s') ∧ i = 0 := by
   rw [programSmallStepSemantics]
   simp only [true_and, not_and]
   split
@@ -635,9 +635,9 @@ theorem concurrent_iff_of_term :
         case inr => rfl
 
 theorem concurrent_iff_of_left :
-    programSmallStepSemantics `[Prog| [[c₁]] || [[c₂]]] s (Action.concurrentLeft a) c' s' = i
-    ↔ c₁ ≠ `[Prog| ↓] ∧ (∃ c₁', c' = `[Prog| [[c₁']] || [[c₂]]] ∧ programSmallStepSemantics c₁ s a c₁' s' = i)
-    ∨ ¬ (c₁ ≠ `[Prog| ↓] ∧ ∃ c₁', c' = `[Prog| [[c₁']] || [[c₂]]]) ∧ i = 0 := by
+    programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s (Action.concurrentLeft a) c' s' = i
+    ↔ c₁ ≠ [Prog| ↓] ∧ (∃ c₁', c' = [Prog| [[c₁']] || [[c₂]]] ∧ programSmallStepSemantics c₁ s a c₁' s' = i)
+    ∨ ¬ (c₁ ≠ [Prog| ↓] ∧ ∃ c₁', c' = [Prog| [[c₁']] || [[c₂]]]) ∧ i = 0 := by
   rw [programSmallStepSemantics]
   simp only [false_and, and_false, iteOneZero_false, ne_eq, not_and, not_exists]
   split
@@ -683,7 +683,7 @@ theorem concurrent_iff_of_left :
             exact h
           case inr h =>
             obtain ⟨h, rfl⟩ := h
-            cases eq_or_ne c₁ `[Prog| ↓]
+            cases eq_or_ne c₁ [Prog| ↓]
             case inl h_term => rw [h_term, terminated_eq_zero]
             case inr h_term =>
               specialize h h_term c₁'
@@ -692,7 +692,7 @@ theorem concurrent_iff_of_left :
         apply Iff.intro
         case mp =>
           rintro rfl
-          cases eq_or_ne c₁ `[Prog| ↓]
+          cases eq_or_ne c₁ [Prog| ↓]
           case inl h_c₁ =>
             apply Or.inr
             rw [and_comm]; apply And.intro rfl
@@ -723,9 +723,9 @@ theorem concurrent_iff_of_left :
         case inr => rfl
 
 theorem concurrent_iff_of_right :
-    programSmallStepSemantics `[Prog| [[c₁]] || [[c₂]]] s (Action.concurrentRight a) c' s' = i
-    ↔ c₂ ≠ `[Prog| ↓] ∧ (∃ c₂', c' = `[Prog| [[c₁]] || [[c₂']]] ∧ programSmallStepSemantics c₂ s a c₂' s' = i)
-    ∨ ¬ (c₂ ≠ `[Prog| ↓] ∧ ∃ c₂', c' = `[Prog| [[c₁]] || [[c₂']]]) ∧ i = 0 := by
+    programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s (Action.concurrentRight a) c' s' = i
+    ↔ c₂ ≠ [Prog| ↓] ∧ (∃ c₂', c' = [Prog| [[c₁]] || [[c₂']]] ∧ programSmallStepSemantics c₂ s a c₂' s' = i)
+    ∨ ¬ (c₂ ≠ [Prog| ↓] ∧ ∃ c₂', c' = [Prog| [[c₁]] || [[c₂']]]) ∧ i = 0 := by
   rw [programSmallStepSemantics]
   simp only [false_and, and_false, iteOneZero_false, not_and, not_exists]
   split
@@ -766,7 +766,7 @@ theorem concurrent_iff_of_right :
           rintro (⟨_, c₂'', h_c, h⟩ | ⟨h, rfl⟩)
           case inl => cases h_c; exact h
           case inr =>
-            cases eq_or_ne c₂ `[Prog| ↓]
+            cases eq_or_ne c₂ [Prog| ↓]
             case inl h_c₂ =>
               rw [h_c₂, terminated_eq_zero]
             case inr h_c₂ =>

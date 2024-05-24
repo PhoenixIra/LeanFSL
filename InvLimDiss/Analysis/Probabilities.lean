@@ -114,6 +114,12 @@ lemma iteOneZero_def {P :Prop} : iteOneZero P = i ↔ i = 0 ∧ ¬ P ∨ i = 1 �
     | inl h => rw [iteOneZero_neg h.right]; exact h.left.symm
     | inr h => rw [iteOneZero_pos h.right]; exact h.left.symm
 
+theorem truncatedAdd_mem_unit (i j : I) : min 1 ((i:ℝ) + j) ∈ I := by
+  apply And.intro
+  · exact le_min zero_le_one (add_nonneg i.property.1 j.property.1)
+  · exact min_le_left 1 ((i:ℝ)+j)
+
+noncomputable def truncatedAdd (i j : I) : I := ⟨min 1 (i + j), truncatedAdd_mem_unit i j⟩
 
 
 end unitInterval
