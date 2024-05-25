@@ -164,6 +164,8 @@ def unexpandSlOr : Unexpander
   | `($_ $l $r) => do `([sl| $(← bracketsOr l) ∨ $(← bracketsOr r)])
   | _ => throw ()
 
+-- TODO: Exists and All brackets
+
 @[app_unexpander slExists]
 def unexpandSlExists : Unexpander
   | `($_ fun $x:ident => [sl| ∃ $y:ident $[$z:ident]*. $f]) =>
