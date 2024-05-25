@@ -53,7 +53,7 @@ syntax term " ↦ " term : sl
 syntax term:51 " = " term:51 : sl
 syntax "[[" term "]]" : sl
 syntax "⌜" term "⌝" : sl
-syntax:max "¬" sl : sl
+syntax:40 "¬" sl:41 : sl
 syntax:35 sl:36 " ∧ " sl:35 : sl
 syntax:30 sl:31 " ∨ " sl:30 : sl
 syntax:max "∃ " explicitBinders ". " sl : sl
@@ -101,6 +101,7 @@ macro_rules
 
 open Lean PrettyPrinter Delaborator
 
+
 @[app_unexpander slEmp]
 def unexpandSlEmp : Unexpander
   | `($_) => `([sl| emp])
@@ -120,18 +121,33 @@ def unexpandSlPure : Unexpander
   | `($_ $t) => `([sl| ⌜$t:term⌝])
   | _ => throw ()
 
+
+def isAtom : TSyntax `sl → Bool
+  | `(sl| emp) => true
+  | `(sl| $_:term ↦ $_:term) => true
+  | `(sl| $_:term = $_:term) => true
+  | `(sl| ⌜$_:term⌝) => true
+  | `(sl| $_ ) => false
+
 @[app_unexpander slNot]
 def unexpandSlNot : Unexpander
-  | `($_ [sl|$t]) => `([sl| ¬ $t])
+  | `($_ [sl|$t]) =>
+    if isAtom t then `([sl| ¬ $t]) else `([sl| ¬ ($t)])
   | `($_ $t) => `([sl| ¬ [[$t]]])
   | _ => throw ()
 
+def greaterPrecThanAnd : TSyntax `sl → Bool
+  | `(sl| ¬ $_:sl) => true
+  | `(sl| $_:sl -∗ $_:sl) => true
+  | `(sl| $f:sl) => if isAtom f then true else false
+
+def bracketsAnd [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `sl)
+  | `(term| [sl|$f:sl]) => if greaterPrecThanAnd f then `(sl|$f) else `(sl| ( $f ) )
+  | `(term| $t:term) => `(sl|[[$t]])
+
 @[app_unexpander slAnd]
 def unexpandSlAnd : Unexpander
-  | `($_ [sl|$l] [sl|$r]) => `([sl| $l ∧ $r])
-  | `($_ $l [sl|$r]) => `([sl| [[$l]] ∧ $r])
-  | `($_ [sl|$l] $r) => `([sl| $l ∧ [[$r]]])
-  | `($_ $l $r) => `([sl| [[$l]] ∧ [[$r]]])
+  | `($_ $l $r) => do `([sl| $(← bracketsAnd l) ∧ $(← bracketsAnd r)])
   | _ => throw ()
 
 @[app_unexpander slOr]
@@ -180,6 +196,6 @@ def unexpandSlEntail : Unexpander
   | _ => throw ()
 
 
-example : [sl Var| ∀ (x:ℚ). ¬ emp ∗ emp] = [sl Var| ∃ (x:ℚ). emp -∗ emp -∗ emp] := sorry
+example : [sl Var| ∀ (x:ℚ). ¬ (emp ∧ (emp ∨ emp))] = [sl Var| ∃ (x:ℚ). emp -∗ emp -∗ emp] := sorry
 
 end SL

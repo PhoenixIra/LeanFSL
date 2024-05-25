@@ -191,6 +191,6 @@ def unexpandQslEntail : Unexpander
   | _ => throw ()
 
 
-example : [qsl Var| I (x:ℚ). ~ emp ⋆ emp ⊢ S (x:ℚ). emp -⋆ emp -⋆ emp] :=  sorry
+example := [qsl Var| I (x:ℚ). ~ emp ⋆ emp ⊢ S (x:ℚ). emp -⋆ emp -⋆ emp]
 
 end QSL
