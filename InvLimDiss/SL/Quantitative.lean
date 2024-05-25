@@ -131,9 +131,18 @@ def unexpandQslIverson : Unexpander
   | `($_ $t) => `([qsl| ⁅$t:term⁆])
   | _ => throw ()
 
+def isAtom : TSyntax `qsl → Bool
+  | `(qsl| emp) => true
+  | `(qsl| $_:term ↦ $_:term) => true
+  | `(qsl| $_:term = $_:term) => true
+  | `(qsl| ⌜$_:term⌝) => true
+  | `(qsl| ⁅$_:term⁆) => true
+  | `(qsl| $_ ) => false
+
 @[app_unexpander qslNot]
 def unexpandQslNot : Unexpander
-  | `($_ [qsl|$t]) => `([qsl| ~ $t])
+  | `($_ [qsl|$t]) =>
+    if isAtom t then `([qsl| ~ $t]) else `([qsl| ~ ($t)])
   | `($_ $t) => `([qsl| ~ [[$t]]])
   | _ => throw ()
 
