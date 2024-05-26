@@ -137,13 +137,13 @@ def unexpandSlNot : Unexpander
   | _ => throw ()
 
 def requireBracketsAnd : TSyntax `sl → Bool
-  | `(sl| ¬ $_:sl) => true
-  | `(sl| $_:sl ∗ $_:sl) => true
-  | `(sl| $_:sl ∧ $_:sl) => true
-  | `(sl| $f:sl) => if isAtom f then true else false
+  | `(sl| ¬ $_:sl) => false
+  | `(sl| $_:sl ∗ $_:sl) => false
+  | `(sl| $_:sl ∧ $_:sl) => false
+  | `(sl| $f:sl) => !isAtom f
 
 def bracketsAnd [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `sl)
-  | `(term| [sl|$f:sl]) => if requireBracketsAnd f then `(sl|$f) else `(sl| ( $f ) )
+  | `(term| [sl|$f:sl]) => if requireBracketsAnd f then `(sl| ( $f ) ) else `(sl| $f )
   | `(term| $t:term) => `(sl|[[$t]])
 
 @[app_unexpander slAnd]
@@ -152,19 +152,17 @@ def unexpandSlAnd : Unexpander
   | _ => throw ()
 
 def requireBracketsOr : TSyntax `sl → Bool
-  | `(sl| ¬ $_:sl) => true
-  | `(sl| $f:sl) => if isAtom f then true else false
+  | `(sl| ¬ $_:sl) => false
+  | `(sl| $f:sl) => !isAtom f
 
 def bracketsOr [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `sl)
-  | `(term| [sl|$f:sl]) => if requireBracketsAnd f then `(sl|$f) else `(sl| ( $f ) )
+  | `(term| [sl|$f:sl]) => if requireBracketsAnd f then `(sl| ( $f ) ) else `(sl| $f )
   | `(term| $t:term) => `(sl|[[$t]])
 
 @[app_unexpander slOr]
 def unexpandSlOr : Unexpander
   | `($_ $l $r) => do `([sl| $(← bracketsOr l) ∨ $(← bracketsOr r)])
   | _ => throw ()
-
--- TODO: Exists and All brackets
 
 @[app_unexpander slExists]
 def unexpandSlExists : Unexpander
@@ -186,16 +184,16 @@ def unexpandSlSepCon : Unexpander
   | _ => throw ()
 
 def requireBracketsSepImp : TSyntax `sl → Bool
-  | `(sl| ¬ $_:sl) => true
-  | `(sl| $_:sl -∗ $_:sl) => true
-  | `(sl| $_:sl ∧ $_:sl) => true
-  | `(sl| $_:sl ∗ $_:sl) => true
-  | `(sl| $_:sl ∨ $_:sl) => true
-  | `(sl| $f:sl) => if isAtom f then true else false
+  | `(sl| ¬ $_:sl) => false
+  | `(sl| $_:sl -∗ $_:sl) => false
+  | `(sl| $_:sl ∧ $_:sl) => false
+  | `(sl| $_:sl ∗ $_:sl) => false
+  | `(sl| $_:sl ∨ $_:sl) => false
+  | `(sl| $f:sl) => !isAtom f
 
 def bracketsSepImp [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `sl)
   | `(term| [sl| $l -∗ $r]) => `(sl| ($l -∗ $r))
-  | `(term| [sl|$f:sl]) => if requireBracketsSepImp f then `(sl|$f) else `(sl| ( $f ) )
+  | `(term| [sl|$f:sl]) => if requireBracketsSepImp f then `(sl| ( $f ) ) else `(sl| $f )
   | `(term| $t:term) => `(sl|[[$t]])
 
 @[app_unexpander slSepImp]
@@ -209,6 +207,6 @@ def unexpandSlEntail : Unexpander
   | _ => throw ()
 
 
-example : [sl Var| ∀ (x:ℚ). ¬ (emp ∨ (emp ∨ emp) ∗ emp)] = [sl Var| ∃ (x:ℚ). emp -∗ emp ∧ emp -∗ emp] := sorry
+example : [sl Var| emp ∧ ∀ (x:ℚ). ¬ (emp ∨ (emp ∨ emp) ∗ emp) ⊢ (∃ (x:ℚ). emp -∗ emp ∧ emp -∗ emp) ∧ emp] := sorry
 
 end SL
