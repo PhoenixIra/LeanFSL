@@ -9,7 +9,7 @@ This file contains the semantics of the programming language as a probability tr
 
 namespace Semantics
 
-open unitInterval Syntax Program State Classical
+open unitInterval Syntax Program State Classical HeapValues
 
 variable {Variable : Type}
 
@@ -41,8 +41,9 @@ noncomputable def manipulateSmallStepSemantics (e_loc e_val : ValueExp Variable)
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero (a = Action.deterministic ∧
-      s.heap (e_loc s.stack) ≠ none ∧ substituteHeap s (e_loc s.stack) (e_val s.stack) = s')
-  | [Prog| ↯] =>iteOneZero (a = Action.deterministic ∧ s = s' ∧ s.heap (e_loc s.stack) = none)
+      ∃ l : ℕ, (e_loc s.stack) = l ∧ s.heap l ≠ undef ∧ substituteHeap s l (e_val s.stack) = s')
+  | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
+      ∧ ((∃ l : ℕ, (e_loc s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e_loc s.stack).isInt ∨ 0 ≤ (e_loc s.stack)))
   | _ => 0
 
 /-- lookup succeeds if the expression is well-defined and an allocated location is looked up.
@@ -53,8 +54,9 @@ noncomputable def lookupSmallStepSemantics (v : Variable) (e : ValueExp Variable
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero ( a = Action.deterministic ∧
-      ∃ val, s.heap (e s.stack) = some val ∧ substituteStack s v val = s' )
-  | [Prog| ↯] => iteOneZero ( a = Action.deterministic ∧ s = s' ∧ s.heap (e s.stack) = none)
+      ∃ l : ℕ, l = (e s.stack) ∧ ∃ value, s.heap l = val value ∧ substituteStack s v value = s' )
+  | [Prog| ↯] => iteOneZero ( a = Action.deterministic ∧ s = s'
+      ∧ ((∃ l : ℕ, (e s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack)))
   | _ => 0
 
 /-- compareAndSet succeeds if all expressions are well-defined and the location is allocated.
@@ -66,10 +68,11 @@ noncomputable def compareAndSetSmallStepSemantics (v : Variable) (e_loc e_cmp e_
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero ( a = Action.deterministic
-      ∧ ∃ old_val, s.heap (e_loc s.stack) = some old_val
-      ∧ ((old_val = e_cmp s.stack ∧ substituteStack (substituteHeap s (e_loc s.stack) (e_val s.stack)) v 1 = s')
+      ∧ ∃ l : ℕ, l = (e_loc s.stack) ∧ ∃ old_val, s.heap l = val old_val
+      ∧ ((old_val = e_cmp s.stack ∧ substituteStack (substituteHeap s l (e_val s.stack)) v 1 = s')
         ∨ old_val ≠ e_cmp s.stack ∧ substituteStack s v 0 = s'))
-  | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s' ∧ s.heap (e_loc s.stack) = none)
+  | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
+      ∧ (∃ l : ℕ, (e_loc s.stack) = l ∧ s.heap l = undef))
   | _ => 0
 
 /-- allocate succeeds if the location m and n spaces afterwards are allocated and sets the values
@@ -88,9 +91,9 @@ noncomputable def freeSmallStepSemantics (e : ValueExp Variable) (n : ℕ) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero (a = Action.deterministic
-    ∧ isAlloc s (e s.stack) n ∧ freeHeap s (e s.stack) n = s')
+    ∧ ∃ l : ℕ, l = (e s.stack) ∧ isAlloc s l n ∧ freeHeap s l n = s')
   | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
-    ∧ ¬isAlloc s (e s.stack) n)
+    ∧ (∃ l : ℕ, (e s.stack) = l ∧ ¬isAlloc s l n ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack)))
   | _ => 0
 
 /-- probabilisticChoice succeeds if the expression is well-defined and picks one program with the given probability.

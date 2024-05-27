@@ -9,7 +9,7 @@ the program semantics in more logical terms
 
 namespace Semantics
 
-open Syntax Program Notation Semantics unitInterval Set State Classical
+open Syntax Program ProgNotation Semantics unitInterval Set State Classical
 
 theorem skip_eq_one_iff : programSmallStepSemantics [Prog| skip] s a c' s' = 1
     ↔ c' = [Prog| ↓] ∧ a = Action.deterministic ∧ s = s' := by
@@ -53,10 +53,10 @@ theorem assign_mem_zero_one : programSmallStepSemantics [Prog| v ≔ e] s a c' s
   case h_2 _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
 theorem manipulate_eq_one_iff : programSmallStepSemantics [Prog| e_loc *≔ e_val] s a c' s' = 1
-    ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic ∧ s.heap (e_loc s.stack) ≠ none
-        ∧ substituteHeap s (e_loc s.stack) (e_val s.stack) = s')
+    ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic ∧ ∃ l:ℕ, (e_loc s.stack) = l ∧ s.heap l ≠ undef
+        ∧ substituteHeap s l (e_val s.stack) = s')
       ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
-        ∧ s.heap (e_loc s.stack) = none)
+        ∧ ((∃ l : ℕ, (e_loc s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e_loc s.stack).isInt ∨ 0 ≤ (e_loc s.stack)))
     := by
   rw [programSmallStepSemantics, manipulateSmallStepSemantics]
   split

@@ -9,8 +9,19 @@ namespace State
 
 open Rat Classical
 
+inductive HeapValues
+  | val : ℚ → HeapValues
+  | undef : HeapValues
+  | conflict : HeapValues
+
+open HeapValues
+
+instance : Coe ℚ HeapValues where
+  coe := fun q => val q
+
+
 def Stack (Variable : Type) : Type := Variable → ℚ
-def Heap : Type := ℕ → Option ℚ
+def Heap : Type := ℕ → HeapValues
 
 structure State (Variable : Type) where
   stack : Stack Variable
@@ -67,7 +78,7 @@ theorem substituteStack_def {s s' : State Var} {v : Var} {q : ℚ} :
 
 noncomputable def substituteHeap
     (s : State Var) (l : ℕ) (q : ℚ) : State Var :=
-  ⟨s.stack, fun l' => if l = l' then some q else s.heap l'⟩
+  ⟨s.stack, fun l' => if l = l' then val q else s.heap l'⟩
 
 theorem substituteHeap_stack {s : State Var} {l : ℕ} {q : ℚ} :
     (substituteHeap s l q).stack = s.stack := by
@@ -76,7 +87,7 @@ theorem substituteHeap_stack {s : State Var} {l : ℕ} {q : ℚ} :
 
 theorem substituteHeap_heap {s : State Var} {l : ℕ} {q : ℚ} :
     (∀ l', l ≠ l' → (substituteHeap s l q).heap l' = s.heap l')
-    ∧ (∀ l', l = l' → (substituteHeap s l q).heap l' = q) := by
+    ∧ (∀ l', l = l' → (substituteHeap s l q).heap l' = val q) := by
   unfold substituteHeap
   apply And.intro
   · intro l' h_ne
@@ -91,7 +102,7 @@ theorem substituteHeap_heap {s : State Var} {l : ℕ} {q : ℚ} :
 theorem substituteHeap_def {s s' : State Var} {q : ℚ} :
     substituteHeap s l q = s' ↔ s'.stack = s.stack
       ∧ (∀ l', l ≠ l' → s'.heap l' = s.heap l')
-      ∧ (∀ l', l = l' → s'.heap l' = q) := by
+      ∧ (∀ l', l = l' → s'.heap l' = val q) := by
   apply Iff.intro
   · intro h_substitute
     rw [←h_substitute]
@@ -110,7 +121,7 @@ theorem substituteHeap_def {s s' : State Var} {q : ℚ} :
 
 noncomputable def removeLocationHeap
     (s : State Var) (l : ℕ) : State Var :=
-  ⟨s.stack, fun l' => if l = l' then none else s.heap l'⟩
+  ⟨s.stack, fun l' => if l = l' then undef else s.heap l'⟩
 
 theorem removeLocationHeap_stack {s : State Var} {l : ℕ} :
     (removeLocationHeap s l).stack = s.stack := by
@@ -119,7 +130,7 @@ theorem removeLocationHeap_stack {s : State Var} {l : ℕ} :
 
 theorem removeLocationHeap_heap {s : State Var} {l : ℕ} :
     (∀ l', l ≠ l' → (removeLocationHeap s l).heap l' = s.heap l')
-    ∧ (∀ l', l = l' → (removeLocationHeap s l).heap l' = none) := by
+    ∧ (∀ l', l = l' → (removeLocationHeap s l).heap l' = undef) := by
   unfold removeLocationHeap
   apply And.intro
   · intro l' h_ne
@@ -134,7 +145,7 @@ theorem removeLocationHeap_heap {s : State Var} {l : ℕ} :
 lemma removeLocationHeap_def {s s' : State Var} {l : ℕ} :
     removeLocationHeap s l = s' ↔ s'.stack = s.stack
       ∧ (∀ l', l ≠ l' → s'.heap l' = s.heap l')
-      ∧ (∀ l', l = l' → s'.heap l' = none) := by
+      ∧ (∀ l', l = l' → s'.heap l' = undef) := by
   apply Iff.intro
   · intro h_remove
     rw [←h_remove]
@@ -157,10 +168,10 @@ noncomputable def isNotAlloc
     (s : State Var) (l : ℕ) (n : ℕ): Prop :=
   match n with
   | Nat.zero => true
-  | Nat.succ n => s.heap (l+n) = none ∧ isNotAlloc s l n
+  | Nat.succ n => s.heap (l+n) = undef ∧ isNotAlloc s l n
 
 theorem isNotAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
-    isNotAlloc s l n ↔ ∀ l', l ≤ l' → l' < l+n → s.heap l' = none := by
+    isNotAlloc s l n ↔ ∀ l', l ≤ l' → l' < l+n → s.heap l' = undef := by
   induction n with
   | zero =>
     unfold isNotAlloc; simp only [Nat.zero_eq, add_zero, true_iff]
@@ -179,7 +190,7 @@ theorem isNotAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
       rw [Nat.add_succ] at h
       apply And.intro
       · exact h (l+n) le_self_add (Nat.lt_succ.mpr le_rfl)
-      · have : ∀ l', l ≤ l' → l' < l + n → s.heap l' = none := by
+      · have : ∀ l', l ≤ l' → l' < l + n → s.heap l' = undef := by
           intro l' h_le h_lt
           exact h l' h_le (Nat.lt_succ.mpr <| le_of_lt h_lt)
         exact ih.mpr this
@@ -201,7 +212,7 @@ theorem allocateHeap_stack {s : State Var} {l : ℕ} {n : ℕ} :
 
 theorem allocateHeap_heap {s : State Var} {l : ℕ} {n : ℕ} :
       (∀ l', (l' < l ∨ l+n ≤ l') → (allocateHeap s l n).heap l' = s.heap l')
-      ∧ (∀ l', l ≤ l' → l' < l+n → (allocateHeap s l n).heap l' = some 0) := by
+      ∧ (∀ l', l ≤ l' → l' < l+n → (allocateHeap s l n).heap l' = val 0) := by
   apply And.intro
   · induction n with
     | zero => intro l' _; simp only [allocateHeap]
@@ -257,7 +268,7 @@ lemma allocateHeap_remain (s : State Var) (l : ℕ) (n : ℕ) :
       | inr h_ne => rw [substituteHeap_heap.left l' h_ne]; exact ih l' (Or.inr <| le_of_lt h)
 
 lemma allocateHeap_change (s : State Var) (l : ℕ) (n : ℕ) :
-    ∀ l', l ≤ l' → l' < l+n → (allocateHeap s l n).heap l' = some 0 := by
+    ∀ l', l ≤ l' → l' < l+n → (allocateHeap s l n).heap l' = val 0 := by
   induction n with
   | zero => intro l' h_le h_lt; rw [Nat.zero_eq, add_zero] at h_lt; exfalso; exact not_le_of_lt h_lt h_le
   | succ n ih =>
@@ -272,7 +283,7 @@ lemma allocateHeap_change (s : State Var) (l : ℕ) (n : ℕ) :
 theorem allocateHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
     allocateHeap s l n = s' ↔ s.stack = s'.stack
       ∧ (∀ l', (l' < l ∨ l+n ≤ l') → s'.heap l' = s.heap l')
-      ∧ (∀ l', l ≤ l' → l' < l+n → s'.heap l' = some 0) := by
+      ∧ (∀ l', l ≤ l' → l' < l+n → s'.heap l' = val 0) := by
   apply Iff.intro
   . intro h_alloc; rw [← h_alloc]
     exact ⟨allocateHeap_stack.symm, allocateHeap_heap⟩
@@ -292,10 +303,10 @@ theorem allocateHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
 noncomputable def isAlloc (s : State Var) (l : ℕ) (n : ℕ) : Prop :=
   match n with
   | 0 => true
-  | Nat.succ n => (∃ v, s.heap (l+n) = some v) ∧ isAlloc s l n
+  | Nat.succ n => (∃ v, s.heap (l+n) = val v) ∧ isAlloc s l n
 
 theorem isAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
-    isAlloc s l n ↔ ∀ l', l ≤ l' → l' < l+n → ∃ x, s.heap l' = some x := by
+    isAlloc s l n ↔ ∀ l', l ≤ l' → l' < l+n → ∃ x, s.heap l' = val x := by
   induction n with
   | zero =>
     unfold isAlloc; simp only [Nat.zero_eq, add_zero, true_iff]
@@ -314,7 +325,7 @@ theorem isAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
       rw [Nat.add_succ] at h
       apply And.intro
       · exact h (l+n) le_self_add (Nat.lt_succ.mpr le_rfl)
-      · have : ∀ l', l ≤ l' → l' < l + n → ∃ x, s.heap l' = some x := by
+      · have : ∀ l', l ≤ l' → l' < l + n → ∃ x, s.heap l' = val x := by
           intro l' h_le h_lt
           exact h l' h_le (Nat.lt_succ.mpr <| le_of_lt h_lt)
         exact ih.mpr this
@@ -337,7 +348,7 @@ theorem freeHeap_stack {s : State Var} {l : ℕ} {n : ℕ} :
 
 theorem freeHeap_heap {s : State Var} {l : ℕ} {n : ℕ} :
       (∀ l', (l' < l ∨ l+n ≤ l') → (freeHeap s l n).heap l' = s.heap l')
-      ∧ (∀ l', l ≤ l' → l' < l+n → (freeHeap s l n).heap l' = none) := by
+      ∧ (∀ l', l ≤ l' → l' < l+n → (freeHeap s l n).heap l' = undef) := by
   apply And.intro
   · induction n with
     | zero => intro l' _; simp only [freeHeap]
@@ -393,7 +404,7 @@ lemma freeHeap_remain (s : State Var) (l : ℕ) (n : ℕ) :
       | inr h_ne => rw [removeLocationHeap_heap.left l' h_ne]; exact ih l' (Or.inr <| le_of_lt h)
 
 lemma freeHeap_change (s : State Var) (l : ℕ) (n : ℕ) :
-    ∀ l', l ≤ l' → l' < l+n → (freeHeap s l n).heap l' = none := by
+    ∀ l', l ≤ l' → l' < l+n → (freeHeap s l n).heap l' = undef := by
   induction n with
   | zero => intro l' h_le h_lt; rw [Nat.zero_eq, add_zero] at h_lt; exfalso; exact not_le_of_lt h_lt h_le
   | succ n ih =>
@@ -408,7 +419,7 @@ lemma freeHeap_change (s : State Var) (l : ℕ) (n : ℕ) :
 theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
     freeHeap s l n = s' ↔ s.stack = s'.stack
       ∧ (∀ l', (l' < l ∨ l+n ≤ l') → s'.heap l' = s.heap l')
-      ∧ (∀ l', l ≤ l' → l' < l+n → s'.heap l' = none) := by
+      ∧ (∀ l', l ≤ l' → l' < l+n → s'.heap l' = undef) := by
   apply Iff.intro
   . intro h_alloc; rw [← h_alloc]
     exact ⟨freeHeap_stack.symm, freeHeap_heap⟩
@@ -425,48 +436,53 @@ theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
       exact freeHeap_change s l n l' h_le h_lt
 
 
-  def disjoint (h₁ h₂ : Heap) : Prop := ∀ n, h₁ n = none ∨ h₂ n = none
+  def disjoint (h₁ h₂ : Heap) : Prop := ∀ n, h₁ n = undef ∨ h₂ n = undef
 
   theorem disjoint_symm (h₁ h₂ : Heap) (h : disjoint h₁ h₂) : disjoint h₂ h₁ := fun n => Or.symm (h n)
 
   theorem disjoint_comm (h₁ h₂ : Heap) : disjoint h₁ h₂ ↔ disjoint h₂ h₁ :=
     ⟨fun h => disjoint_symm h₁ h₂ h, fun h => disjoint_symm h₂ h₁ h⟩
 
-  def union (h h' : Heap) : Heap := λ n => if let some a := h n then a else h' n
+  instance union : Union Heap
+    where union := λ h h' n =>
+      match h n with
+      | val a =>
+        match h' n with
+        | val _ => conflict
+        | undef => val a
+        | conflict => conflict
+      | undef => h' n
+      | conflict => conflict
 
-  instance : Union Heap := ⟨union⟩
-
-  theorem union_comm (h₁ h₂ : Heap) (h : disjoint h₁ h₂) : h₁ ∪ h₂ = h₂ ∪ h₁ := by
+  theorem union_comm (h₁ h₂ : Heap) : h₁ ∪ h₂ = h₂ ∪ h₁ := by
     apply funext
     intro n
-    simp only [instUnionHeap, union]
-    cases h n
-    case inl h_h₁ =>
-      simp only [h_h₁]
-      cases h₂ n
-      case none => simp only
-      case some => simp only
-    case inr h_h₂ =>
-      simp only [h_h₂]
-      cases h₁ n
-      case none => simp only
-      case some => simp only
+    simp only [union]
+    split
+    case h_1 h => rw [h]
+    case h_2 h =>
+      split
+      case h_1 h' => exact h'
+      case h_2 h' => rw [h, h']
+      case h_3 h' => exact h'
+    case h_3 h => rw [h]; split; all_goals (rfl)
 
   theorem union_assoc (h₁ h₂ h₃ : Heap)  :
       (h₁ ∪ h₂) ∪ h₃ = h₁ ∪ (h₂ ∪ h₃) := by
     apply funext
     intro n
-    simp only [instUnionHeap, union]
+    simp only [union]
     cases h₁ n
-    case none => simp only
-    case some q => simp only
+    <;> cases h₂ n
+    <;> cases h₃ n
+    <;> simp
 
-  def emptyHeap : Heap := λ _ => none
+  instance emptyHeap : EmptyCollection Heap := ⟨λ _ => undef⟩
 
-  theorem emptyHeap_disjoint (h : Heap) : disjoint emptyHeap h := fun _ => Or.inl rfl
+  theorem emptyHeap_disjoint (h : Heap) : disjoint ∅ h := fun _ => Or.inl rfl
 
-  theorem emptyHeap_union (h : Heap) : emptyHeap ∪ h = h := by
-  apply funext; intro n; simp only [instUnionHeap, union, emptyHeap]
+  theorem emptyHeap_union (h : Heap) : ∅ ∪ h = h := by
+  apply funext; intro n; simp only [union, emptyHeap]
 
 
 
