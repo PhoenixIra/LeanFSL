@@ -9,19 +9,19 @@ namespace State
 
 open Rat Classical
 
-inductive HeapValues
-  | val : ℚ → HeapValues
-  | undef : HeapValues
-  | conflict : HeapValues
+inductive HeapValue
+  | val : ℚ → HeapValue
+  | undef : HeapValue
+  | conflict : HeapValue
 
-open HeapValues
+open HeapValue
 
-instance : Coe ℚ HeapValues where
+instance : Coe ℚ HeapValue where
   coe := fun q => val q
 
 
 def Stack (Variable : Type) : Type := Variable → ℚ
-def Heap : Type := ℕ → HeapValues
+def Heap : Type := ℕ → HeapValue
 
 structure State (Variable : Type) where
   stack : Stack Variable

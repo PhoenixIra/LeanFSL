@@ -9,7 +9,7 @@ This file contains the semantics of the programming language as a probability tr
 
 namespace Semantics
 
-open unitInterval Syntax Program State Classical HeapValues
+open unitInterval Syntax Program State Classical HeapValue
 
 variable {Variable : Type}
 
