@@ -39,8 +39,7 @@ def slSepCon (P Q : StateProp Var) : StateProp Var :=
 def slSepImp (P Q : StateProp Var) : StateProp Var :=
   λ ⟨s,h⟩ => ∀ h', P ⟨s,h'⟩ → disjoint h h' → Q ⟨s,(h ∪ h')⟩
 
-def slEntailment (P Q : StateProp Var) : Prop := ∀ s, P s → Q s
-
+noncomputable instance : CompleteLattice (StateProp Var) := Pi.instCompleteLattice
 
 open Lean
 
@@ -78,7 +77,7 @@ macro_rules
   | `(term| [sl| $l:sl ∗ $r:sl]) => `(slSepCon [sl|$l] [sl|$r])
   | `(term| [sl| $l:sl -∗ $r:sl]) => `(slSepImp [sl|$l] [sl|$r])
   | `(term| [sl| ($f:sl)]) => `([sl|$f])
-  | `(term| [sl| $l:sl ⊢ $r:sl]) => `(slEntailment [sl|$l] [sl|$r])
+  | `(term| [sl| $l:sl ⊢ $r:sl]) => `([sl|$l] ≤ [sl|$r])
 
   | `(term| [sl $v:term| emp]) => `(@slEmp $v)
   | `(term| [sl $v:term| $l:term ↦ $r:term]) => `(@slPointsTo $v $l $r)
@@ -92,7 +91,7 @@ macro_rules
   | `(term| [sl $v:term| $l:sl ∗ $r:sl]) => `(slSepCon [sl $v|$l] [sl $v|$r])
   | `(term| [sl $v:term| $l:sl -∗ $r:sl]) => `(slSepImp [sl $v|$l] [sl $v|$r])
   | `(term| [sl $v:term| ($f:sl)]) => `([sl $v|$f])
-  | `(term| [sl $v:term | $l:sl ⊢ $r:sl]) => `(@slEntailment $v [sl|$l] [sl|$r])
+  | `(term| [sl $v:term | $l:sl ⊢ $r:sl]) => `([sl $v|$l] ≤ [sl $v|$r])
 
 open Lean PrettyPrinter Delaborator
 
@@ -190,12 +189,14 @@ def unexpandSlSepImp : Unexpander
   | `($_ $l $r) => do `([sl| $(← bracketsSepImp l) -∗ $(← bracketsSepImp r)])
   | _ => throw ()
 
-@[app_unexpander slEntailment]
+@[app_unexpander LE.le]
 def unexpandSlEntail : Unexpander
   | `($_ [sl|$l] [sl|$r]) => `([sl| $l ⊢ $r])
   | _ => throw ()
 
 
 example : [sl Var| emp ∧ ∀ (x:ℚ). ¬ (emp ∨ (emp ∨ emp) ∗ emp) ⊢ (∃ (x:ℚ). emp -∗ emp ∧ emp -∗ emp) ∧ emp] := sorry
+
+
 
 end SL

@@ -44,8 +44,7 @@ noncomputable def qslSepMul (P Q : StateRV Var) : StateRV Var :=
 noncomputable def qslSepDiv (P Q : StateRV Var) : StateRV Var :=
   λ ⟨s,h⟩ => sInf { x | ∃ h', disjoint h h' ∧ x = Q ⟨s,(h ∪ h')⟩ / P ⟨s,h'⟩ }
 
-noncomputable def qslEntailment (P Q : StateRV Var) : Prop :=
-  ∀ s, P s ≤ Q s
+noncomputable instance : CompleteLattice (StateRV Var) := Pi.instCompleteLattice
 
 open Lean
 
@@ -89,7 +88,7 @@ macro_rules
   | `(term| [qsl| $l:qsl ⋆ $r:qsl]) => `(qslSepMul [qsl|$l] [qsl|$r])
   | `(term| [qsl| $l:qsl -⋆ $r:qsl]) => `(qslSepDiv [qsl|$l] [qsl|$r])
   | `(term| [qsl| ($f:qsl)]) => `([qsl|$f])
-  | `(term| [qsl| $l:qsl ⊢ $r:qsl]) => `(qslEntailment [qsl|$l] [qsl|$r])
+  | `(term| [qsl| $l:qsl ⊢ $r:qsl]) => `([qsl|$l] ≤ [qsl|$r])
 
   | `(term| [qsl $v:term| emp]) => `(@qslEmp $v)
   | `(term| [qsl $v:term| $l:term ↦ $r:term]) => `(@qslPointsTo $v $l $r)
@@ -98,15 +97,15 @@ macro_rules
   | `(term| [qsl $v:term| <$t:term>]) => `(@qslReal $v $t)
   | `(term| [qsl $v:term| ⁅$t:term⁆]) => `(@qslIverson $v $t)
   | `(term| [qsl $v:term| ~ $f:qsl]) => `(qslNot [qsl $v|$f])
-  | `(term| [qsl $v:term| $l:qsl ⊓ $r:qsl]) => `(qslAnd [qsl $v|$l] [qsl $v|$r])
-  | `(term| [qsl $v:term| $l:qsl ⊔ $r:qsl]) => `(qslOr [qsl $v|$l] [qsl $v|$r])
+  | `(term| [qsl $v:term| $l:qsl ⊓ $r:qsl]) => `(qslMin [qsl $v|$l] [qsl $v|$r])
+  | `(term| [qsl $v:term| $l:qsl ⊔ $r:qsl]) => `(qslMax [qsl $v|$l] [qsl $v|$r])
   | `(term| [qsl $v:term| $l:qsl + $r:qsl]) => `(qslAdd [qsl $v|$l] [qsl $v|$r])
   | `(term| [qsl $v:term| S $xs. $f:qsl]) => do expandExplicitBinders ``qslSup xs (← `([qsl $v|$f]))
   | `(term| [qsl $v:term| I $xs. $f:qsl]) => do expandExplicitBinders ``qslInf xs (← `([qsl $v|$f]))
-  | `(term| [qsl $v:term| $l:qsl ⋆ $r:qsl]) => `(qslSepCon [qsl $v|$l] [qsl $v|$r])
-  | `(term| [qsl $v:term| $l:qsl -⋆ $r:qsl]) => `(qslSepImp [qsl $v|$l] [qsl $v|$r])
+  | `(term| [qsl $v:term| $l:qsl ⋆ $r:qsl]) => `(qslSepMul [qsl $v|$l] [qsl $v|$r])
+  | `(term| [qsl $v:term| $l:qsl -⋆ $r:qsl]) => `(qslSepDiv [qsl $v|$l] [qsl $v|$r])
   | `(term| [qsl $v:term| ($f:qsl)]) => `([qsl $v|$f])
-  | `(term| [qsl $v:term | $l:qsl ⊢ $r:qsl]) => `(@qslEntailment $v [qsl|$l] [qsl|$r])
+  | `(term| [qsl $v:term | $l:qsl ⊢ $r:qsl]) => `([qsl $v|$l] ≤ [qsl $v|$r])
 
 
 open Lean PrettyPrinter Delaborator
@@ -221,12 +220,13 @@ def unexpandQslSepDiv : Unexpander
   | `($_ $l $r) => do `([qsl| $(← bracketsSepDiv l) -⋆ $(← bracketsSepDiv r)])
   | _ => throw ()
 
-@[app_unexpander qslEntailment]
+@[app_unexpander LE.le]
 def unexpandQslEntail : Unexpander
   | `($_ [qsl|$l] [qsl|$r]) => `([qsl| $l ⊢ $r])
   | _ => throw ()
 
 
 example : [qsl Var| emp ⊔ I (x:ℚ). ~ (emp ⊔ (emp ⊔ emp) ⋆ emp) ⊢ (S (x:ℚ). emp -⋆ emp + emp -⋆ emp) ⊓ emp] := sorry
+
 
 end QSL
