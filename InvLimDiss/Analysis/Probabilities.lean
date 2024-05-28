@@ -12,6 +12,29 @@ open Classical Set.Icc
 
 noncomputable instance unit_cl : CompleteLattice I := Set.Icc.completeLattice (by simp)
 
+instance : PosMulMono I where
+  elim := by
+    intro s i₁ i₂ h_i; simp only
+    unfold instHMul instMulElemRealUnitInterval
+    simp only [Subtype.mk_le_mk]
+    apply mul_le_mul
+    · exact Eq.ge rfl
+    · exact h_i
+    · exact nonneg'
+    · exact nonneg'
+
+instance : MulPosMono I where
+  elim := by
+    intro s i₁ i₂ h_i; simp only
+    unfold instHMul instMulElemRealUnitInterval
+    simp only [Subtype.mk_le_mk]
+    apply mul_le_mul
+    · exact h_i
+    · exact Eq.ge rfl
+    · exact nonneg'
+    · exact nonneg'
+
+
 lemma div_le_one {a b : ℝ} (h_b_pos : 0 < b) (h_ab : a ≤ b): a/b ≤ 1 := by
   have h_b_nonneg : 0 ≤ b := by apply le_iff_lt_or_eq.mpr; left; exact h_b_pos
   have : b ≤ b := by apply le_iff_lt_or_eq.mpr; right; rfl
@@ -30,6 +53,45 @@ lemma div_mem_unit {a b : ℝ} (h_a_nonneg : 0 ≤ a) (h_ab : a ≤ b): a/b ∈ 
 
 noncomputable def unitDiv (i j : I) : I := if h : i ≤ j then ⟨i/j, div_mem_unit nonneg' h⟩ else 1
 noncomputable instance unitHasDiv : Div I := ⟨unitDiv⟩
+
+lemma unit_div_le_div {i j k l : I} (h_j : (0:ℝ) < l) (hik : i ≤ k) (hlj : l ≤ j) : i / j ≤ k / l := by
+  unfold instHDiv unitHasDiv unitDiv; simp only
+  split
+  case inl =>
+    split
+    case inl =>
+      simp only [Subtype.mk_le_mk]
+      apply div_le_div
+      · exact nonneg'
+      · exact hik
+      · exact h_j
+      · exact hlj
+    case inr => exact le_one'
+  case inr hij =>
+    split
+    case inl hkl => exfalso; exact hij <| le_trans hik <| le_trans hkl hlj
+    case inr => exact Eq.le rfl
+
+lemma unit_le_div_iff_mul_le (i j k : I) (h : 0 < k) : i ≤ j / k ↔ i * k ≤ j := by
+  unfold instHDiv unitHasDiv unitDiv; simp only
+  unfold instHMul instMulElemRealUnitInterval; simp only
+  apply Iff.intro
+  · intro h_div
+    split at h_div
+    case inl =>
+      have : (0:ℝ) < k := h
+      apply (le_div_iff this).mp
+      exact h_div
+    case inr h_jk =>
+      simp at h_jk
+      exact le_trans mul_le_right (le_of_lt h_jk)
+  · intro h_mul
+    split
+    case inl =>
+      have : (0:ℝ) < k := h
+      apply (le_div_iff this).mpr
+      exact h_mul
+    case inr => exact le_one'
 
 lemma eq_zero_iff_sym_eq_one : σ x = 1 ↔ x = 0 := by
   apply Iff.intro

@@ -1,5 +1,6 @@
 import InvLimDiss.Program.State
 import InvLimDiss.Program.Expressions
+import InvLimDiss.SL.Entailment
 import Lean.PrettyPrinter
 
 /-
@@ -15,12 +16,14 @@ def StateProp (Var : Type) : Type := State Var → Prop
 
 noncomputable instance : CompleteLattice (StateProp Var) := Pi.instCompleteLattice
 
+instance : Entailment (StateProp Var) := ⟨fun P Q => P ≤ Q⟩
+
 variable {Var : Type}
 
-def slEmp : StateProp Var := λ ⟨_,h⟩ => h = emptyHeap
+def slEmp : StateProp Var := λ ⟨_,h⟩ => h = ∅
 
 def slPointsTo (loc val : ValueExp Var) : StateProp Var :=
-    λ ⟨s,h⟩ => ∃ n : ℕ, n = (loc s) ∧ h n = some (val s)
+    λ ⟨s,h⟩ => ∃ n : ℕ, n = (loc s) ∧ h n = HeapValue.val (val s)
 
 def slEquals (e e' : ValueExp Var) : StateProp Var :=
     λ ⟨s,_⟩ => e s = e' s
@@ -180,7 +183,7 @@ def requireBracketsSepImp : TSyntax `sl → Bool
   | `(sl| $_:sl ∨ $_:sl) => false
   | `(sl| $f:sl) => !isAtom f
 
-def bracketsSepImp [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `sl)
+def bracketsSepImp [Monad m] [MonadRef m] [MonadQuotation m] : TSyntax `term → m (TSyntax `sl)
   | `(term| [sl|$f:sl]) => if requireBracketsSepImp f then `(sl| ( $f ) ) else `(sl| $f )
   | `(term| $t:term) => `(sl|[[$t]])
 
@@ -190,9 +193,13 @@ def unexpandSlSepImp : Unexpander
   | `($_ $l $r) => do `([sl| $(← bracketsSepImp l) -∗ $(← bracketsSepImp r)])
   | _ => throw ()
 
+def bracketsEntailment [Monad m] [MonadRef m] [MonadQuotation m] : TSyntax `term → m (TSyntax `sl)
+  | `(term| [sl|$f:sl]) => `(sl| $f)
+  | `(term| $f ) => `(sl| [[$f]])
+
 @[app_unexpander LE.le]
 def unexpandSlEntail : Unexpander
-  | `($_ [sl|$l] [sl|$r]) => `([sl| $l ⊢ $r])
+  | `($_ $l $r) => do `([sl| $(← bracketsEntailment l) ⊢ $(← bracketsEntailment r)])
   | _ => throw ()
 
 

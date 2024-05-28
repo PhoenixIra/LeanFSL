@@ -1,5 +1,6 @@
 import InvLimDiss.Program.State
 import InvLimDiss.Program.Expressions
+import InvLimDiss.SL.Entailment
 import InvLimDiss.Analysis.Probabilities
 
 /-
@@ -12,17 +13,19 @@ open State unitInterval Syntax
 
 def StateRV (Var : Type) : Type := State Var → I
 
-noncomputable instance : CompleteLattice (StateRV Var) := Pi.instCompleteLattice
+noncomputable instance {Var : Type} : CompleteLattice (StateRV Var) := Pi.instCompleteLattice
+
+instance : Entailment (StateRV Var) := ⟨fun P Q => P ≤ Q⟩
 
 variable {Var : Type}
 
-noncomputable def qslEmp : StateRV Var := λ ⟨_,h⟩ => iteOneZero (h = emptyHeap)
+noncomputable def qslEmp : StateRV Var := λ ⟨_,h⟩ => iteOneZero (h = ∅)
 
 noncomputable def qslPointsTo (loc val : ValueExp Var) : StateRV Var :=
-    λ ⟨s,h⟩ => iteOneZero (∃ n : ℕ, n = loc s ∧ h n = some (val s))
+    λ s => iteOneZero (∃ n : ℕ, n = loc s.stack ∧ s.heap n = HeapValue.val (val s.stack))
 
 noncomputable def qslEquals (e e' : ValueExp Var) : StateRV Var :=
-    λ ⟨s,_⟩ => iteOneZero (e s = e' s)
+    λ s => iteOneZero (e s.stack = e' s.stack)
 
 noncomputable def qslReal (p : I) : StateRV Var := λ _ => p
 
@@ -41,10 +44,10 @@ noncomputable def qslSup {α : Type} (P : α → StateRV Var) : StateRV Var := s
 noncomputable def qslInf {α : Type} (P : α → StateRV Var) : StateRV Var := sInf {P x | x : α}
 
 noncomputable def qslSepMul (P Q : StateRV Var) : StateRV Var :=
-  λ ⟨s,h⟩ => sSup { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = h ∧ x = P ⟨s, h₁⟩ * Q ⟨s, h₂⟩}
+  fun s => sSup { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap ∧ x = P ⟨s.stack, h₁⟩ * Q ⟨s.stack, h₂⟩}
 
 noncomputable def qslSepDiv (P Q : StateRV Var) : StateRV Var :=
-  λ ⟨s,h⟩ => sInf { x | ∃ h', disjoint h h' ∧ x = Q ⟨s,(h ∪ h')⟩ / P ⟨s,h'⟩ }
+  fun s => sInf { x | ∃ h', disjoint s.heap h' ∧ 0 < P ⟨s.stack,h'⟩ ∧ x = Q ⟨s.stack,s.heap ∪ h'⟩ / P ⟨s.stack,h'⟩ }
 
 open Lean
 
@@ -221,8 +224,8 @@ def unexpandQslSepDiv : Unexpander
   | _ => throw ()
 
 @[app_unexpander LE.le]
-def unexpandQslEntail : Unexpander
-  | `($_ [qsl|$l] [qsl|$r]) => `([qsl| $l ⊢ $r])
+def unexpandSlEntail : Unexpander
+  | `($_ [qsl|$l:qsl] [qsl|$r:qsl]) => do `([qsl| $l ⊢ $r])
   | _ => throw ()
 
 
