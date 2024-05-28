@@ -13,6 +13,8 @@ open State Syntax
 
 def StateProp (Var : Type) : Type := State Var → Prop
 
+noncomputable instance : CompleteLattice (StateProp Var) := Pi.instCompleteLattice
+
 variable {Var : Type}
 
 def slEmp : StateProp Var := λ ⟨_,h⟩ => h = emptyHeap
@@ -25,13 +27,13 @@ def slEquals (e e' : ValueExp Var) : StateProp Var :=
 
 def slNot (P : StateProp Var) : StateProp Var := λ s => ¬ P s
 
-def slAnd (P Q : StateProp Var) : StateProp Var := λ s => P s ∧ Q s
+def slAnd (P Q : StateProp Var) : StateProp Var := P ⊓ Q
 
-def slOr (P Q : StateProp Var) : StateProp Var := λ s => P s ∨ Q s
+def slOr (P Q : StateProp Var) : StateProp Var := P ⊔ Q
 
-def slExists {α : Type} (P : α → StateProp Var) : StateProp Var := λ s => ∃ x : α, P x s
+def slExists {α : Type} (P : α → StateProp Var) : StateProp Var := sSup {P x | x : α}
 
-def slAll {α : Type} (P : α → StateProp Var) : StateProp Var := λ s => ∀ x : α, P x s
+def slAll {α : Type} (P : α → StateProp Var) : StateProp Var := sInf {P x | x : α}
 
 def slSepCon (P Q : StateProp Var) : StateProp Var :=
   λ ⟨s,h⟩ => ∃ h₁ h₂, P ⟨s, h₁⟩ ∧ Q ⟨s, h₂⟩ ∧ disjoint h₁ h₂ ∧ h₁ ∪ h₂ = h
@@ -39,7 +41,6 @@ def slSepCon (P Q : StateProp Var) : StateProp Var :=
 def slSepImp (P Q : StateProp Var) : StateProp Var :=
   λ ⟨s,h⟩ => ∀ h', P ⟨s,h'⟩ → disjoint h h' → Q ⟨s,(h ∪ h')⟩
 
-noncomputable instance : CompleteLattice (StateProp Var) := Pi.instCompleteLattice
 
 open Lean
 

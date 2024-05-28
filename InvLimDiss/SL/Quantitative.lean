@@ -12,6 +12,8 @@ open State unitInterval Syntax
 
 def StateRV (Var : Type) : Type := State Var → I
 
+noncomputable instance : CompleteLattice (StateRV Var) := Pi.instCompleteLattice
+
 variable {Var : Type}
 
 noncomputable def qslEmp : StateRV Var := λ ⟨_,h⟩ => iteOneZero (h = emptyHeap)
@@ -28,23 +30,21 @@ noncomputable def qslIverson (P : State Var → Prop) : StateRV Var := λ s => i
 
 noncomputable def qslNot (P : StateRV Var) : StateRV Var := λ s => σ (P s)
 
-noncomputable def qslMin (P Q : StateRV Var) : StateRV Var := λ s => min (P s) (Q s)
+noncomputable def qslMin (P Q : StateRV Var) : StateRV Var := P ⊓ Q
 
-noncomputable def qslMax (P Q : StateRV Var) : StateRV Var := λ s => max (P s) (Q s)
+noncomputable def qslMax (P Q : StateRV Var) : StateRV Var := P ⊔ Q
 
 noncomputable def qslAdd (P Q : StateRV Var) : StateRV Var := λ s => truncatedAdd (P s) (Q s)
 
-noncomputable def qslSup {α : Type} (P : α → StateRV Var) : StateRV Var := λ s => sSup {P x s | x : α}
+noncomputable def qslSup {α : Type} (P : α → StateRV Var) : StateRV Var := sSup {P x | x : α}
 
-noncomputable def qslInf {α : Type} (P : α → StateRV Var) : StateRV Var := λ s => sInf {P x s | x : α}
+noncomputable def qslInf {α : Type} (P : α → StateRV Var) : StateRV Var := sInf {P x | x : α}
 
 noncomputable def qslSepMul (P Q : StateRV Var) : StateRV Var :=
   λ ⟨s,h⟩ => sSup { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = h ∧ x = P ⟨s, h₁⟩ * Q ⟨s, h₂⟩}
 
 noncomputable def qslSepDiv (P Q : StateRV Var) : StateRV Var :=
   λ ⟨s,h⟩ => sInf { x | ∃ h', disjoint h h' ∧ x = Q ⟨s,(h ∪ h')⟩ / P ⟨s,h'⟩ }
-
-noncomputable instance : CompleteLattice (StateRV Var) := Pi.instCompleteLattice
 
 open Lean
 
