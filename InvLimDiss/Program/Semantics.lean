@@ -146,11 +146,13 @@ noncomputable def programSmallStepSemantics :
   | [Prog| while e begin [[c]] end] => loopSmallStepSemantics e c
   | [Prog| [[c₁]] ; [[c₂]]] => fun s a c s' =>
     if c₁ = [Prog| ↓ ] then iteOneZero (a = Action.deterministic ∧ s=s' ∧ c = c₂)
+    else if c₁ = [Prog| ↯ ] then iteOneZero (a = Action.deterministic ∧ s=s' ∧ c = [Prog| ↯])
     else if let [Prog| [[c₁']] ; [[c₂']]] := c then
       if c₂ = c₂' then (programSmallStepSemantics c₁ s a c₁' s') else 0
     else 0
   | [Prog| [[c₁]] || [[c₂]]] => fun s a c s' =>
     if c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] then iteOneZero (c = [Prog| ↓] ∧ a = Action.deterministic ∧ s = s')
+    else if c₁ = [Prog| ↯ ] ∨ c₂ = [Prog| ↯ ] then iteOneZero (a = Action.deterministic ∧ s=s' ∧ c = [Prog| ↯])
     else if let [Prog| [[c₁']] || [[c₂']]] := c then match a with
       | Action.concurrentLeft a => if c₂ = c₂' then programSmallStepSemantics c₁ s a c₁' s' else 0
       | Action.concurrentRight a => if c₁ = c₁' then programSmallStepSemantics c₂ s a c₂' s' else 0

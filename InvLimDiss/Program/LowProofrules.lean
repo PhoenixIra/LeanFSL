@@ -501,61 +501,85 @@ theorem loop_mem :
 
 theorem sequential_iff :
     programSmallStepSemantics [Prog| [[c₁]] ; [[c₂]]] s a c' s' = i
-    ↔ (c₁ = [Prog| ↓] ∧ a = Action.deterministic ∧ s = s' ∧ c' = c₂ ∧ i = 1
+    ↔ (c₁ = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s' ∧ c' = [Prog| ↯] ∧ i = 1
+    ∨ c₁ = [Prog| ↯] ∧ ¬ (a = Action.deterministic ∧ s = s' ∧ c' = [Prog| ↯]) ∧ i = 0)
+    ∨ (c₁ = [Prog| ↓] ∧ a = Action.deterministic ∧ s = s' ∧ c' = c₂ ∧ i = 1
     ∨ c₁ = [Prog| ↓] ∧ ¬ (a = Action.deterministic ∧ s = s' ∧ c' = c₂) ∧ i = 0)
-    ∨ c₁ ≠ [Prog| ↓] ∧ (∃ c₁', c' = [Prog| [[c₁']] ; [[c₂]] ] ∧ programSmallStepSemantics c₁ s a c₁' s' = i)
-    ∨ c₁ ≠ [Prog| ↓] ∧ ¬ (∃ c₁', c' = [Prog| [[c₁']] ; [[c₂]] ]) ∧ i = 0 := by
+    ∨ (c₁ ≠ [Prog| ↓] ∧ c₁ ≠ [Prog| ↯] ∧ (∃ c₁', c' = [Prog| [[c₁']] ; [[c₂]] ] ∧ programSmallStepSemantics c₁ s a c₁' s' = i)
+    ∨ c₁ ≠ [Prog| ↓] ∧ c₁ ≠ [Prog| ↯] ∧ ¬ (∃ c₁', c' = [Prog| [[c₁']] ; [[c₂]] ]) ∧ i = 0) := by
   apply Iff.intro
   case mp =>
     intro h
     unfold programSmallStepSemantics at h
     split at h
     case inl h_term =>
-      apply Or.inl
-      simp [iteOneZero_def] at h
+      apply Or.inr; apply Or.inl
+      simp only [iteOneZero_def] at h
       cases h
       case inl h =>
+        apply Or.inr
         obtain ⟨rfl, h⟩ := h
-        apply Or.inr
-        apply And.intro h_term
-        rw [and_comm]
-        apply And.intro rfl
-        rintro ⟨h_a, h_s, h_c₂⟩
-        exact h h_a h_s h_c₂
+        exact ⟨h_term, h, rfl⟩
       case inr h =>
-        obtain ⟨rfl, h_a, h_s, h_c₂⟩ := h
         apply Or.inl
+        obtain ⟨rfl, h_a, h_s, h_c₂⟩ := h
         exact ⟨h_term, h_a, h_s, h_c₂, rfl⟩
-    case inr h_term =>
-      apply Or.inr
+    case inr h_n_term =>
       split at h
-      case h_1 _ c₁' c₂' =>
-        split at h
-        case inl h_c₂ =>
-          apply Or.inl
-          apply And.intro h_term
-          use c₁'
-          rw [h_c₂]
-          exact ⟨rfl, h⟩
-        case inr h_c₂ =>
+      case inl h_error =>
+        apply Or.inl
+        simp only [iteOneZero_def] at h
+        cases h
+        case inl h =>
           apply Or.inr
-          apply And.intro h_term
+          obtain ⟨rfl, h⟩ := h
+          exact ⟨h_error, h, rfl⟩
+        case inr h =>
+          apply Or.inl
+          obtain ⟨rfl, h_a, h_s, h_c₂⟩ := h
+          exact ⟨h_error, h_a, h_s, h_c₂, rfl⟩
+      case inr h_n_error =>
+        apply Or.inr; apply Or.inr
+        split at h
+        case h_1 _ c₁' c₂' =>
+          split at h
+          case inl h_c₂ =>
+            apply Or.inl
+            apply And.intro h_n_term
+            apply And.intro h_n_error
+            use c₁'
+            rw [h_c₂]
+            exact ⟨rfl, h⟩
+          case inr h_c₂ =>
+            apply Or.inr
+            apply And.intro h_n_term
+            apply And.intro h_n_error
+            rw [and_comm]
+            apply And.intro h.symm
+            intro h
+            obtain ⟨c₁'', h⟩ := h
+            simp only [sequential.injEq] at h
+            exact h_c₂ h.right.symm
+        case h_2 a c h_c =>
+          apply Or.inr
+          apply And.intro h_n_term
+          apply And.intro h_n_error
           rw [and_comm]
-          apply And.intro h.symm
-          intro h
-          obtain ⟨c₁'', h⟩ := h
-          simp only [sequential.injEq] at h
-          exact h_c₂ h.right.symm
-      case h_2 a c h_c =>
-        apply Or.inr
-        apply And.intro h_term
-        rw [and_comm]
-        apply And.intro h.symm; clear h
-        rintro ⟨c₁', h_c'⟩
-        exact h_c c₁' c₂ h_c'
+          apply And.intro h.symm; clear h
+          rintro ⟨c₁', h_c'⟩
+          exact h_c c₁' c₂ h_c'
   case mpr =>
-    rintro ((⟨h_term, h_a, h_s, h_c₂, rfl⟩ | ⟨h_term, h, rfl⟩)
-      | ⟨h_term, c₁', rfl, h⟩ | ⟨h_term, h, rfl⟩)
+    rintro ((⟨h_error, h_a, h_s, h_c₂, rfl⟩ | ⟨h_error, h, rfl⟩)
+      | (⟨h_term, h_a, h_s, h_c₂, rfl⟩ | ⟨h_term, h, rfl⟩)
+      | (⟨h_term, h_error, c₁', rfl, h⟩ | ⟨h_term, h_error, h, rfl⟩))
+    · unfold programSmallStepSemantics
+      have : c₁ ≠ [Prog| ↓] := by {rw [h_error]; simp only [ne_eq, not_false_eq_true]}
+      rw [if_neg this, if_pos h_error, iteOneZero_eq_one_def]
+      exact ⟨h_a, h_s, h_c₂⟩
+    · unfold programSmallStepSemantics
+      have : c₁ ≠ [Prog| ↓] := by {rw [h_error]; simp only [ne_eq, not_false_eq_true]}
+      rw [if_neg this, if_pos h_error, iteOneZero_eq_zero_def]
+      exact h
     · unfold programSmallStepSemantics
       rw [if_pos h_term, iteOneZero_eq_one_def]
       exact ⟨h_a, h_s, h_c₂⟩
@@ -563,10 +587,10 @@ theorem sequential_iff :
       rw [if_pos h_term, iteOneZero_eq_zero_def]
       exact h
     · unfold programSmallStepSemantics
-      simp only [↓reduceIte, if_neg h_term]
+      simp only [↓reduceIte, if_neg h_term, if_neg h_error]
       exact h
     · unfold programSmallStepSemantics
-      rw [if_neg h_term]
+      rw [if_neg h_term, if_neg h_error]
       split
       case h_1 _ c₁' c₂' =>
         split
@@ -578,158 +602,246 @@ theorem sequential_iff :
 
 theorem concurrent_iff_of_term :
     programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s Action.deterministic c' s' = i
-    ↔ c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] ∧ c' = [Prog| ↓] ∧ s = s' ∧ i = 1
-    ∨ ¬ (c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] ∧ c' = [Prog| ↓] ∧ s = s') ∧ i = 0 := by
+    ↔ ((c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] ∧ c' = [Prog| ↓] ∨
+      (c₁ = [Prog| ↯] ∨ c₂ = [Prog| ↯]) ∧ c' = [Prog| ↯]) ∧ s = s' ∧ i = 1)
+    ∨ (¬((c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] ∧ c' = [Prog| ↓] ∨
+      (c₁ = [Prog| ↯] ∨ c₂ = [Prog| ↯]) ∧ c' = [Prog| ↯]) ∧ s = s') ∧ i = 0) := by
   rw [programSmallStepSemantics]
   simp only [true_and, not_and]
   split
   case inl h_term =>
+    obtain ⟨rfl, rfl⟩ := h_term
     apply Iff.intro
     case mp =>
-      intro h_i
-      rw [iteOneZero_def] at h_i
-      cases h_i
-      case inl h =>
-        obtain ⟨rfl, h_neg⟩ := h
-        apply Or.inr
-        rw [and_comm]; apply And.intro rfl
-        intro _ _ h
-        rw [not_and] at h_neg
-        exact h_neg h
-      case inr h =>
-        obtain ⟨rfl, h_c', h_s⟩ := h
+      rw [iteOneZero_def]
+      rintro (⟨rfl, h⟩ | ⟨rfl, rfl, rfl⟩)
+      · apply Or.inr
+        refine And.intro ?_ rfl
+        rintro (⟨_, _, rfl⟩ | ⟨(h_err₁ | h_err₂), _⟩)
+        · simp only [true_and] at h
+          exact h
+        · cases h_err₁
+        · cases h_err₂
+      · apply Or.inl
+        refine And.intro ?_ ⟨rfl, rfl⟩
         apply Or.inl
-        exact ⟨h_term.left, h_term.right, h_c', h_s, rfl⟩
+        trivial
     case mpr =>
-      rintro (⟨_, _, h_c', h_s, rfl⟩ | ⟨h, rfl⟩)
-      case inl =>
-        rw [iteOneZero_pos]
-        exact ⟨h_c', h_s⟩
-      case inr =>
-        rw [iteOneZero_neg]; rw [not_and]
-        intro h_c'
-        exact h h_term.left h_term.right h_c'
-  case inr h_term =>
+      rintro (⟨(⟨_, _, rfl⟩ | ⟨(h | h), _⟩), rfl, rfl⟩ | ⟨h, rfl⟩)
+      · rw [iteOneZero_pos]
+        trivial
+      · cases h
+      · cases h
+      · rw [iteOneZero_neg]
+        simp only [not_and]
+        rintro rfl
+        apply h
+        apply Or.inl
+        trivial
+  case inr h_n_term =>
     split
-    case h_1 _ c₁' c₂' =>
+    case inl h_n_error =>
       apply Iff.intro
       case mp =>
-        rintro rfl
-        apply Or.inr
-        rw [and_comm]; apply And.intro rfl
-        intro h_c₁ h_c₂
-        exact (h_term ⟨h_c₁, h_c₂⟩).elim
+        rw [iteOneZero_def]
+        rintro (⟨rfl, h⟩ | ⟨rfl, rfl, rfl⟩)
+        · apply Or.inr
+          refine And.intro ?_ rfl
+          rintro (⟨h₁, h₂, _⟩ | ⟨_, rfl, rfl⟩)
+          · obtain (rfl | rfl) := h_n_error
+            · cases h₁
+            · cases h₂
+          · simp only [and_true] at h; exact h
+        · apply Or.inl
+          refine And.intro ?_ ⟨rfl, rfl⟩
+          apply Or.inr
+          refine And.intro ?_ rfl
+          obtain (rfl | rfl) := h_n_error
+          · apply Or.inl
+            rfl
+          · apply Or.inr
+            rfl
       case mpr =>
-        rintro (⟨h_c₁, h_c₂, _⟩ | ⟨_, rfl⟩)
-        case inl => exact (h_term ⟨h_c₁, h_c₂⟩).elim
-        case inr => rfl
-    case h_2 _ h_c' =>
-      apply Iff.intro
-      case mp =>
-        rintro rfl
-        apply Or.inr
-        rw [and_comm]; apply And.intro rfl
-        intro h_c₁ h_c₂
-        exact (h_term ⟨h_c₁, h_c₂⟩).elim
-      case mpr =>
-        rintro (⟨h_c₁, h_c₂, _⟩ | ⟨_, rfl⟩)
-        case inl => exact (h_term ⟨h_c₁, h_c₂⟩).elim
-        case inr => rfl
+        rintro (⟨(⟨h₁, h₂, _⟩ | ⟨_, rfl⟩), rfl, rfl⟩ | ⟨h, rfl⟩)
+        · obtain (rfl | rfl) := h_n_error
+          · cases h₁
+          · cases h₂
+        · rw [iteOneZero_pos]
+          trivial
+        · rw [iteOneZero_neg]
+          rw [and_comm, not_and]
+          rintro rfl
+          apply h
+          apply Or.inr
+          refine And.intro ?_ rfl
+          obtain (rfl | rfl) := h_n_error
+          · apply Or.inl
+            rfl
+          · apply Or.inr
+            rfl
+    case inr h_n_error =>
+      split
+      case h_1 =>
+        apply Iff.intro
+        case mp =>
+          rintro rfl
+          apply Or.inr
+          refine And.intro ?_ rfl
+          rintro (⟨_, _, h⟩ | ⟨_, h⟩)
+          · cases h
+          · cases h
+        case mpr =>
+          rintro (⟨(⟨_, _, h⟩ | ⟨_, h⟩), rfl, rfl⟩ | ⟨_, rfl⟩)
+          · cases h
+          · cases h
+          · rfl
+      case h_2 h =>
+        apply Iff.intro
+        case mp =>
+          rintro rfl
+          apply Or.inr
+          refine And.intro ?_ rfl
+          rintro (⟨rfl, rfl, _⟩ | ⟨(rfl | rfl),_⟩)
+          · simp only [and_self, not_true_eq_false] at h_n_term
+          · simp only [true_or, not_true_eq_false] at h_n_error
+          · simp only [or_true, not_true_eq_false] at h_n_error
+        case mpr =>
+          rintro (⟨(⟨rfl, rfl, _⟩ | ⟨(rfl | rfl), _⟩), _, _⟩ | ⟨_, rfl⟩)
+          · simp only [and_self, not_true_eq_false] at h_n_term
+          · simp only [true_or, not_true_eq_false] at h_n_error
+          · simp only [or_true, not_true_eq_false] at h_n_error
+          · rfl
 
 theorem concurrent_iff_of_left :
     programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s (Action.concurrentLeft a) c' s' = i
-    ↔ c₁ ≠ [Prog| ↓] ∧ (∃ c₁', c' = [Prog| [[c₁']] || [[c₂]]] ∧ programSmallStepSemantics c₁ s a c₁' s' = i)
-    ∨ ¬ (c₁ ≠ [Prog| ↓] ∧ ∃ c₁', c' = [Prog| [[c₁']] || [[c₂]]]) ∧ i = 0 := by
+    ↔ c₁ ≠ [Prog| ↓] ∧ c₁ ≠ [Prog| ↯] ∧ c₂ ≠ [Prog| ↯]
+      ∧ (∃ c₁', c' = [Prog| [[c₁']] || [[c₂]]] ∧ programSmallStepSemantics c₁ s a c₁' s' = i)
+    ∨ ¬ (c₁ ≠ [Prog| ↓] ∧ c₁ ≠ [Prog| ↯] ∧ c₂ ≠ [Prog| ↯]
+      ∧ ∃ c₁', c' = [Prog| [[c₁']] || [[c₂]]]) ∧ i = 0 := by
   rw [programSmallStepSemantics]
   simp only [false_and, and_false, iteOneZero_false, ne_eq, not_and, not_exists]
   split
   case inl h_term =>
+    obtain ⟨rfl, rfl⟩ := h_term
     apply Iff.intro
     case mp =>
       rintro rfl
       apply Or.inr
       rw [and_comm]; apply And.intro rfl
       intro h_c₁
-      exact (h_c₁ h_term.left).elim
+      exact (h_c₁ rfl).elim
     case mpr =>
       rintro (⟨h_c₁, _⟩ | ⟨_, rfl⟩)
-      case inl => exact (h_c₁ h_term.left).elim
+      case inl => exact (h_c₁ rfl).elim
       case inr => rfl
-  case inr h_term =>
+  case inr h_n_term =>
     split
-    case h_1 _ c₁' c₂' =>
-      split
-      case inl h_c₂ =>
-        rw [h_c₂]; clear h_c₂
-        apply Iff.intro
+    case inl h_error =>
+      clear h_n_term
+      obtain (rfl | rfl) := h_error
+      · apply Iff.intro
         case mp =>
-          intro h
-          cases eq_or_ne c₁ terminated
-          case inl h_term =>
-            apply Or.inr
-            rw [h_term, terminated_eq_zero] at h
-            rw [← h]
-            rw [and_comm]; apply And.intro rfl
-            intro h_term'
-            exact (h_term' h_term).elim
-          case inr h_term =>
-            apply Or.inl
-            apply And.intro h_term
-            use c₁'
+          rintro rfl
+          apply Or.inr
+          refine And.intro ?_ rfl
+          rintro _ h
+          simp only [not_true_eq_false] at h
         case mpr =>
-          intro h
-          cases h
-          case inl h =>
-            obtain ⟨_, c₁', h_c, h⟩ := h
-            cases h_c
-            exact h
-          case inr h =>
-            obtain ⟨h, rfl⟩ := h
-            cases eq_or_ne c₁ [Prog| ↓]
-            case inl h_term => rw [h_term, terminated_eq_zero]
+          rintro (⟨_, h, _⟩ | ⟨_, rfl⟩)
+          · simp only [not_true_eq_false] at h
+          · rfl
+      · apply Iff.intro
+        case mp =>
+          rintro rfl
+          apply Or.inr
+          refine And.intro ?_ rfl
+          rintro _ _ h
+          simp only [not_true_eq_false] at h
+        case mpr =>
+          rintro (⟨_, _, h, _⟩ | ⟨_, rfl⟩)
+          · simp only [not_true_eq_false] at h
+          · rfl
+    case inr h_n_error =>
+      split
+      case h_1 _ c₁' c₂' =>
+        split
+        case inl h_c₂ =>
+          obtain rfl := h_c₂
+          apply Iff.intro
+          case mp =>
+            intro h
+            cases eq_or_ne c₁ terminated
+            case inl h_term =>
+              apply Or.inr
+              rw [h_term, terminated_eq_zero] at h
+              rw [← h]
+              rw [and_comm]; apply And.intro rfl
+              intro h_term'
+              exact (h_term' h_term).elim
             case inr h_term =>
-              specialize h h_term c₁'
-              simp only [not_true_eq_false] at h
-      case inr h_c₂ =>
+              apply Or.inl
+              apply And.intro h_term
+              rw [not_or] at h_n_error
+              apply And.intro h_n_error.left
+              apply And.intro h_n_error.right
+              use c₁'
+          case mpr =>
+            intro h
+            cases h
+            case inl h =>
+              obtain ⟨_, _, _, c₁', h_c, h⟩ := h
+              cases h_c
+              exact h
+            case inr h =>
+              obtain ⟨h, rfl⟩ := h
+              cases eq_or_ne c₁ [Prog| ↓]
+              case inl h_term => rw [h_term, terminated_eq_zero]
+              case inr h_n_term =>
+                rw [not_or] at h_n_error
+                specialize h h_n_term h_n_error.left h_n_error.right c₁'
+                simp only [not_true_eq_false] at h
+        case inr h_c₂ =>
+          apply Iff.intro
+          case mp =>
+            rintro rfl
+            cases eq_or_ne c₁ [Prog| ↓]
+            case inl h_c₁ =>
+              apply Or.inr
+              rw [and_comm]; apply And.intro rfl
+              intro h_c₁'
+              exact (h_c₁' h_c₁).elim
+            case inr h_c₁ =>
+              apply Or.inr
+              rw [and_comm]; apply And.intro rfl
+              intro _ _ _ _
+              simp only [concurrent.injEq, not_and]
+              intro _
+              exact Ne.symm h_c₂
+          case mpr =>
+            rintro (⟨_, _, _, _, h_c, h⟩ | ⟨_, rfl⟩)
+            case inl => cases h_c; simp only [not_true_eq_false] at h_c₂
+            case inr => rfl
+      case h_2 _ h =>
         apply Iff.intro
         case mp =>
           rintro rfl
-          cases eq_or_ne c₁ [Prog| ↓]
-          case inl h_c₁ =>
-            apply Or.inr
-            rw [and_comm]; apply And.intro rfl
-            intro h_c₁'
-            exact (h_c₁' h_c₁).elim
-          case inr h_c₁ =>
-            apply Or.inr
-            rw [and_comm]; apply And.intro rfl
-            intro _ c'
-            simp only [concurrent.injEq, not_and]
-            intro _
-            exact Ne.symm h_c₂
+          apply Or.inr
+          rw [and_comm]; apply And.intro rfl
+          intro _ _ _ c₁
+          exact h c₁ c₂
         case mpr =>
-          rintro (⟨_, c₁'', h_c, h⟩ | ⟨_, rfl⟩)
-          case inl => cases h_c; simp only [not_true_eq_false] at h_c₂
+          rintro (⟨_, _, _, c₁', h_c, _⟩ | ⟨_, rfl⟩)
+          case inl => exact (h c₁' c₂ h_c).elim
           case inr => rfl
-    case h_2 _ h =>
-      apply Iff.intro
-      case mp =>
-        rintro rfl
-        apply Or.inr
-        rw [and_comm]; apply And.intro rfl
-        intro _ c₁
-        exact h c₁ c₂
-      case mpr =>
-        rintro (⟨_, c₁', h_c, _⟩ | ⟨_, rfl⟩)
-        case inl => exact (h c₁' c₂ h_c).elim
-        case inr => rfl
 
 theorem concurrent_iff_of_right :
     programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s (Action.concurrentRight a) c' s' = i
-    ↔ c₂ ≠ [Prog| ↓] ∧ (∃ c₂', c' = [Prog| [[c₁]] || [[c₂']]] ∧ programSmallStepSemantics c₂ s a c₂' s' = i)
-    ∨ ¬ (c₂ ≠ [Prog| ↓] ∧ ∃ c₂', c' = [Prog| [[c₁]] || [[c₂']]]) ∧ i = 0 := by
+    ↔ c₂ ≠ [Prog| ↓] ∧ c₁ ≠ [Prog| ↯] ∧ c₂ ≠ [Prog| ↯]
+      ∧ (∃ c₂', c' = [Prog| [[c₁]] || [[c₂']]] ∧ programSmallStepSemantics c₂ s a c₂' s' = i)
+    ∨ ¬ (c₂ ≠ [Prog| ↓] ∧ c₁ ≠ [Prog| ↯] ∧ c₂ ≠ [Prog| ↯]
+      ∧ ∃ c₂', c' = [Prog| [[c₁]] || [[c₂']]]) ∧ i = 0 := by
   rw [programSmallStepSemantics]
-  simp only [false_and, and_false, iteOneZero_false, not_and, not_exists]
+  simp only [false_and, and_false, iteOneZero_false, ne_eq, not_and, not_exists]
   split
   case inl h_term =>
     apply Iff.intro
@@ -745,62 +857,88 @@ theorem concurrent_iff_of_right :
       case inr => rfl
   case inr _ =>
     split
-    case h_1 _ c₁' c₂' =>
-      split
-      case inl h_c₁ =>
-        apply Iff.intro
+    case inl h_error =>
+      obtain (rfl | rfl) := h_error
+      · apply Iff.intro
         case mp =>
-          intro h
-          cases eq_or_ne c₂ terminated
-          case inl h_c₂ =>
-            rw [h_c₂, terminated_eq_zero] at h
-            rw [← h]
+          rintro rfl
+          apply Or.inr
+          refine And.intro ?_ rfl
+          rintro _ h
+          simp only [not_true_eq_false] at h
+        case mpr =>
+          rintro (⟨_, h, _⟩ | ⟨_, rfl⟩)
+          · simp only [not_true_eq_false] at h
+          · rfl
+      · apply Iff.intro
+        case mp =>
+          rintro rfl
+          apply Or.inr
+          refine And.intro ?_ rfl
+          rintro _ _ h
+          simp only [not_true_eq_false] at h
+        case mpr =>
+          rintro (⟨_, _, h, _⟩ | ⟨_, rfl⟩)
+          · simp only [not_true_eq_false] at h
+          · rfl
+    case inr h_n_error =>
+      split
+      case h_1 _ c₁' c₂' =>
+        split
+        case inl h_c₁ =>
+          obtain rfl := h_c₁
+          apply Iff.intro
+          case mp =>
+            intro h
+            cases eq_or_ne c₂ terminated
+            case inl h_c₂ =>
+              rw [h_c₂, terminated_eq_zero] at h
+              rw [← h]
+              apply Or.inr
+              rw [and_comm]; apply And.intro rfl
+              intro h
+              exact (h h_c₂).elim
+            case inr h_c₂ =>
+              apply Or.inl
+              rw [not_or] at h_n_error
+              use h_c₂, h_n_error.left, h_n_error.right, c₂'
+          case mpr =>
+            rintro (⟨_, _, _, _, h_c, h⟩ | ⟨h, rfl⟩)
+            case inl => cases h_c; exact h
+            case inr =>
+              cases eq_or_ne c₂ [Prog| ↓]
+              case inl h_c₂ =>
+                rw [h_c₂, terminated_eq_zero]
+              case inr h_c₂ =>
+                rw [not_or] at h_n_error
+                specialize h h_c₂ h_n_error.left h_n_error.right c₂'
+                simp only [not_true_eq_false] at h
+        case inr h_c₁ =>
+          apply Iff.intro
+          case mp =>
+            rintro rfl
             apply Or.inr
             rw [and_comm]; apply And.intro rfl
-            intro h
-            exact (h h_c₂).elim
-          case inr h_c₂ =>
-            apply Or.inl
-            apply And.intro h_c₂
-            rw [h_c₁]
-            use c₂'
-        case mpr =>
-          rintro (⟨_, c₂'', h_c, h⟩ | ⟨h, rfl⟩)
-          case inl => cases h_c; exact h
-          case inr =>
-            cases eq_or_ne c₂ [Prog| ↓]
-            case inl h_c₂ =>
-              rw [h_c₂, terminated_eq_zero]
-            case inr h_c₂ =>
-              specialize h h_c₂ c₂'
-              simp only [concurrent.injEq, and_true] at h
-              exact (h h_c₁.symm).elim
-      case inr h_c₁ =>
+            intro _ _ _ _ h
+            cases h
+            simp at h_c₁
+          case mpr =>
+            rintro (⟨_, _, _, _, h_c, _⟩ | ⟨_, rfl⟩)
+            case inl =>
+              cases h_c
+              simp only [not_true_eq_false] at h_c₁
+            case inr => rfl
+      case h_2 h_c =>
         apply Iff.intro
         case mp =>
           rintro rfl
           apply Or.inr
           rw [and_comm]; apply And.intro rfl
-          intro _ c₂'' h
-          cases h
-          simp at h_c₁
+          intro _ _ _ c₂
+          exact h_c c₁ c₂
         case mpr =>
-          rintro (⟨_, _, h_c, _⟩ | ⟨_, rfl⟩)
-          case inl =>
-            cases h_c
-            simp only [not_true_eq_false] at h_c₁
+          rintro (⟨_, _, _, c₂, h_c', _⟩ | ⟨_, rfl⟩)
+          case inl => exact (h_c c₁ c₂ h_c').elim
           case inr => rfl
-    case h_2 h_c =>
-      apply Iff.intro
-      case mp =>
-        rintro rfl
-        apply Or.inr
-        rw [and_comm]; apply And.intro rfl
-        intro _ c₂
-        exact h_c c₁ c₂
-      case mpr =>
-        rintro (⟨_, c₂, h_c', _⟩ | ⟨_, rfl⟩)
-        case inl => exact (h_c c₁ c₂ h_c').elim
-        case inr => rfl
 
 end Semantics
