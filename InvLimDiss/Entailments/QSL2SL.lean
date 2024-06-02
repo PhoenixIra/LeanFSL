@@ -54,18 +54,15 @@ theorem atLeast_qslEmp_iff {i : I} (h_lt : 0 < i) (s : State Var) :
 
 theorem atLeast_qslPointsTo_iff {i : I} (h_lt : 0 < i) (s : State Var) :
     i ≤ [qsl| l ↦ l'] s ↔ [sl| l ↦ l'] s := by
+  unfold slPointsTo qslPointsTo
   apply Iff.intro
   · intro h
-    unfold slPointsTo
     split
-    unfold qslPointsTo at h
     simp only at h
     have : iteOneZero (_) = 1 := iteOneZero_of_non_one <| ne_of_lt <| lt_of_lt_of_le h_lt h
     rw [iteOneZero_eq_one_def] at this
     exact this
   · intro h
-    unfold qslPointsTo
-    unfold slPointsTo at h
     simp only at h
     rw [iteOneZero_eq_one_def.mpr h]
     exact le_one'
@@ -75,16 +72,29 @@ theorem atLeast_qslReal_iff {i j : I} (s : State Var) :
 
 theorem atLeast_qslIverson_iff {i : I} (h_lt : 0 < i) (P : State Var → Prop) (s : State Var) :
     i ≤ [qsl| ⁅P⁆] s ↔ P s := by
+  unfold qslIverson
   apply Iff.intro
   · intro h
-    unfold qslIverson at h
     have : iteOneZero (_) = 1 := iteOneZero_of_non_one <| ne_of_lt <| lt_of_lt_of_le h_lt h
     rw [iteOneZero_eq_one_def] at this
     exact this
   · intro h
-    unfold qslIverson
     rw [iteOneZero_pos h]
     exact le_one'
+
+theorem atLeast_qslNot_of_slNot {i : I } {f : StateRV Var} {P : StateProp Var} {s : State Var}
+  (h_rec : sInf {j ∈ valuesOf f | σ i < j } ≤ f s ↔ P s)  :
+    [sl| ¬ [[P]]] s → i ≤ [qsl| ~[[f]]] s := by
+  unfold slNot qslNot
+  intro h
+  rw [le_symm_iff_le_symm, ← not_lt]
+  intro h_lt
+  rw [← h_rec, not_le] at h
+  apply (not_le_of_lt h)
+  apply sInf_le
+  apply And.intro
+  · simp only [valuesOf, Set.mem_setOf_eq, exists_apply_eq_apply]
+  · exact h_lt
 
 theorem lt_sInf_of_valuesOf (h_fin : Set.Finite (valuesOf f)) {i : I} (h_lt : 0 < i) :
     σ i < sInf {j ∈ valuesOf f | σ i < j } := by
@@ -113,24 +123,43 @@ theorem atLeast_qslNot_iff {i : I} {f : StateRV Var} {P : StateProp Var} {s : St
   (h_rec : sInf {j ∈ valuesOf f | σ i < j } ≤ f s ↔ P s)  :
     i ≤ [qsl| ~[[f]]] s ↔ [sl| ¬ [[P]]] s := by
   apply Iff.intro
-  · intro h
-    unfold qslNot at h
-    unfold slNot
+  · unfold slNot qslNot
+    intro h
     rw [← h_rec, not_le]; clear h_rec
     rw [le_symm_iff_le_symm] at h
     apply lt_of_le_of_lt h; clear h
     exact h_min
+  · exact atLeast_qslNot_of_slNot h_rec
+
+theorem atLeast_qslMin_iff {i : I} {f₁ f₂ : StateRV Var} {P₁ P₂ : StateProp Var} {s : State Var}
+  (h_rec₁ : i ≤ f₁ s ↔ P₁ s) (h_rec₂ : i ≤ f₂ s ↔ P₂ s) :
+    i ≤ [qsl| [[f₁]] ⊓ [[f₂]]] s ↔ [sl| [[P₁]] ∧ [[P₂]]] s := by
+  rw [ qslMin, slAnd, Pi.inf_apply, Pi.inf_apply ]
+  apply Iff.intro
   · intro h
-    unfold slNot at h
-    unfold qslNot
-    rw [le_symm_iff_le_symm, ← not_lt]
-    intro h_lt
-    rw [← h_rec, not_le] at h
-    apply (not_le_of_lt h)
-    apply sInf_le
-    apply And.intro
-    · simp only [valuesOf, Set.mem_setOf_eq, exists_apply_eq_apply]
-    · exact h_lt
+    rw [inf_eq_min, min_def] at h
+    split at h
+    case inl h_le =>
+      apply And.intro
+      · rw [← h_rec₁]
+        exact h
+      · rw [← h_rec₂]
+        exact le_trans h h_le
+    case inr h_lt =>
+      rw [not_le] at h_lt
+      apply And.intro
+      · rw [← h_rec₁]
+        exact le_of_lt <| lt_of_le_of_lt h h_lt
+      · rw [← h_rec₂]
+        exact h
+  · intro h
+    rw [inf_eq_min, min_def]
+    split
+    case inl h_le => sorry
+    case inr h_lt => sorry
+
+
+
 
 
 end Qsl2Sl
