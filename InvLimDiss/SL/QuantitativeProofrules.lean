@@ -92,5 +92,4 @@ theorem qslSepCon_qslSepImp_entail (P₁ P₂ : StateRV Var) :
 
 
 
-
 end QSL

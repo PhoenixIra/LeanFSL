@@ -10,7 +10,7 @@ namespace unitInterval
 
 open Classical Set.Icc
 
-noncomputable instance unit_cl : CompleteLattice I := Set.Icc.completeLattice (by simp)
+noncomputable instance unit_cl : CompleteLinearOrder I := Set.Icc.completeLinearOrder (by simp)
 
 instance : PosMulMono I where
   elim := by
@@ -159,7 +159,7 @@ lemma iteOneZero_eq_zero_def {P : Prop} : iteOneZero P = 0 ↔ ¬ P := by
   unfold iteOneZero
   exact (ite_unit_def_of_ne <| Ne.symm zero_ne_one).2
 
-lemma iteOneZero_def {P :Prop} : iteOneZero P = i ↔ i = 0 ∧ ¬ P ∨ i = 1 ∧ P := by
+lemma iteOneZero_def {P : Prop} : iteOneZero P = i ↔ i = 0 ∧ ¬ P ∨ i = 1 ∧ P := by
   apply Iff.intro
   · intro h
     by_cases h_p : P
@@ -176,6 +176,12 @@ lemma iteOneZero_def {P :Prop} : iteOneZero P = i ↔ i = 0 ∧ ¬ P ∨ i = 1 �
     | inl h => rw [iteOneZero_neg h.right]; exact h.left.symm
     | inr h => rw [iteOneZero_pos h.right]; exact h.left.symm
 
+lemma iteOneZero_of_non_one {P : Prop}  (h : 0 ≠ iteOneZero P) : iteOneZero P = 1 := by
+  unfold iteOneZero ite_unit at h
+  split at h
+  case inl h_P => exact iteOneZero_pos h_P
+  case inr h_nP => exact (h rfl).elim
+
 theorem truncatedAdd_mem_unit (i j : I) : min 1 ((i:ℝ) + j) ∈ I := by
   apply And.intro
   · exact le_min zero_le_one (add_nonneg i.property.1 j.property.1)
@@ -183,5 +189,40 @@ theorem truncatedAdd_mem_unit (i j : I) : min 1 ((i:ℝ) + j) ∈ I := by
 
 noncomputable def truncatedAdd (i j : I) : I := ⟨min 1 (i + j), truncatedAdd_mem_unit i j⟩
 
+theorem le_symm_if_le_symm (i j : I) : i ≤ σ j → j ≤ σ i := by
+  intro h
+  rw [Subtype.mk_le_mk, coe_symm_eq] at h ⊢
+  apply le_sub_left_of_add_le
+  rw [add_comm]
+  apply add_le_of_le_sub_left
+  exact h
+
+theorem le_symm_iff_le_symm (i j : I) : i ≤ σ j ↔ j ≤ σ i := ⟨le_symm_if_le_symm i j, le_symm_if_le_symm j i⟩
+
+theorem symm_le_if_symm_le (i j : I) : σ i ≤ j → σ j ≤ i := by
+  intro h
+  rw [Subtype.mk_le_mk, coe_symm_eq] at h ⊢
+  rw [sub_le_iff_le_add, add_comm, ← sub_le_iff_le_add]
+  exact h
+
+theorem symm_le_iff_symm_le (i j : I) : σ i ≤ j ↔ σ j ≤ i := ⟨symm_le_if_symm_le i j, symm_le_if_symm_le j i⟩
+
+theorem lt_symm_if_lt_symm (i j : I) : i < σ j → j < σ i := by
+  intro h
+  rw [Subtype.mk_lt_mk, coe_symm_eq] at h ⊢
+  apply lt_sub_left_of_add_lt
+  rw [add_comm]
+  apply add_lt_of_lt_sub_left
+  exact h
+
+theorem lt_symm_iff_lt_symm (i j : I) : i < σ j ↔ j < σ i := ⟨lt_symm_if_lt_symm i j, lt_symm_if_lt_symm j i⟩
+
+theorem symm_lt_if_symm_lt (i j : I) : σ i < j → σ j < i := by
+  intro h
+  rw [Subtype.mk_lt_mk, coe_symm_eq] at h ⊢
+  rw [sub_lt_iff_lt_add, add_comm, ← sub_lt_iff_lt_add]
+  exact h
+
+theorem symm_lt_iff_symm_lt (i j : I) : σ i < j ↔ σ j < i := ⟨symm_lt_if_symm_lt i j, symm_lt_if_symm_lt j i⟩
 
 end unitInterval

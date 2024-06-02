@@ -223,10 +223,10 @@ def unexpandQslSepDiv : Unexpander
   | `($_ $l $r) => do `([qsl| $(← bracketsSepDiv l) -⋆ $(← bracketsSepDiv r)])
   | _ => throw ()
 
-@[app_unexpander LE.le]
-def unexpandSlEntail : Unexpander
-  | `($_ [qsl|$l:qsl] [qsl|$r:qsl]) => do `([qsl| $l ⊢ $r])
-  | _ => throw ()
+-- @[app_unexpander LE.le]
+-- def unexpandSlEntail : Unexpander
+--   | `($_ [qsl|$l:qsl] [qsl|$r:qsl]) => do `([qsl| $l ⊢ $r])
+--   | _ => throw ()
 
 
 -- example : [qsl Var| emp ⊔ I (x:ℚ). ~ (emp ⊔ (emp ⊔ emp) ⋆ emp) ⊢ (S (x:ℚ). emp -⋆ emp + emp -⋆ emp) ⊓ emp] := sorry

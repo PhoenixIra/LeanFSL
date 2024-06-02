@@ -193,14 +193,14 @@ def unexpandSlSepImp : Unexpander
   | `($_ $l $r) => do `([sl| $(← bracketsSepImp l) -∗ $(← bracketsSepImp r)])
   | _ => throw ()
 
-def bracketsEntailment [Monad m] [MonadRef m] [MonadQuotation m] : TSyntax `term → m (TSyntax `sl)
-  | `(term| [sl|$f:sl]) => `(sl| $f)
-  | `(term| $f ) => `(sl| [[$f]])
+-- def bracketsEntailment [Monad m] [MonadRef m] [MonadQuotation m] : TSyntax `term → m (TSyntax `sl)
+--   | `(term| [sl|$f:sl]) => `(sl| $f)
+--   | `(term| $f ) => `(sl| [[$f]])
 
-@[app_unexpander LE.le]
-def unexpandSlEntail : Unexpander
-  | `($_ $l $r) => do `([sl| $(← bracketsEntailment l) ⊢ $(← bracketsEntailment r)])
-  | _ => throw ()
+-- @[app_unexpander LE.le]
+-- def unexpandSlEntail : Unexpander
+--   | `($_ $l $r) => do `([sl| $(← bracketsEntailment l) ⊢ $(← bracketsEntailment r)])
+--   | _ => throw ()
 
 
 -- example : [sl Var| emp ∧ ∀ (x:ℚ). ¬ (emp ∨ (emp ∨ emp) ∗ emp) ⊢ (∃ (x:ℚ). emp -∗ emp ∧ emp -∗ emp) ∧ emp] := sorry
