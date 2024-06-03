@@ -189,6 +189,17 @@ theorem truncatedAdd_mem_unit (i j : I) : min 1 ((i:ℝ) + j) ∈ I := by
 
 noncomputable def truncatedAdd (i j : I) : I := ⟨min 1 (i + j), truncatedAdd_mem_unit i j⟩
 
+theorem le_truncatedAdd (i j k : I) : i ≤ truncatedAdd j k ↔ i ≤ (j:ℝ) + k := by
+  unfold truncatedAdd
+  rw [Subtype.mk_le_mk]
+  apply Iff.intro
+  · intro h
+    simp only [le_min_iff] at h
+    exact h.right
+  · intro h
+    simp only [le_min_iff]
+    exact ⟨le_one', h⟩
+
 theorem le_symm_if_le_symm (i j : I) : i ≤ σ j → j ≤ σ i := by
   intro h
   rw [Subtype.mk_le_mk, coe_symm_eq] at h ⊢

@@ -22,14 +22,16 @@ theorem nonempty_valuesOf {f : StateRV Var} : Set.Nonempty (valuesOf f) := by
   use (f s)
   exact valuesOf_of_self
 
-theorem qsl_entail_if_at_least (f g : StateRV Var) : f ⊢ g ↔ ∀ i ∈ valuesOf f, ∀ s, i ≤ f s → i ≤ g s := by
+theorem qsl_entail_if_at_least (f g : StateRV Var) {values : Set I} (h_subset : valuesOf f ⊆ values) :
+    f ⊢ g ↔ ∀ i ∈ values, ∀ s, i ≤ f s → i ≤ g s := by
   apply Iff.intro
   · intro h i _ s h_f
     calc i
       _ ≤ f s := h_f
       _ ≤ g s := h s
   · intro h s
-    apply h (f s) valuesOf_of_self s (le_refl (f s))
+    refine h (f s) ?_ s (le_refl (f s))
+    exact Set.mem_of_subset_of_mem h_subset valuesOf_of_self
 
 theorem zero_le_atLeast (f : StateRV Var) (s : State Var) : 0 ≤ f s := nonneg'
 
@@ -82,24 +84,24 @@ theorem atLeast_qslIverson_iff {i : I} (h_lt : 0 < i) (P : State Var → Prop) (
     rw [iteOneZero_pos h]
     exact le_one'
 
-theorem atLeast_qslNot_of_slNot {i : I } {f : StateRV Var} {P : StateProp Var} {s : State Var}
-  (h_rec : sInf {j ∈ valuesOf f | σ i < j } ≤ f s ↔ P s)  :
-    [sl| ¬ [[P]]] s → i ≤ [qsl| ~[[f]]] s := by
+theorem atLeast_qslNot_of_slNot {i : I } {f : StateRV Var} {s : State Var} {values : Set I}
+  (h_subset : valuesOf f ⊆ values) :
+    [sl| ¬ [[fun s => sInf {j ∈ values | σ i < j } ≤ f s]]] s → i ≤ [qsl| ~[[f]]] s := by
   unfold slNot qslNot
   intro h
   rw [le_symm_iff_le_symm, ← not_lt]
   intro h_lt
-  rw [← h_rec, not_le] at h
+  rw [not_le] at h
   apply (not_le_of_lt h)
   apply sInf_le
   apply And.intro
-  · simp only [valuesOf, Set.mem_setOf_eq, exists_apply_eq_apply]
+  · exact Set.mem_of_subset_of_mem h_subset valuesOf_of_self
   · exact h_lt
 
-theorem lt_sInf_of_valuesOf (h_fin : Set.Finite (valuesOf f)) {i : I} (h_lt : 0 < i) :
-    σ i < sInf {j ∈ valuesOf f | σ i < j } := by
-  have h_fin : Set.Finite {j ∈ valuesOf f | σ i < j } := Set.Finite.subset h_fin (Set.sep_subset (valuesOf f) (fun j => σ i < j))
-  by_cases Set.Nonempty {j ∈ valuesOf f | σ i < j }
+theorem lt_sInf_of_valuesOf {values : Set I} (h_fin : Set.Finite (values)) {i : I} (h_lt : 0 < i) :
+    σ i < sInf {j ∈ values | σ i < j } := by
+  have h_fin : Set.Finite {j ∈ values | σ i < j } := Set.Finite.subset h_fin (Set.sep_subset values (fun j => σ i < j))
+  by_cases Set.Nonempty {j ∈ values | σ i < j }
   case neg h_empty =>
     rw [← unitInterval.symm_one, symm_lt_iff_symm_lt] at h_lt
     apply lt_of_lt_of_le h_lt
@@ -118,22 +120,20 @@ theorem lt_sInf_of_valuesOf (h_fin : Set.Finite (valuesOf f)) {i : I} (h_lt : 0 
       clear h_nonempty h_fin h
       simp only [Set.mem_setOf_eq, lt_self_iff_false, and_false] at h_mem
 
-theorem atLeast_qslNot_iff {i : I} {f : StateRV Var} {P : StateProp Var} {s : State Var}
-  (h_min : σ i < sInf {j ∈ valuesOf f | σ i < j })
-  (h_rec : sInf {j ∈ valuesOf f | σ i < j } ≤ f s ↔ P s)  :
-    i ≤ [qsl| ~[[f]]] s ↔ [sl| ¬ [[P]]] s := by
+theorem atLeast_qslNot_iff {i : I} {f : StateRV Var} {s : State Var} {values : Set I}
+  (h_subset : valuesOf f ⊆ values) (h_min : σ i < sInf {j ∈ values | σ i < j }) :
+    i ≤ [qsl| ~[[f]]] s ↔ [sl| ¬ [[fun s => sInf {j ∈ values | σ i < j } ≤ f s]]] s := by
   apply Iff.intro
   · unfold slNot qslNot
     intro h
-    rw [← h_rec, not_le]; clear h_rec
+    rw [not_le]
     rw [le_symm_iff_le_symm] at h
     apply lt_of_le_of_lt h; clear h
     exact h_min
-  · exact atLeast_qslNot_of_slNot h_rec
+  · exact atLeast_qslNot_of_slNot h_subset
 
-theorem atLeast_qslMin_iff {i : I} {f₁ f₂ : StateRV Var} {P₁ P₂ : StateProp Var} {s : State Var}
-  (h_rec₁ : i ≤ f₁ s ↔ P₁ s) (h_rec₂ : i ≤ f₂ s ↔ P₂ s) :
-    i ≤ [qsl| [[f₁]] ⊓ [[f₂]]] s ↔ [sl| [[P₁]] ∧ [[P₂]]] s := by
+theorem atLeast_qslMin_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
+    i ≤ [qsl| [[f₁]] ⊓ [[f₂]]] s ↔ [sl| [[fun s => i ≤ f₁ s]] ∧ [[fun s => i ≤ f₂ s]]] s := by
   rw [ qslMin, slAnd, Pi.inf_apply, Pi.inf_apply ]
   apply Iff.intro
   · intro h
@@ -141,25 +141,66 @@ theorem atLeast_qslMin_iff {i : I} {f₁ f₂ : StateRV Var} {P₁ P₂ : StateP
     split at h
     case inl h_le =>
       apply And.intro
-      · rw [← h_rec₁]
-        exact h
-      · rw [← h_rec₂]
-        exact le_trans h h_le
+      · exact h
+      · exact le_trans h h_le
     case inr h_lt =>
       rw [not_le] at h_lt
       apply And.intro
-      · rw [← h_rec₁]
-        exact le_of_lt <| lt_of_le_of_lt h h_lt
-      · rw [← h_rec₂]
-        exact h
-  · intro h
+      · exact le_of_lt <| lt_of_le_of_lt h h_lt
+      · exact h
+  · rintro ⟨h₁, h₂⟩
     rw [inf_eq_min, min_def]
     split
-    case inl h_le => sorry
-    case inr h_lt => sorry
+    case inl h_le => exact h₁
+    case inr h_lt => exact h₂
 
+theorem atLeast_qslMax_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
+    i ≤ [qsl| [[f₁]] ⊔ [[f₂]]] s ↔ [sl| [[fun s => i ≤ f₁ s]] ∨ [[fun s => i ≤ f₂ s]]] s := by
+  rw [ qslMax, slOr, Pi.sup_apply, Pi.sup_apply ]
+  apply Iff.intro
+  · intro h
+    rw [sup_eq_max, max_def] at h
+    split at h
+    case inl h_le =>
+      apply Or.inr
+      exact h
+    case inr h_lt =>
+      apply Or.inl
+      rw [not_le] at h_lt
+      exact h
+  · rintro (h | h)
+    · rw [sup_eq_max, max_def]
+      split
+      case inl h_le => refine le_trans h h_le
+      case inr h_lt => exact h
+    · rw [sup_eq_max, max_def]
+      split
+      case inl h_le => exact h
+      case inr h_lt => rw [not_le] at h_lt; refine le_trans h (le_of_lt h_lt)
 
+theorem atLeast_qslAdd_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {values₁ values₂ : Set I}
+    (h_subset₁ : valuesOf f₁ ⊆ values₁) (h_subset₂ : valuesOf f₂ ⊆ values₂) :
+    i ≤ [qsl| [[f₁]] + [[f₂]]] s
+    ↔ ∃ i₁ ∈ values₁, ∃ i₂ ∈ values₂, i ≤ (i₁:ℝ) + i₂ ∧ [sl| [[fun s => i₁ ≤ f₁ s]] ∧ [[fun s => i₂ ≤ f₂ s]]] s := by
+  apply Iff.intro
+  · intro h
+    use (f₁ s), (Set.mem_of_subset_of_mem h_subset₁ valuesOf_of_self)
+    use (f₂ s), (Set.mem_of_subset_of_mem h_subset₂ valuesOf_of_self)
+    rw [ qslAdd, le_truncatedAdd] at h
+    use h, le_rfl
+  · rintro ⟨i₁, _, i₂, _, h_i, h₁, h₂⟩
+    rw [ qslAdd, le_truncatedAdd]
+    rw [ Subtype.mk_le_mk] at h₁ h₂
+    calc (i:ℝ)
+    _ ≤ (i₁:ℝ) + i₂ := h_i
+    _ ≤ (f₁ s) + i₂ := add_le_add_right h₁ ↑i₂
+    _ ≤ (f₁ s) + (f₂ s) := add_le_add_left h₂ (f₁ s)
 
+theorem atLeast_qslMul_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {values₁ values₂ : Set I}
+    (h_subset₁ : valuesOf f₁ ⊆ values₁) (h_subset₂ : valuesOf f₂ ⊆ values₂) :
+    i ≤ [qsl| [[f₁]] · [[f₂]]] s
+    ↔ ∃ i₁ ∈ values₁, ∃ i₂ ∈ values₂, i ≤ i₁ * i₂ ∧ [sl| [[fun s => i₁ ≤ f₁ s]] ∧ [[fun s => i₂ ≤ f₂ s]]] s := by
+  sorry
 
 
 end Qsl2Sl

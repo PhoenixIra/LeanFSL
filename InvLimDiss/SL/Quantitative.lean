@@ -39,6 +39,8 @@ noncomputable def qslMax (P Q : StateRV Var) : StateRV Var := P ⊔ Q
 
 noncomputable def qslAdd (P Q : StateRV Var) : StateRV Var := λ s => truncatedAdd (P s) (Q s)
 
+noncomputable def qslMul (P Q : StateRV Var) : StateRV Var := λ s => P s * Q s
+
 noncomputable def qslSup {α : Type} (P : α → StateRV Var) : StateRV Var := sSup {P x | x : α}
 
 noncomputable def qslInf {α : Type} (P : α → StateRV Var) : StateRV Var := sInf {P x | x : α}
@@ -63,6 +65,7 @@ syntax:max "~" qsl : qsl
 syntax:35 qsl:36 " ⊓ " qsl:35 : qsl
 syntax:30 qsl:31 " ⊔ " qsl:30 : qsl
 syntax:30 qsl:31 " + " qsl:30 : qsl
+syntax:35 qsl:36 " · " qsl:35 : qsl
 syntax:max "S " explicitBinders ". " qsl : qsl
 syntax:max "I " explicitBinders ". " qsl : qsl
 syntax:35 qsl:36 " ⋆ " qsl:35 : qsl
@@ -86,6 +89,7 @@ macro_rules
   | `(term| [qsl| $l:qsl ⊓ $r:qsl]) => `(qslMin [qsl|$l] [qsl|$r])
   | `(term| [qsl| $l:qsl ⊔ $r:qsl]) => `(qslMax [qsl|$l] [qsl|$r])
   | `(term| [qsl| $l:qsl + $r:qsl]) => `(qslAdd [qsl|$l] [qsl|$r])
+  | `(term| [qsl| $l:qsl · $r:qsl]) => `(qslMul [qsl|$l] [qsl|$r])
   | `(term| [qsl| S $xs. $f:qsl]) => do expandExplicitBinders ``qslSup xs (← `([qsl|$f]))
   | `(term| [qsl| I $xs. $f:qsl]) => do expandExplicitBinders ``qslInf xs (← `([qsl|$f]))
   | `(term| [qsl| $l:qsl ⋆ $r:qsl]) => `(qslSepMul [qsl|$l] [qsl|$r])
@@ -103,6 +107,7 @@ macro_rules
   | `(term| [qsl $v:term| $l:qsl ⊓ $r:qsl]) => `(qslMin [qsl $v|$l] [qsl $v|$r])
   | `(term| [qsl $v:term| $l:qsl ⊔ $r:qsl]) => `(qslMax [qsl $v|$l] [qsl $v|$r])
   | `(term| [qsl $v:term| $l:qsl + $r:qsl]) => `(qslAdd [qsl $v|$l] [qsl $v|$r])
+  | `(term| [qsl $v:term| $l:qsl · $r:qsl]) => `(qslMul [qsl $v|$l] [qsl $v|$r])
   | `(term| [qsl $v:term| S $xs. $f:qsl]) => do expandExplicitBinders ``qslSup xs (← `([qsl $v|$f]))
   | `(term| [qsl $v:term| I $xs. $f:qsl]) => do expandExplicitBinders ``qslInf xs (← `([qsl $v|$f]))
   | `(term| [qsl $v:term| $l:qsl ⋆ $r:qsl]) => `(qslSepMul [qsl $v|$l] [qsl $v|$r])
@@ -156,6 +161,7 @@ def requireBracketsMin : TSyntax `qsl → Bool
   | `(qsl| ~ $_:qsl) => false
   | `(qsl| $_:qsl ⋆ $_:qsl) => false
   | `(qsl| $_:qsl ⊓ $_:qsl) => false
+  | `(qsl| $_:qsl · $_:qsl) => false
   | `(qsl| $f:qsl) => !isAtom f
 
 def bracketsMin [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
@@ -177,12 +183,17 @@ def bracketsMax [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (
 
 @[app_unexpander qslMax]
 def unexpandQslMax : Unexpander
-  | `($_ $l $r) => do `([qsl| $(← bracketsMin l) ⊔ $(← bracketsMin r)])
+  | `($_ $l $r) => do `([qsl| $(← bracketsMax l) ⊔ $(← bracketsMax r)])
   | _ => throw ()
 
 @[app_unexpander qslAdd]
 def unexpandQslAdd : Unexpander
-  | `($_ $l $r) => do `([qsl| $(← bracketsMin l) + $(← bracketsMin r)])
+  | `($_ $l $r) => do `([qsl| $(← bracketsMax l) + $(← bracketsMax r)])
+  | _ => throw ()
+
+@[app_unexpander qslMul]
+def unexpandQslMul : Unexpander
+  | `($_ $l $r) => do `([qsl| $(← bracketsMin l) · $(← bracketsMin r)])
   | _ => throw ()
 
 @[app_unexpander qslSup]
@@ -209,6 +220,7 @@ def requireBracketsSepDiv : TSyntax `qsl → Bool
   | `(qsl| $_:qsl -⋆ $_:qsl) => false
   | `(qsl| $_:qsl ⊓ $_:qsl) => false
   | `(qsl| $_:qsl ⋆ $_:qsl) => false
+  | `(qsl| $_:qsl · $_:qsl) => false
   | `(qsl| $_:qsl ⊔ $_:qsl) => false
   | `(qsl| $_:qsl + $_:qsl) => false
   | `(qsl| $f:qsl) => !isAtom f
