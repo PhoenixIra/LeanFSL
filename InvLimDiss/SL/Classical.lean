@@ -62,56 +62,56 @@ syntax:35 sl:36 " ∗ " sl:35 : sl
 syntax:25 sl:26 " -∗ " sl:25 : sl
 syntax "("sl")" : sl
 
-syntax "[sl| " sl " ]" : term
-syntax "[sl| " sl " ⊢ " sl " ]" : term
+syntax "`[sl| " sl " ]" : term
+syntax "`[sl| " sl " ⊢ " sl " ]" : term
 
-syntax "[sl " term " | " sl " ]" : term
-syntax "[sl " term  " | " sl " ⊢ " sl " ]" : term
+syntax "`[sl " term " | " sl " ]" : term
+syntax "`[sl " term  " | " sl " ⊢ " sl " ]" : term
 
 macro_rules
-  | `(term| [sl| emp]) => `(slEmp)
-  | `(term| [sl| $l:term ↦ $r:term]) => `(slPointsTo $l $r)
-  | `(term| [sl| $l:term = $r:term]) => `(slEquals $l $r)
-  | `(term| [sl| [[$t:term]]]) => `($t)
-  | `(term| [sl| ¬ $f:sl]) => `(slNot [sl|$f])
-  | `(term| [sl| $l:sl ∧ $r:sl]) => `(slAnd [sl|$l] [sl|$r])
-  | `(term| [sl| $l:sl ∨ $r:sl]) => `(slOr [sl|$l] [sl|$r])
-  | `(term| [sl| ∃ $xs. $f:sl]) => do expandExplicitBinders ``slExists xs (← `([sl|$f]))
-  | `(term| [sl| ∀ $xs. $f:sl]) => do expandExplicitBinders ``slAll xs (← `([sl|$f]))
-  | `(term| [sl| $l:sl ∗ $r:sl]) => `(slSepCon [sl|$l] [sl|$r])
-  | `(term| [sl| $l:sl -∗ $r:sl]) => `(slSepImp [sl|$l] [sl|$r])
-  | `(term| [sl| ($f:sl)]) => `([sl|$f])
-  | `(term| [sl| $l:sl ⊢ $r:sl]) => `([sl|$l] ≤ [sl|$r])
+  | `(term| `[sl| emp]) => `(slEmp)
+  | `(term| `[sl| $l:term ↦ $r:term]) => `(slPointsTo $l $r)
+  | `(term| `[sl| $l:term = $r:term]) => `(slEquals $l $r)
+  | `(term| `[sl| [[$t:term]]]) => `($t)
+  | `(term| `[sl| ¬ $f:sl]) => `(slNot `[sl|$f])
+  | `(term| `[sl| $l:sl ∧ $r:sl]) => `(slAnd `[sl|$l] `[sl|$r])
+  | `(term| `[sl| $l:sl ∨ $r:sl]) => `(slOr `[sl|$l] `[sl|$r])
+  | `(term| `[sl| ∃ $xs. $f:sl]) => do expandExplicitBinders ``slExists xs (← `(`[sl|$f]))
+  | `(term| `[sl| ∀ $xs. $f:sl]) => do expandExplicitBinders ``slAll xs (← `(`[sl|$f]))
+  | `(term| `[sl| $l:sl ∗ $r:sl]) => `(slSepCon `[sl|$l] `[sl|$r])
+  | `(term| `[sl| $l:sl -∗ $r:sl]) => `(slSepImp `[sl|$l] `[sl|$r])
+  | `(term| `[sl| ($f:sl)]) => `(`[sl|$f])
+  | `(term| `[sl| $l:sl ⊢ $r:sl]) => `(`[sl|$l] ≤ `[sl|$r])
 
-  | `(term| [sl $v:term| emp]) => `(@slEmp $v)
-  | `(term| [sl $v:term| $l:term ↦ $r:term]) => `(@slPointsTo $v $l $r)
-  | `(term| [sl $v:term| $l:term = $r:term]) => `(@slEquals $v $l $r)
-  | `(term| [sl $_| [[$t:term]]]) => `($t)
-  | `(term| [sl $v:term| ¬ $f:sl]) => `(slNot [sl $v|$f])
-  | `(term| [sl $v:term| $l:sl ∧ $r:sl]) => `(slAnd [sl $v|$l] [sl $v|$r])
-  | `(term| [sl $v:term| $l:sl ∨ $r:sl]) => `(slOr [sl $v|$l] [sl $v|$r])
-  | `(term| [sl $v:term| ∃ $xs. $f:sl]) => do expandExplicitBinders ``slExists xs (← `([sl $v|$f]))
-  | `(term| [sl $v:term| ∀ $xs. $f:sl]) => do expandExplicitBinders ``slAll xs (← `([sl $v|$f]))
-  | `(term| [sl $v:term| $l:sl ∗ $r:sl]) => `(slSepCon [sl $v|$l] [sl $v|$r])
-  | `(term| [sl $v:term| $l:sl -∗ $r:sl]) => `(slSepImp [sl $v|$l] [sl $v|$r])
-  | `(term| [sl $v:term| ($f:sl)]) => `([sl $v|$f])
-  | `(term| [sl $v:term | $l:sl ⊢ $r:sl]) => `([sl $v|$l] ≤ [sl $v|$r])
+  | `(term| `[sl $v:term| emp]) => `(@slEmp $v)
+  | `(term| `[sl $v:term| $l:term ↦ $r:term]) => `(@slPointsTo $v $l $r)
+  | `(term| `[sl $v:term| $l:term = $r:term]) => `(@slEquals $v $l $r)
+  | `(term| `[sl $_| [[$t:term]]]) => `($t)
+  | `(term| `[sl $v:term| ¬ $f:sl]) => `(slNot `[sl $v|$f])
+  | `(term| `[sl $v:term| $l:sl ∧ $r:sl]) => `(slAnd `[sl $v|$l] `[sl $v|$r])
+  | `(term| `[sl $v:term| $l:sl ∨ $r:sl]) => `(slOr `[sl $v|$l] `[sl $v|$r])
+  | `(term| `[sl $v:term| ∃ $xs. $f:sl]) => do expandExplicitBinders ``slExists xs (← `(`[sl $v|$f]))
+  | `(term| `[sl $v:term| ∀ $xs. $f:sl]) => do expandExplicitBinders ``slAll xs (← `(`[sl $v|$f]))
+  | `(term| `[sl $v:term| $l:sl ∗ $r:sl]) => `(slSepCon `[sl $v|$l] `[sl $v|$r])
+  | `(term| `[sl $v:term| $l:sl -∗ $r:sl]) => `(slSepImp `[sl $v|$l] `[sl $v|$r])
+  | `(term| `[sl $v:term| ($f:sl)]) => `(`[sl $v|$f])
+  | `(term| `[sl $v:term | $l:sl ⊢ $r:sl]) => `(`[sl $v|$l] ≤ `[sl $v|$r])
 
 open Lean PrettyPrinter Delaborator
 
 
 @[app_unexpander slEmp]
 def unexpandSlEmp : Unexpander
-  | `($_) => `([sl| emp])
+  | `($_) => `(`[sl| emp])
 
 @[app_unexpander slPointsTo]
 def unexpandSlPointsTo : Unexpander
-  | `($_ $l $r) => `([sl| $l:term ↦ $r:term])
+  | `($_ $l $r) => `(`[sl| $l:term ↦ $r:term])
   | _ => throw ()
 
 @[app_unexpander slEquals]
 def unexpandSlEquals : Unexpander
-  | `($_ $l $r) => `([sl| $l:term = $r:term])
+  | `($_ $l $r) => `(`[sl| $l:term = $r:term])
   | _ => throw ()
 
 
@@ -123,9 +123,9 @@ def isAtom : TSyntax `sl → Bool
 
 @[app_unexpander slNot]
 def unexpandSlNot : Unexpander
-  | `($_ [sl|$t]) =>
-    if isAtom t then `([sl| ¬ $t]) else `([sl| ¬ ($t)])
-  | `($_ $t) => `([sl| ¬ [[$t]]])
+  | `($_ `[sl|$t]) =>
+    if isAtom t then `(`[sl| ¬ $t]) else `(`[sl| ¬ ($t)])
+  | `($_ $t) => `(`[sl| ¬ [[$t]]])
   | _ => throw ()
 
 def requireBracketsAnd : TSyntax `sl → Bool
@@ -135,12 +135,12 @@ def requireBracketsAnd : TSyntax `sl → Bool
   | `(sl| $f:sl) => !isAtom f
 
 def bracketsAnd [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `sl)
-  | `(term| [sl|$f:sl]) => if requireBracketsAnd f then `(sl| ( $f ) ) else `(sl| $f )
+  | `(term| `[sl|$f:sl]) => if requireBracketsAnd f then `(sl| ( $f ) ) else `(sl| $f )
   | `(term| $t:term) => `(sl|[[$t]])
 
 @[app_unexpander slAnd]
 def unexpandSlAnd : Unexpander
-  | `($_ $l $r) => do `([sl| $(← bracketsAnd l) ∧ $(← bracketsAnd r)])
+  | `($_ $l $r) => do `(`[sl| $(← bracketsAnd l) ∧ $(← bracketsAnd r)])
   | _ => throw ()
 
 def requireBracketsOr : TSyntax `sl → Bool
@@ -148,31 +148,31 @@ def requireBracketsOr : TSyntax `sl → Bool
   | `(sl| $f:sl) => !isAtom f
 
 def bracketsOr [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `sl)
-  | `(term| [sl|$f:sl]) => if requireBracketsAnd f then `(sl| ( $f ) ) else `(sl| $f )
+  | `(term| `[sl|$f:sl]) => if requireBracketsAnd f then `(sl| ( $f ) ) else `(sl| $f )
   | `(term| $t:term) => `(sl|[[$t]])
 
 @[app_unexpander slOr]
 def unexpandSlOr : Unexpander
-  | `($_ $l $r) => do `([sl| $(← bracketsOr l) ∨ $(← bracketsOr r)])
+  | `($_ $l $r) => do `(`[sl| $(← bracketsOr l) ∨ $(← bracketsOr r)])
   | _ => throw ()
 
 @[app_unexpander slExists]
 def unexpandSlExists : Unexpander
-  | `($_ fun $x:ident => [sl| ∃ $y:ident $[$z:ident]*. $f]) =>
-    `([sl| ∃ $x:ident $y:ident $[$z:ident]*. $f])
-  | `($_ fun $x:ident => [sl|$f:sl]) => `([sl| ∃ $x:ident. $f])
+  | `($_ fun $x:ident => `[sl| ∃ $y:ident $[$z:ident]*. $f]) =>
+    `(`[sl| ∃ $x:ident $y:ident $[$z:ident]*. $f])
+  | `($_ fun $x:ident => `[sl|$f:sl]) => `(`[sl| ∃ $x:ident. $f])
   | _ => throw ()
 
 @[app_unexpander slAll]
 def unexpandSlAll : Unexpander
-  | `($_ fun $x:ident => [sl| ∀ $y:ident $[$z:ident]*. $f]) =>
-    `([sl| ∀ $x:ident $y:ident $[$z:ident]*. $f])
-  | `($_ fun $x:ident => [sl|$f:sl]) => `([sl| ∀ $x:ident. $f])
+  | `($_ fun $x:ident => `[sl| ∀ $y:ident $[$z:ident]*. $f]) =>
+    `(`[sl| ∀ $x:ident $y:ident $[$z:ident]*. $f])
+  | `($_ fun $x:ident => `[sl|$f:sl]) => `(`[sl| ∀ $x:ident. $f])
   | _ => throw ()
 
 @[app_unexpander slSepCon]
 def unexpandSlSepCon : Unexpander
-  | `($_ $l $r) => do `([sl| $(← bracketsAnd l) ∗ $(← bracketsAnd r)])
+  | `($_ $l $r) => do `(`[sl| $(← bracketsAnd l) ∗ $(← bracketsAnd r)])
   | _ => throw ()
 
 def requireBracketsSepImp : TSyntax `sl → Bool
@@ -184,26 +184,26 @@ def requireBracketsSepImp : TSyntax `sl → Bool
   | `(sl| $f:sl) => !isAtom f
 
 def bracketsSepImp [Monad m] [MonadRef m] [MonadQuotation m] : TSyntax `term → m (TSyntax `sl)
-  | `(term| [sl|$f:sl]) => if requireBracketsSepImp f then `(sl| ( $f ) ) else `(sl| $f )
+  | `(term| `[sl|$f:sl]) => if requireBracketsSepImp f then `(sl| ( $f ) ) else `(sl| $f )
   | `(term| $t:term) => `(sl|[[$t]])
 
 @[app_unexpander slSepImp]
 def unexpandSlSepImp : Unexpander
-  | `($_ [sl| $l -∗ $r] $f) => do `([sl| ($l -∗ $r) -∗ $(← bracketsSepImp f)])
-  | `($_ $l $r) => do `([sl| $(← bracketsSepImp l) -∗ $(← bracketsSepImp r)])
+  | `($_ `[sl| $l -∗ $r] $f) => do `(`[sl| ($l -∗ $r) -∗ $(← bracketsSepImp f)])
+  | `($_ $l $r) => do `(`[sl| $(← bracketsSepImp l) -∗ $(← bracketsSepImp r)])
   | _ => throw ()
 
 -- def bracketsEntailment [Monad m] [MonadRef m] [MonadQuotation m] : TSyntax `term → m (TSyntax `sl)
---   | `(term| [sl|$f:sl]) => `(sl| $f)
+--   | `(term| `[sl|$f:sl]) => `(sl| $f)
 --   | `(term| $f ) => `(sl| [[$f]])
 
 -- @[app_unexpander LE.le]
 -- def unexpandSlEntail : Unexpander
---   | `($_ $l $r) => do `([sl| $(← bracketsEntailment l) ⊢ $(← bracketsEntailment r)])
+--   | `($_ $l $r) => do `(`[sl| $(← bracketsEntailment l) ⊢ $(← bracketsEntailment r)])
 --   | _ => throw ()
 
 
--- example : [sl Var| emp ∧ ∀ (x:ℚ). ¬ (emp ∨ (emp ∨ emp) ∗ emp) ⊢ (∃ (x:ℚ). emp -∗ emp ∧ emp -∗ emp) ∧ emp] := sorry
+-- example : `[sl Var| emp ∧ ∀ (x:ℚ). ¬ (emp ∨ (emp ∨ emp) ∗ emp) ⊢ (∃ (x:ℚ). emp -∗ emp ∧ emp -∗ emp) ∧ emp] := sorry
 
 
 

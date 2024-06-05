@@ -2,12 +2,12 @@ import InvLimDiss.SL.Quantitative
 
 namespace QSL
 
-open unitInterval
+open unitInterval State
 
 variable {Var : Type}
 
 theorem monotone_qslSepCon {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₁ ⊢ P₂) (h_Q : Q₁ ⊢ Q₂) :
-    [qsl Var| [[P₁]] ⋆ [[Q₁]] ⊢ [[P₂]] ⋆ [[Q₂]]] := by
+    `[qsl Var| [[P₁]] ⋆ [[Q₁]] ⊢ [[P₂]] ⋆ [[Q₂]]] := by
   intro ⟨s,heap⟩
   apply sSup_le
   simp only [Set.mem_setOf_eq, forall_exists_index, and_imp]
@@ -24,7 +24,7 @@ theorem monotone_qslSepCon {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₁ ⊢ P
   · exact nonneg'
 
 theorem monotone_qslSepImp {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₂ ⊢ P₁) (h_Q : Q₁ ⊢ Q₂) :
-    [qsl| [[P₁]] -⋆ [[Q₁]] ⊢ [[P₂]] -⋆ [[Q₂]]] := by
+    `[qsl| [[P₁]] -⋆ [[Q₁]] ⊢ [[P₂]] -⋆ [[Q₂]]] := by
   intro ⟨s,heap⟩
   apply le_sInf
   simp only [Set.mem_setOf_eq, forall_exists_index, and_imp]
@@ -42,7 +42,7 @@ theorem monotone_qslSepImp {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₂ ⊢ P
 
 -- adjointness of sepcon and sepimp
 theorem le_qslSepImp_iff_qslSepCon_le (P₁ P₂ P₃ : StateRV Var) :
-    [qsl| [[P₁]] ⊢ [[P₂]] -⋆ [[P₃]]] ↔ [qsl| [[P₁]] ⋆ [[P₂]] ⊢ [[P₃]]] := by
+    `[qsl| [[P₁]] ⊢ [[P₂]] -⋆ [[P₃]]] ↔ `[qsl| [[P₁]] ⋆ [[P₂]] ⊢ [[P₃]]] := by
   apply Iff.intro
   case mp =>
     intro h ⟨s,heap⟩
@@ -72,7 +72,7 @@ theorem le_qslSepImp_iff_qslSepCon_le (P₁ P₂ P₃ : StateRV Var) :
 
 -- modus ponens of sepimp and sepcon
 theorem qslSepCon_qslSepImp_entail (P₁ P₂ : StateRV Var) :
-    [qsl| ([[P₁]] -⋆ [[P₂]]) ⋆ [[P₁]] ⊢ [[P₂]]] := by
+    `[qsl| ([[P₁]] -⋆ [[P₂]]) ⋆ [[P₁]] ⊢ [[P₂]]] := by
   rintro ⟨s,heap⟩
   apply sSup_le
   simp only [Set.mem_setOf_eq, forall_exists_index, and_imp]
@@ -88,8 +88,35 @@ theorem qslSepCon_qslSepImp_entail (P₁ P₂ : StateRV Var) :
     simp only [Set.mem_setOf_eq]
     exists heap₂
 
+theorem qslSup_apply (P : α → StateRV Var) (s : State Var) :
+    `[qsl| S x. [[P x]]] s = sSup {y | ∃ x, P x s = y} := by
+  rw [qslSup, sSup_apply, iSup, Set.range]
+  simp only [Subtype.exists, exists_prop]
+  apply le_antisymm
+  · apply sSup_le_sSup
+    rintro i ⟨P', ⟨⟨x, hx⟩, hP'⟩⟩
+    use x
+    rw [hx, hP']
+  · apply sSup_le_sSup
+    rintro i ⟨x, hx⟩
+    use (P x)
+    refine And.intro ?_ hx
+    use x
 
-
+theorem qslInf_apply (P : α → StateRV Var) (s : State Var) :
+    `[qsl| I x. [[P x]]] s = sInf {y | ∃ x, P x s = y} := by
+  rw [qslInf, sInf_apply, iInf, Set.range]
+  simp only [Subtype.exists, exists_prop]
+  apply le_antisymm
+  · apply sInf_le_sInf
+    intro i ⟨x, hx⟩
+    use (P x)
+    refine And.intro ?_ hx
+    use x
+  · apply sInf_le_sInf
+    intro i ⟨P', ⟨⟨x, hx⟩, hP'⟩⟩
+    use x
+    rw [hx, hP']
 
 
 end QSL

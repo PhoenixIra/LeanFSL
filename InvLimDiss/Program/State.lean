@@ -21,17 +21,21 @@ instance : Coe ℚ HeapValue where
 
 
 def Stack (Variable : Type) : Type := Variable → ℚ
+
 def Heap : Type := ℕ → HeapValue
 
 structure State (Variable : Type) where
   stack : Stack Variable
   heap : Heap
 
-def mkState {Variable : Type} (s : Stack Variable) (h : Heap) : State Variable where
-  stack := s
-  heap := h
-
 variable {Var : Type}
+
+
+theorem nonempty_stack : Nonempty (Stack Var) := ⟨fun _ => 0⟩
+
+theorem nonempty_heap : Nonempty Heap := ⟨fun _ => undef⟩
+
+theorem nonempty_state : Nonempty (State Var) := ⟨fun _ => 0, fun _ => undef⟩
 
 
 noncomputable def substituteStack

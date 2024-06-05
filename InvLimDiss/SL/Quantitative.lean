@@ -27,7 +27,7 @@ noncomputable def qslPointsTo (loc val : ValueExp Var) : StateRV Var :=
 noncomputable def qslEquals (e e' : ValueExp Var) : StateRV Var :=
     λ s => iteOneZero (e s.stack = e' s.stack)
 
-noncomputable def qslReal (p : I) : StateRV Var := λ _ => p
+noncomputable def qslReal (e : ProbExp Var) : StateRV Var := λ ⟨s,_⟩ => e s
 
 noncomputable def qslIverson (P : State Var → Prop) : StateRV Var := λ s => iteOneZero (P s)
 
@@ -72,74 +72,74 @@ syntax:35 qsl:36 " ⋆ " qsl:35 : qsl
 syntax:25 qsl:26 " -⋆ " qsl:25 : qsl
 syntax "("qsl")" : qsl
 
-syntax "[qsl| " qsl " ]" : term
-syntax "[qsl| " qsl " ⊢ " qsl " ]" : term
+syntax "`[qsl| " qsl " ]" : term
+syntax "`[qsl| " qsl " ⊢ " qsl " ]" : term
 
-syntax "[qsl " term " | " qsl " ]" : term
-syntax "[qsl " term " | " qsl " ⊢ " qsl " ]" : term
+syntax "`[qsl " term " | " qsl " ]" : term
+syntax "`[qsl " term " | " qsl " ⊢ " qsl " ]" : term
 
 macro_rules
-  | `(term| [qsl| emp]) => `(qslEmp)
-  | `(term| [qsl| $l:term ↦ $r:term]) => `(qslPointsTo $l $r)
-  | `(term| [qsl| $l:term = $r:term]) => `(qslEquals $l $r)
-  | `(term| [qsl| [[$t:term]]]) => `($t)
-  | `(term| [qsl| < $t:term >]) => `(qslReal $t)
-  | `(term| [qsl| ⁅$t:term⁆]) => `(qslIverson $t)
-  | `(term| [qsl| ~ $f:qsl]) => `(qslNot [qsl|$f])
-  | `(term| [qsl| $l:qsl ⊓ $r:qsl]) => `(qslMin [qsl|$l] [qsl|$r])
-  | `(term| [qsl| $l:qsl ⊔ $r:qsl]) => `(qslMax [qsl|$l] [qsl|$r])
-  | `(term| [qsl| $l:qsl + $r:qsl]) => `(qslAdd [qsl|$l] [qsl|$r])
-  | `(term| [qsl| $l:qsl · $r:qsl]) => `(qslMul [qsl|$l] [qsl|$r])
-  | `(term| [qsl| S $xs. $f:qsl]) => do expandExplicitBinders ``qslSup xs (← `([qsl|$f]))
-  | `(term| [qsl| I $xs. $f:qsl]) => do expandExplicitBinders ``qslInf xs (← `([qsl|$f]))
-  | `(term| [qsl| $l:qsl ⋆ $r:qsl]) => `(qslSepMul [qsl|$l] [qsl|$r])
-  | `(term| [qsl| $l:qsl -⋆ $r:qsl]) => `(qslSepDiv [qsl|$l] [qsl|$r])
-  | `(term| [qsl| ($f:qsl)]) => `([qsl|$f])
-  | `(term| [qsl| $l:qsl ⊢ $r:qsl]) => `([qsl|$l] ≤ [qsl|$r])
+  | `(term| `[qsl| emp]) => `(qslEmp)
+  | `(term| `[qsl| $l:term ↦ $r:term]) => `(qslPointsTo $l $r)
+  | `(term| `[qsl| $l:term = $r:term]) => `(qslEquals $l $r)
+  | `(term| `[qsl| [[$t:term]]]) => `($t)
+  | `(term| `[qsl| < $t:term >]) => `(qslReal $t)
+  | `(term| `[qsl| ⁅$t:term⁆]) => `(qslIverson $t)
+  | `(term| `[qsl| ~ $f:qsl]) => `(qslNot `[qsl|$f])
+  | `(term| `[qsl| $l:qsl ⊓ $r:qsl]) => `(qslMin `[qsl|$l] `[qsl|$r])
+  | `(term| `[qsl| $l:qsl ⊔ $r:qsl]) => `(qslMax `[qsl|$l] `[qsl|$r])
+  | `(term| `[qsl| $l:qsl + $r:qsl]) => `(qslAdd `[qsl|$l] `[qsl|$r])
+  | `(term| `[qsl| $l:qsl · $r:qsl]) => `(qslMul `[qsl|$l] `[qsl|$r])
+  | `(term| `[qsl| S $xs. $f:qsl]) => do expandExplicitBinders ``qslSup xs (← `(`[qsl|$f]))
+  | `(term| `[qsl| I $xs. $f:qsl]) => do expandExplicitBinders ``qslInf xs (← `(`[qsl|$f]))
+  | `(term| `[qsl| $l:qsl ⋆ $r:qsl]) => `(qslSepMul `[qsl|$l] `[qsl|$r])
+  | `(term| `[qsl| $l:qsl -⋆ $r:qsl]) => `(qslSepDiv `[qsl|$l] `[qsl|$r])
+  | `(term| `[qsl| ($f:qsl)]) => `(`[qsl|$f])
+  | `(term| `[qsl| $l:qsl ⊢ $r:qsl]) => `(`[qsl|$l] ≤ `[qsl|$r])
 
-  | `(term| [qsl $v:term| emp]) => `(@qslEmp $v)
-  | `(term| [qsl $v:term| $l:term ↦ $r:term]) => `(@qslPointsTo $v $l $r)
-  | `(term| [qsl $v:term| $l:term = $r:term]) => `(@qslEquals $v $l $r)
-  | `(term| [qsl $_| [[$t:term]]]) => `($t)
-  | `(term| [qsl $v:term| <$t:term>]) => `(@qslReal $v $t)
-  | `(term| [qsl $v:term| ⁅$t:term⁆]) => `(@qslIverson $v $t)
-  | `(term| [qsl $v:term| ~ $f:qsl]) => `(qslNot [qsl $v|$f])
-  | `(term| [qsl $v:term| $l:qsl ⊓ $r:qsl]) => `(qslMin [qsl $v|$l] [qsl $v|$r])
-  | `(term| [qsl $v:term| $l:qsl ⊔ $r:qsl]) => `(qslMax [qsl $v|$l] [qsl $v|$r])
-  | `(term| [qsl $v:term| $l:qsl + $r:qsl]) => `(qslAdd [qsl $v|$l] [qsl $v|$r])
-  | `(term| [qsl $v:term| $l:qsl · $r:qsl]) => `(qslMul [qsl $v|$l] [qsl $v|$r])
-  | `(term| [qsl $v:term| S $xs. $f:qsl]) => do expandExplicitBinders ``qslSup xs (← `([qsl $v|$f]))
-  | `(term| [qsl $v:term| I $xs. $f:qsl]) => do expandExplicitBinders ``qslInf xs (← `([qsl $v|$f]))
-  | `(term| [qsl $v:term| $l:qsl ⋆ $r:qsl]) => `(qslSepMul [qsl $v|$l] [qsl $v|$r])
-  | `(term| [qsl $v:term| $l:qsl -⋆ $r:qsl]) => `(qslSepDiv [qsl $v|$l] [qsl $v|$r])
-  | `(term| [qsl $v:term| ($f:qsl)]) => `([qsl $v|$f])
-  | `(term| [qsl $v:term | $l:qsl ⊢ $r:qsl]) => `([qsl $v|$l] ≤ [qsl $v|$r])
+  | `(term| `[qsl $v:term| emp]) => `(@qslEmp $v)
+  | `(term| `[qsl $v:term| $l:term ↦ $r:term]) => `(@qslPointsTo $v $l $r)
+  | `(term| `[qsl $v:term| $l:term = $r:term]) => `(@qslEquals $v $l $r)
+  | `(term| `[qsl $_| [[$t:term]]]) => `($t)
+  | `(term| `[qsl $v:term| <$t:term>]) => `(@qslReal $v $t)
+  | `(term| `[qsl $v:term| ⁅$t:term⁆]) => `(@qslIverson $v $t)
+  | `(term| `[qsl $v:term| ~ $f:qsl]) => `(qslNot `[qsl $v|$f])
+  | `(term| `[qsl $v:term| $l:qsl ⊓ $r:qsl]) => `(qslMin `[qsl $v|$l] `[qsl $v|$r])
+  | `(term| `[qsl $v:term| $l:qsl ⊔ $r:qsl]) => `(qslMax `[qsl $v|$l] `[qsl $v|$r])
+  | `(term| `[qsl $v:term| $l:qsl + $r:qsl]) => `(qslAdd `[qsl $v|$l] `[qsl $v|$r])
+  | `(term| `[qsl $v:term| $l:qsl · $r:qsl]) => `(qslMul `[qsl $v|$l] `[qsl $v|$r])
+  | `(term| `[qsl $v:term| S $xs. $f:qsl]) => do expandExplicitBinders ``qslSup xs (← `(`[qsl $v|$f]))
+  | `(term| `[qsl $v:term| I $xs. $f:qsl]) => do expandExplicitBinders ``qslInf xs (← `(`[qsl $v|$f]))
+  | `(term| `[qsl $v:term| $l:qsl ⋆ $r:qsl]) => `(qslSepMul `[qsl $v|$l] `[qsl $v|$r])
+  | `(term| `[qsl $v:term| $l:qsl -⋆ $r:qsl]) => `(qslSepDiv `[qsl $v|$l] `[qsl $v|$r])
+  | `(term| `[qsl $v:term| ($f:qsl)]) => `(`[qsl $v|$f])
+  | `(term| `[qsl $v:term | $l:qsl ⊢ $r:qsl]) => `(`[qsl $v|$l] ≤ `[qsl $v|$r])
 
 
 open Lean PrettyPrinter Delaborator
 
 @[app_unexpander qslEmp]
 def unexpandQslEmp : Unexpander
-  | `($_) => `([qsl| emp])
+  | `($_) => `(`[qsl| emp])
 
 @[app_unexpander qslPointsTo]
 def unexpandQslPointsTo : Unexpander
-  | `($_ $l $r) => `([qsl| $l:term ↦ $r:term])
+  | `($_ $l $r) => `(`[qsl| $l:term ↦ $r:term])
   | _ => throw ()
 
 @[app_unexpander qslEquals]
 def unexpandQslEquals : Unexpander
-  | `($_ $l $r) => `([qsl| $l:term = $r:term])
+  | `($_ $l $r) => `(`[qsl| $l:term = $r:term])
   | _ => throw ()
 
 @[app_unexpander qslReal]
 def unexpandQslReal : Unexpander
-  | `($_ $t) => `([qsl| < $t:term >])
+  | `($_ $t) => `(`[qsl| < $t:term >])
   | _ => throw ()
 
 @[app_unexpander qslIverson]
 def unexpandQslIverson : Unexpander
-  | `($_ $t) => `([qsl| ⁅$t:term⁆])
+  | `($_ $t) => `(`[qsl| ⁅$t:term⁆])
   | _ => throw ()
 
 def isAtom : TSyntax `qsl → Bool
@@ -152,9 +152,9 @@ def isAtom : TSyntax `qsl → Bool
 
 @[app_unexpander qslNot]
 def unexpandQslNot : Unexpander
-  | `($_ [qsl|$t]) =>
-    if isAtom t then `([qsl| ~ $t]) else `([qsl| ~ ($t)])
-  | `($_ $t) => `([qsl| ~ [[$t]]])
+  | `($_ `[qsl|$t]) =>
+    if isAtom t then `(`[qsl| ~ $t]) else `(`[qsl| ~ ($t)])
+  | `($_ $t) => `(`[qsl| ~ [[$t]]])
   | _ => throw ()
 
 def requireBracketsMin : TSyntax `qsl → Bool
@@ -165,12 +165,12 @@ def requireBracketsMin : TSyntax `qsl → Bool
   | `(qsl| $f:qsl) => !isAtom f
 
 def bracketsMin [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
-  | `(term| [qsl|$f:qsl]) => if requireBracketsMin f then `(qsl| ( $f ) ) else `(qsl| $f )
+  | `(term| `[qsl|$f:qsl]) => if requireBracketsMin f then `(qsl| ( $f ) ) else `(qsl| $f )
   | `(term| $t:term) => `(qsl|[[$t]])
 
 @[app_unexpander qslMin]
 def unexpandQslMin : Unexpander
-  | `($_ $l $r) => do `([qsl| $(← bracketsMin l) ⊓ $(← bracketsMin r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsMin l) ⊓ $(← bracketsMin r)])
   | _ => throw ()
 
 def requireBracketsMax : TSyntax `qsl → Bool
@@ -178,41 +178,41 @@ def requireBracketsMax : TSyntax `qsl → Bool
   | `(qsl| $f:qsl) => !isAtom f
 
 def bracketsMax [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
-  | `(term| [qsl|$f:qsl]) => if requireBracketsMax f then `(qsl| ( $f ) ) else `(qsl| $f )
+  | `(term| `[qsl|$f:qsl]) => if requireBracketsMax f then `(qsl| ( $f ) ) else `(qsl| $f )
   | `(term| $t:term) => `(qsl|[[$t]])
 
 @[app_unexpander qslMax]
 def unexpandQslMax : Unexpander
-  | `($_ $l $r) => do `([qsl| $(← bracketsMax l) ⊔ $(← bracketsMax r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsMax l) ⊔ $(← bracketsMax r)])
   | _ => throw ()
 
 @[app_unexpander qslAdd]
 def unexpandQslAdd : Unexpander
-  | `($_ $l $r) => do `([qsl| $(← bracketsMax l) + $(← bracketsMax r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsMax l) + $(← bracketsMax r)])
   | _ => throw ()
 
 @[app_unexpander qslMul]
 def unexpandQslMul : Unexpander
-  | `($_ $l $r) => do `([qsl| $(← bracketsMin l) · $(← bracketsMin r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsMin l) · $(← bracketsMin r)])
   | _ => throw ()
 
 @[app_unexpander qslSup]
 def unexpandQslSup : Unexpander
-  | `($_ fun $x:ident => [qsl| S $y:ident $[$z:ident]*. $f]) =>
-    `([qsl| S $x:ident $y:ident $[$z:ident]*. $f])
-  | `($_ fun $x:ident => [qsl|$f:qsl]) => `([qsl| S $x:ident. $f])
+  | `($_ fun $x:ident => `[qsl| S $y:ident $[$z:ident]*. $f]) =>
+    `(`[qsl| S $x:ident $y:ident $[$z:ident]*. $f])
+  | `($_ fun $x:ident => `[qsl|$f:qsl]) => `(`[qsl| S $x:ident. $f])
   | _ => throw ()
 
 @[app_unexpander qslInf]
 def unexpandQslInf : Unexpander
-  | `($_ fun $x:ident => [qsl| I $y:ident $[$z:ident]*. $f]) =>
-    `([qsl| I $x:ident $y:ident $[$z:ident]*. $f])
-  | `($_ fun $x:ident => [qsl|$f:qsl]) => `([qsl| I $x:ident. $f])
+  | `($_ fun $x:ident => `[qsl| I $y:ident $[$z:ident]*. $f]) =>
+    `(`[qsl| I $x:ident $y:ident $[$z:ident]*. $f])
+  | `($_ fun $x:ident => `[qsl|$f:qsl]) => `(`[qsl| I $x:ident. $f])
   | _ => throw ()
 
 @[app_unexpander qslSepMul]
 def unexpandQslSepMul : Unexpander
-  | `($_ $l $r) => do `([qsl| $(← bracketsMin l) ⋆ $(← bracketsMin r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsMin l) ⋆ $(← bracketsMin r)])
   | _ => throw ()
 
 def requireBracketsSepDiv : TSyntax `qsl → Bool
@@ -226,22 +226,22 @@ def requireBracketsSepDiv : TSyntax `qsl → Bool
   | `(qsl| $f:qsl) => !isAtom f
 
 def bracketsSepDiv [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
-  | `(term| [qsl|$f:qsl]) => if requireBracketsSepDiv f then `(qsl| ( $f ) ) else `(qsl| $f )
+  | `(term| `[qsl|$f:qsl]) => if requireBracketsSepDiv f then `(qsl| ( $f ) ) else `(qsl| $f )
   | `(term| $t:term) => `(qsl|[[$t]])
 
 @[app_unexpander qslSepDiv]
 def unexpandQslSepDiv : Unexpander
-  | `($_ [qsl|$l -⋆ $r] $f) => do `([qsl| ($l -⋆ $r) -⋆ $(← bracketsSepDiv f)])
-  | `($_ $l $r) => do `([qsl| $(← bracketsSepDiv l) -⋆ $(← bracketsSepDiv r)])
+  | `($_ `[qsl|$l -⋆ $r] $f) => do `(`[qsl| ($l -⋆ $r) -⋆ $(← bracketsSepDiv f)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsSepDiv l) -⋆ $(← bracketsSepDiv r)])
   | _ => throw ()
 
 -- @[app_unexpander LE.le]
 -- def unexpandSlEntail : Unexpander
---   | `($_ [qsl|$l:qsl] [qsl|$r:qsl]) => do `([qsl| $l ⊢ $r])
+--   | `($_ `[qsl|$l:qsl] `[qsl|$r:qsl]) => do `(`[qsl| $l ⊢ $r])
 --   | _ => throw ()
 
 
--- example : [qsl Var| emp ⊔ I (x:ℚ). ~ (emp ⊔ (emp ⊔ emp) ⋆ emp) ⊢ (S (x:ℚ). emp -⋆ emp + emp -⋆ emp) ⊓ emp] := sorry
+-- example : `[qsl Var| emp ⊔ I (x:ℚ). ~ (emp ⊔ (emp ⊔ emp) ⋆ emp) ⊢ (S (x:ℚ). emp -⋆ emp + emp -⋆ emp) ⊓ emp] := sorry
 
 
 end QSL
