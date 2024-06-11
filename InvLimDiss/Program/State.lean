@@ -1,18 +1,18 @@
 import Mathlib.Data.Rat.Defs
 import Mathlib.Data.Set.Finite
+import Mathlib.Algebra.Order.Ring.Nat
+import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
 
 /-
 This file contains definitions and lemmas about program states, i.e. stack-heap pairs.
 -/
 
-namespace State
 
 open Rat Classical
 
 inductive HeapValue
   | val : ℚ → HeapValue
   | undef : HeapValue
-  | conflict : HeapValue
 
 open HeapValue
 
@@ -30,12 +30,13 @@ structure State (Variable : Type) where
 
 variable {Var : Type}
 
+namespace State
 
-theorem nonempty_stack : Nonempty (Stack Var) := ⟨fun _ => 0⟩
+instance inhabited_stack : Inhabited (Stack Var) := ⟨fun _ => 0⟩
 
-theorem nonempty_heap : Nonempty Heap := ⟨fun _ => undef⟩
+instance inhabited_heap : Inhabited Heap := ⟨fun _ => undef⟩
 
-theorem nonempty_state : Nonempty (State Var) := ⟨fun _ => 0, fun _ => undef⟩
+instance inhabited_state : Inhabited (State Var) := ⟨fun _ => 0, fun _ => undef⟩
 
 
 noncomputable def substituteStack
@@ -193,7 +194,9 @@ theorem isNotAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
     · intro h
       rw [Nat.add_succ] at h
       apply And.intro
-      · exact h (l+n) le_self_add (Nat.lt_succ.mpr le_rfl)
+      · apply h (l+n)
+        · exact le_self_add
+        · exact(Nat.lt_succ.mpr le_rfl)
       · have : ∀ l', l ≤ l' → l' < l + n → s.heap l' = undef := by
           intro l' h_le h_lt
           exact h l' h_le (Nat.lt_succ.mpr <| le_of_lt h_lt)
@@ -238,7 +241,7 @@ theorem allocateHeap_heap {s : State Var} {l : ℕ} {n : ℕ} :
   · intro l' h_l₁ h_l₂
     induction n with
     | zero =>
-      rw [Nat.zero_eq, add_zero] at h_l₂
+      rw [add_zero] at h_l₂
       exfalso
       exact not_le_of_lt h_l₂ h_l₁
     | succ n ih =>
@@ -274,7 +277,7 @@ lemma allocateHeap_remain (s : State Var) (l : ℕ) (n : ℕ) :
 lemma allocateHeap_change (s : State Var) (l : ℕ) (n : ℕ) :
     ∀ l', l ≤ l' → l' < l+n → (allocateHeap s l n).heap l' = val 0 := by
   induction n with
-  | zero => intro l' h_le h_lt; rw [Nat.zero_eq, add_zero] at h_lt; exfalso; exact not_le_of_lt h_lt h_le
+  | zero => intro l' h_le h_lt; rw [add_zero] at h_lt; exfalso; exact not_le_of_lt h_lt h_le
   | succ n ih =>
     intro l' h_le h_lt
     unfold allocateHeap
@@ -374,7 +377,7 @@ theorem freeHeap_heap {s : State Var} {l : ℕ} {n : ℕ} :
   · intro l' h_l₁ h_l₂
     induction n with
     | zero =>
-      rw [Nat.zero_eq, add_zero] at h_l₂
+      rw [add_zero] at h_l₂
       exfalso
       exact not_le_of_lt h_l₂ h_l₁
     | succ n ih =>
@@ -410,7 +413,7 @@ lemma freeHeap_remain (s : State Var) (l : ℕ) (n : ℕ) :
 lemma freeHeap_change (s : State Var) (l : ℕ) (n : ℕ) :
     ∀ l', l ≤ l' → l' < l+n → (freeHeap s l n).heap l' = undef := by
   induction n with
-  | zero => intro l' h_le h_lt; rw [Nat.zero_eq, add_zero] at h_lt; exfalso; exact not_le_of_lt h_lt h_le
+  | zero => intro l' h_le h_lt; rw [add_zero] at h_lt; exfalso; exact not_le_of_lt h_lt h_le
   | succ n ih =>
     intro l' h_le h_lt
     unfold freeHeap
@@ -442,52 +445,129 @@ theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
 
   def disjoint (h₁ h₂ : Heap) : Prop := ∀ n, h₁ n = undef ∨ h₂ n = undef
 
-  theorem disjoint_symm (h₁ h₂ : Heap) (h : disjoint h₁ h₂) : disjoint h₂ h₁ := fun n => Or.symm (h n)
+  theorem disjoint.symm {h₁ h₂ : Heap} (h : disjoint h₁ h₂) : disjoint h₂ h₁ := fun n => Or.symm (h n)
 
-  theorem disjoint_comm (h₁ h₂ : Heap) : disjoint h₁ h₂ ↔ disjoint h₂ h₁ :=
-    ⟨fun h => disjoint_symm h₁ h₂ h, fun h => disjoint_symm h₂ h₁ h⟩
+  theorem disjoint.comm (h₁ h₂ : Heap) : disjoint h₁ h₂ ↔ disjoint h₂ h₁ :=
+    ⟨fun h => h.symm, fun h => h.symm⟩
 
   instance union : Union Heap
     where union := λ h h' n =>
       match h n with
-      | val a =>
-        match h' n with
-        | val _ => conflict
-        | undef => val a
-        | conflict => conflict
+      | val a => val a
       | undef => h' n
-      | conflict => conflict
 
-  theorem union_comm (h₁ h₂ : Heap) : h₁ ∪ h₂ = h₂ ∪ h₁ := by
+  theorem union_comm (heap₁ heap₂ : Heap) (h_disjoint : disjoint heap₁ heap₂) :
+      heap₁ ∪ heap₂ = heap₂ ∪ heap₁ := by
     apply funext
     intro n
     simp only [union]
     split
-    case h_1 h => rw [h]
+    case h_1 h₁ =>
+      split
+      case h_1 h₂ =>
+        cases h_disjoint n with
+        | inl h₁' => rw [h₁'] at h₁; cases h₁
+        | inr h₂' => rw [h₂'] at h₂; cases h₂
+      case h_2 _ =>
+        exact h₁.symm
     case h_2 h =>
       split
       case h_1 h' => exact h'
       case h_2 h' => rw [h, h']
-      case h_3 h' => exact h'
-    case h_3 h => rw [h]; split; all_goals (rfl)
 
-  theorem union_assoc (h₁ h₂ h₃ : Heap)  :
-      (h₁ ∪ h₂) ∪ h₃ = h₁ ∪ (h₂ ∪ h₃) := by
+  theorem union_assoc (heap₁ heap₂ heap₃ : Heap)  :
+      (heap₁ ∪ heap₂) ∪ heap₃ = heap₁ ∪ (heap₂ ∪ heap₃) := by
     apply funext
     intro n
     simp only [union]
-    cases h₁ n
-    <;> cases h₂ n
-    <;> cases h₃ n
+    cases heap₁ n
+    <;> cases heap₂ n
+    <;> cases heap₃ n
     <;> simp
+
 
   instance emptyHeap : EmptyCollection Heap := ⟨λ _ => undef⟩
 
-  theorem emptyHeap_disjoint (h : Heap) : disjoint ∅ h := fun _ => Or.inl rfl
+  theorem emptyHeap_disjoint (heap : Heap) : disjoint ∅ heap := fun _ => Or.inl rfl
 
-  theorem emptyHeap_union (h : Heap) : ∅ ∪ h = h := by
+  theorem emptyHeap_disjoint' {heap : Heap} : disjoint ∅ heap := emptyHeap_disjoint heap
+
+  theorem emptyHeap_union (heap : Heap) : ∅ ∪ heap = heap := by
   apply funext; intro n; simp only [union, emptyHeap]
 
+  theorem emptyHeap_union' {heap : Heap} : ∅ ∪ heap = heap := emptyHeap_union heap
 
+
+  def Heap.Finite (heap : Heap) : Prop := Set.Finite { l | heap l ≠ undef}
+
+  namespace Finite
+
+  -- private lemma prod_finite (heap : Heap) (h_finite : Heap.Finite heap) :
+  --   Set.Finite ({ l : ℕ | heap l ≠ undef} ×ˢ {true, false}) := by
+  -- apply Set.Finite.prod h_finite (Set.toFinite {true, false})
+
+  private lemma powerset_finite (heap : Heap) (h_finite : Heap.Finite heap) :
+      Set.Finite ({ns : Set ℕ | ∀ n ∈ ns, heap n ≠ undef }) := by
+    exact Set.Finite.finite_subsets h_finite
+
+
+  open Classical
+
+  private noncomputable def surjectiv_func (heap : Heap) (ns : Set ℕ ) : Heap :=
+    fun n => if n ∈ ns then heap n else undef
+
+  private lemma powerset_surjection (heap : Heap) (h_finite : Heap.Finite heap) :
+      Set.Finite (surjectiv_func heap '' { ns : Set ℕ | ∀ n ∈ ns, heap n ≠ undef}) := by
+    apply Set.Finite.of_surjOn (surjectiv_func heap)
+    · intro g h
+      exact h
+    · exact powerset_finite heap h_finite
+
+  theorem finite_of_subheaps {heap : Heap} (h_finite : Heap.Finite heap) :
+      Set.Finite {heap₁ | ∃ heap₂, heap₁ ∪ heap₂ = heap} := by
+    have := powerset_surjection heap h_finite
+    simp only [Set.image, ne_eq, Set.mem_setOf_eq] at this
+    apply Set.Finite.subset this
+    rintro heap₁ ⟨heap₂, h_heap⟩
+    use {n | (∃ a, heap₁ n = val a)}
+    apply And.intro
+    · intro n ⟨_, h_heap₁⟩
+      obtain h_heap := congrFun h_heap n
+      simp only [Union.union, h_heap₁] at h_heap
+      rw [← h_heap]
+      simp only [not_false_eq_true]
+    · apply funext
+      intro n
+      obtain h_heap := congrFun h_heap n
+      simp only [Union.union] at h_heap
+      simp only [surjectiv_func, Set.mem_setOf_eq]
+      split
+      case isTrue h_heap₁ =>
+        obtain ⟨_, h_heap₁⟩ := h_heap₁
+        simp only [h_heap₁] at h_heap
+        exact Eq.symm <| Eq.trans h_heap₁ h_heap
+      case isFalse h_heap₁ =>
+        simp only [not_exists] at h_heap₁
+        split at h_heap
+        case h_1 q h₁ =>
+          exfalso
+          exact h_heap₁ q h₁
+        case h_2 h₁ =>
+          exact h₁.symm
+
+
+
+
+
+
+
+
+
+
+
+
+  --     case isFalse h => sorry
+
+  end Finite
 
 end State

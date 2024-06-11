@@ -14,9 +14,8 @@ noncomputable instance unit_cl : CompleteLinearOrder I := Set.Icc.completeLinear
 
 instance : PosMulMono I where
   elim := by
-    intro s i₁ i₂ h_i; simp only
-    unfold instHMul instMulElemRealUnitInterval
-    simp only [Subtype.mk_le_mk]
+    intro s i₁ i₂ h_i
+    simp only [← Subtype.coe_le_coe, coe_mul]
     apply mul_le_mul
     · exact Eq.ge rfl
     · exact h_i
@@ -26,8 +25,7 @@ instance : PosMulMono I where
 instance : MulPosMono I where
   elim := by
     intro s i₁ i₂ h_i; simp only
-    unfold instHMul instMulElemRealUnitInterval
-    simp only [Subtype.mk_le_mk]
+    simp only [← Subtype.coe_le_coe, coe_mul]
     apply mul_le_mul
     · exact h_i
     · exact Eq.ge rfl
@@ -42,56 +40,80 @@ lemma div_le_one {a b : ℝ} (h_b_pos : 0 < b) (h_ab : a ≤ b): a/b ≤ 1 := by
            _ = b * b⁻¹  := by rewrite[div_eq_mul_inv]; rfl
            _ = 1        := by refine mul_inv_cancel (ne_of_gt h_b_pos)
 
-lemma div_mem_unit {a b : ℝ} (h_a_nonneg : 0 ≤ a) (h_ab : a ≤ b): a/b ∈ I := by
-  have h_b_nonneg: 0 ≤ b := by apply le_trans; exact h_a_nonneg; exact h_ab
+lemma div_mem_unit {a b : ℝ} (h_a_nonneg : 0 ≤ a) (h_ab : a < b): a/b ∈ I := by
+  have h_b_pos: 0 < b := by apply lt_of_le_of_lt; exact h_a_nonneg; exact h_ab
   simp; apply And.intro;
-  . exact div_nonneg h_a_nonneg h_b_nonneg
-  . rewrite [le_iff_lt_or_eq] at h_b_nonneg
-    cases h_b_nonneg with
-    | inl h_b_pos => exact div_le_one h_b_pos h_ab
-    | inr h_b_zero => rewrite [←h_b_zero, div_zero]; simp
+  . exact div_nonneg h_a_nonneg (le_of_lt h_b_pos)
+  . exact div_le_one h_b_pos (le_of_lt h_ab)
 
-noncomputable def unitDiv (i j : I) : I := if h : i ≤ j then ⟨i/j, div_mem_unit nonneg' h⟩ else 1
-noncomputable instance unitHasDiv : Div I := ⟨unitDiv⟩
+noncomputable instance unitDiv : Div I :=
+    ⟨fun i j => if h : i < j then ⟨i/j, div_mem_unit nonneg' h⟩ else 1⟩
 
 lemma unit_div_le_div {i j k l : I} (h_j : (0:ℝ) < l) (hik : i ≤ k) (hlj : l ≤ j) : i / j ≤ k / l := by
-  unfold instHDiv unitHasDiv unitDiv; simp only
+  unfold instHDiv unitDiv; simp only
   split
-  case inl =>
+  case isTrue =>
     split
-    case inl =>
+    case isTrue =>
       simp only [Subtype.mk_le_mk]
       apply div_le_div
       · exact nonneg'
       · exact hik
       · exact h_j
       · exact hlj
-    case inr => exact le_one'
-  case inr hij =>
+    case isFalse => exact le_one'
+  case isFalse hij =>
     split
-    case inl hkl => exfalso; exact hij <| le_trans hik <| le_trans hkl hlj
-    case inr => exact Eq.le rfl
+    case isTrue hkl => exfalso; exact hij <| lt_of_le_of_lt hik <| lt_of_lt_of_le hkl hlj
+    case isFalse => exact Eq.le rfl
 
 lemma unit_le_div_iff_mul_le (i j k : I) (h : 0 < k) : i ≤ j / k ↔ i * k ≤ j := by
-  unfold instHDiv unitHasDiv unitDiv; simp only
-  unfold instHMul instMulElemRealUnitInterval; simp only
+  unfold instHDiv unitDiv
+  simp only [← Subtype.coe_le_coe, coe_mul]
   apply Iff.intro
   · intro h_div
     split at h_div
-    case inl =>
+    case isTrue =>
       have : (0:ℝ) < k := h
       apply (le_div_iff this).mp
       exact h_div
-    case inr h_jk =>
+    case isFalse h_jk =>
       simp at h_jk
-      exact le_trans mul_le_right (le_of_lt h_jk)
+      exact le_trans mul_le_right h_jk
   · intro h_mul
     split
-    case inl =>
+    case isTrue =>
       have : (0:ℝ) < k := h
       apply (le_div_iff this).mpr
       exact h_mul
-    case inr => exact le_one'
+    case isFalse => exact le_one'
+
+lemma unit_div_zero (i : I) : i / 0 = 1 := by
+  simp only [instHDiv, unitDiv, coe_zero, dite_eq_right_iff]
+  intro h
+  exfalso
+  rw [← not_le] at h
+  exact h nonneg'
+
+lemma unit_div_of_lt {i j : I} (h : i < j) : ((i / j):I) = (i:ℝ) / j := by
+  simp only [instHDiv, unitDiv, dif_pos h]
+
+lemma unit_div_of_le {i j : I} (h : j ≤ i) : i / j = 1 := by
+  simp only [instHDiv, unitDiv, dite_eq_right_iff]
+  intro h'
+  exfalso
+  rw [← not_le] at h'
+  exact h' h
+
+lemma unit_div_eq_one_iff {i j : I} : i / j = 1 ↔ j ≤ i := by
+  apply Iff.intro
+  · intro h
+    rw [HDiv.hDiv, instHDiv, unitDiv] at h
+    simp only [dite_eq_right_iff] at h
+    sorry
+
+  · intro h
+    exact unit_div_of_le h
 
 lemma eq_zero_iff_sym_eq_one : σ x = 1 ↔ x = 0 := by
   apply Iff.intro
@@ -179,8 +201,8 @@ lemma iteOneZero_def {P : Prop} : iteOneZero P = i ↔ i = 0 ∧ ¬ P ∨ i = 1 
 lemma iteOneZero_of_non_one {P : Prop}  (h : 0 ≠ iteOneZero P) : iteOneZero P = 1 := by
   unfold iteOneZero ite_unit at h
   split at h
-  case inl h_P => exact iteOneZero_pos h_P
-  case inr h_nP => exact (h rfl).elim
+  case isTrue h_P => exact iteOneZero_pos h_P
+  case isFalse h_nP => exact (h rfl).elim
 
 theorem truncatedAdd_mem_unit (i j : I) : min 1 ((i:ℝ) + j) ∈ I := by
   apply And.intro

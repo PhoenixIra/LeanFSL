@@ -47,9 +47,9 @@ syntax term " ≔ " "cas" "(" term ", " term ", " term ")" : program
 syntax term " ≔ alloc " term : program
 syntax "free" "(" term ", " term ")": program
 syntax program " ; " program : program
-syntax " pif " term " then " program " else " program " end " : program
-syntax " if " term " then " program " else " program " end ": program
-syntax " while " term " begin " program " end " : program
+syntax " pif " term " then " program " else " program " fi " : program
+syntax " if " term " then " program " else " program " fi ": program
+syntax " while " term " begin " program " fi " : program
 syntax program " || " program : program
 syntax "(" program ")" : program
 syntax "[[" term "]]" : program
@@ -66,9 +66,9 @@ macro_rules
   | `(term| [Prog| $l:term ≔ cas ( $a:term , $b:term , $c:term )]) => `(Program.compareAndSet $l $a $b $c)
   | `(term| [Prog| $l:term ≔ alloc $r:term]) => `(Program.allocate $l $r)
   | `(term| [Prog| free ( $a:term , $b:term )]) => `(Program.free' $a $b)
-  | `(term| [Prog| pif $p:term then $l else $r end]) => `(Program.probabilisticChoice $p [Prog| $l] [Prog| $r])
-  | `(term| [Prog| if $b:term then $l:program else $r:program end]) => `(Program.conditionalChoice $b [Prog| $l] [Prog| $r])
-  | `(term| [Prog| while $b:term begin $c end]) => `(Program.loop $b [Prog| $c])
+  | `(term| [Prog| pif $p:term then $l else $r fi]) => `(Program.probabilisticChoice $p [Prog| $l] [Prog| $r])
+  | `(term| [Prog| if $b:term then $l:program else $r:program fi]) => `(Program.conditionalChoice $b [Prog| $l] [Prog| $r])
+  | `(term| [Prog| while $b:term begin $c fi]) => `(Program.loop $b [Prog| $c])
   | `(term| [Prog| $l ; $r]) => `(Program.sequential [Prog| $l] [Prog| $r])
   | `(term| [Prog| $l || $r]) => `(Program.concurrent [Prog| $l] [Prog| $r])
   | `(term| [Prog| ($a:program)]) => `([Prog| $a])
@@ -120,24 +120,24 @@ def unexpandFree : Unexpander
 
 @[app_unexpander Program.probabilisticChoice]
 def unexpandProbChoice : Unexpander
-  | `($_ $p [Prog| $l] [Prog| $r]) => `([Prog| pif $p:term then $l else $r end])
-  | `($_ $p $l [Prog| $r]) => `([Prog| pif $p:term then [[$l]] else $r end])
-  | `($_ $p [Prog| $l] $r) => `([Prog| pif $p:term then $l else [[$r]] end])
-  | `($_ $p $l $r) => `([Prog| pif $p:term then [[$l]] else [[$r]] end])
+  | `($_ $p [Prog| $l] [Prog| $r]) => `([Prog| pif $p:term then $l else $r fi])
+  | `($_ $p $l [Prog| $r]) => `([Prog| pif $p:term then [[$l]] else $r fi])
+  | `($_ $p [Prog| $l] $r) => `([Prog| pif $p:term then $l else [[$r]] fi])
+  | `($_ $p $l $r) => `([Prog| pif $p:term then [[$l]] else [[$r]] fi])
   | _ => throw ()
 
 @[app_unexpander Program.conditionalChoice]
 def unexpandConChoice : Unexpander
-  | `($_ $p [Prog| $l] [Prog| $r]) => `([Prog| if $p:term then $l else $r end])
-  | `($_ $p $l [Prog| $r]) => `([Prog| if $p:term then [[$l]] else $r end])
-  | `($_ $p [Prog| $l] $r) => `([Prog| if $p:term then $l else [[$r]] end])
-  | `($_ $p $l $r) => `([Prog| if $p:term then [[$l]] else [[$r]] end])
+  | `($_ $p [Prog| $l] [Prog| $r]) => `([Prog| if $p:term then $l else $r fi])
+  | `($_ $p $l [Prog| $r]) => `([Prog| if $p:term then [[$l]] else $r fi])
+  | `($_ $p [Prog| $l] $r) => `([Prog| if $p:term then $l else [[$r]] fi])
+  | `($_ $p $l $r) => `([Prog| if $p:term then [[$l]] else [[$r]] fi])
   | _ => throw ()
 
 @[app_unexpander Program.loop]
 def unexpandLoop : Unexpander
-  | `($_ $b [Prog| $l]) => `([Prog| while $b:term begin $l end])
-  | `($_ $b $l) => `([Prog| while $b:term begin [[$l]] end])
+  | `($_ $b [Prog| $l]) => `([Prog| while $b:term begin $l fi])
+  | `($_ $b $l) => `([Prog| while $b:term begin [[$l]] fi])
   | _ => throw ()
 
 @[app_unexpander Program.sequential]
@@ -157,8 +157,8 @@ def unexpandConcur : Unexpander
   | _ => throw ()
 
 
-example := [Prog| skip ; skip ; if λ _ => true then "x" ≔ λ _ => 5 else skip end ; skip ]
-example (e : ProbExp Variable) (c₁ c₂ : Program Variable) := [Prog| pif e then [[c₁]] else [[c₂]] end]
+example := [Prog| skip ; skip ; if λ _ => true then "x" ≔ λ _ => 5 else skip fi ; skip ]
+example (e : ProbExp Variable) (c₁ c₂ : Program Variable) := [Prog| pif e then [[c₁]] else [[c₂]] fi]
 example (c₁ c₂ : Program Variable) := [Prog| [[c₁]] || [[c₂]] ]
 
 end ProgNotation
