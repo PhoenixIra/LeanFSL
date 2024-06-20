@@ -447,7 +447,7 @@ theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
 
   theorem disjoint.symm {h₁ h₂ : Heap} (h : disjoint h₁ h₂) : disjoint h₂ h₁ := fun n => Or.symm (h n)
 
-  theorem disjoint.comm (h₁ h₂ : Heap) : disjoint h₁ h₂ ↔ disjoint h₂ h₁ :=
+  theorem disjoint_comm (h₁ h₂ : Heap) : disjoint h₁ h₂ ↔ disjoint h₂ h₁ :=
     ⟨fun h => h.symm, fun h => h.symm⟩
 
   instance union : Union Heap
@@ -496,6 +496,31 @@ theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
   apply funext; intro n; simp only [union, emptyHeap]
 
   theorem emptyHeap_union' {heap : Heap} : ∅ ∪ heap = heap := emptyHeap_union heap
+
+  theorem union_eq_emptyHeap_iff {heap heap' : Heap} :
+      heap ∪ heap' = ∅ ↔ heap = ∅ ∧ heap' = ∅ := by
+    apply Iff.intro
+    · intro h
+      obtain h := congrFun h
+      simp only [union] at h
+      apply And.intro
+      · apply funext
+        intro n
+        specialize h n
+        split at h
+        case h_1 => cases h
+        case h_2 h_undef =>
+          rw [h_undef]
+          simp only [emptyHeap]
+      · apply funext
+        intro n
+        specialize h n
+        split at h
+        case h_1 => cases h
+        case h_2 => exact h
+    · rintro ⟨rfl, rfl⟩
+      rw [emptyHeap_union']
+
 
 
   def Heap.Finite (heap : Heap) : Prop := Set.Finite { l | heap l ≠ undef}

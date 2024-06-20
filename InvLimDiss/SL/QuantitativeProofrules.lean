@@ -28,15 +28,13 @@ theorem monotone_qslSepImp {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₂ ⊢ P
   intro ⟨s,heap⟩
   apply le_sInf
   simp only [Set.mem_setOf_eq, forall_exists_index, and_imp]
-  rintro - heap₁ h_disjoint h_non_one rfl
+  rintro - heap₁ h_disjoint rfl
   apply sInf_le_iff.mpr
   simp only [lowerBounds, Set.mem_setOf_eq, forall_exists_index, and_imp]
   intro _ h
-  have := lt_of_lt_of_le h_non_one (h_P ⟨s,heap₁⟩)
-  specialize h heap₁ h_disjoint this rfl; clear this
+  specialize h heap₁ h_disjoint rfl
   apply le_trans h
   apply unit_div_le_div
-  · exact h_non_one
   · exact h_Q ⟨s,heap ∪ heap₁⟩
   · exact h_P ⟨s,heap₁⟩
 
@@ -52,18 +50,17 @@ theorem le_qslSepImp_iff_qslSepCon_le (P₁ P₂ P₃ : StateRV Var) :
     cases eq_or_ne (P₂ ⟨s,heap₂⟩) 0 with
     | inl h_eq => rw [h_eq, mul_zero]; exact nonneg'
     | inr h_ne =>
-      have := lt_of_le_of_ne nonneg' h_ne.symm
-      rw [← (unit_le_div_iff_mul_le _ _ _ this)]
+      rw [← (unit_le_div_iff_mul_le)]
       specialize h ⟨s,heap₁⟩
       unfold qslSepDiv at h
       simp only [le_sInf_iff, Set.mem_setOf_eq, forall_exists_index, and_imp] at h
-      exact h (P₃ ⟨s,heap₁ ∪ heap₂⟩ / P₂ ⟨s,heap₂⟩) heap₂ h_disjoint this rfl
+      exact h (P₃ ⟨s,heap₁ ∪ heap₂⟩ / P₂ ⟨s,heap₂⟩) heap₂ h_disjoint rfl
   case mpr =>
     intro h ⟨s,heap₁⟩
     apply le_sInf
     simp only [Set.mem_setOf_eq, forall_exists_index, and_imp]
-    rintro - heap₂ h_disjoint h_non_one rfl
-    rw [unit_le_div_iff_mul_le _ _ _ h_non_one]
+    rintro - heap₂ h_disjoint rfl
+    rw [unit_le_div_iff_mul_le]
     specialize h ⟨s,heap₁ ∪ heap₂⟩
     unfold qslSepMul at h
     rw [sSup_le_iff] at h
@@ -82,8 +79,7 @@ theorem qslSepCon_qslSepImp_entail (P₁ P₂ : StateRV Var) :
     rw [h_eq, mul_zero]
     exact nonneg'
   case inr h_ne =>
-    have h_le := (lt_of_le_of_ne nonneg' (Ne.symm h_ne))
-    rw [← unit_le_div_iff_mul_le _ _ _ h_le]
+    rw [← unit_le_div_iff_mul_le]
     apply sInf_le
     simp only [Set.mem_setOf_eq]
     exists heap₂
@@ -118,5 +114,26 @@ theorem qslInf_apply (P : α → StateRV Var) (s : State Var) :
     use x
     rw [hx, hP']
 
+theorem qslSepInv_eq_one (f₁ f₂ : StateRV Var) (s : State Var) :
+    `[qsl| [[f₁]] -⋆ [[f₂]]] s = 1 ↔
+    ∀ heap, disjoint s.heap heap →
+      f₁ ⟨s.stack, heap⟩ ≤ f₂ ⟨s.stack, s.heap ∪ heap⟩ := by
+  apply Iff.intro
+  · intro h heap h_disjoint
+    rw [← unit_div_eq_one_iff]
+    apply le_antisymm le_one'
+    rw [qslSepDiv] at h
+    obtain h_inf := le_of_eq h.symm; clear h
+    rw [le_sInf_iff] at h_inf
+    specialize h_inf (f₂ ⟨s.stack, s.heap ∪ heap⟩ / f₁ ⟨s.stack, heap⟩)
+    apply h_inf
+    use heap
+  · intro h
+    conv at h => intro a b; rw [← unit_div_eq_one_iff]
+    rw [qslSepDiv]
+    apply le_antisymm le_one'
+    apply le_sInf
+    rintro i ⟨heap, h_disjoint, rfl⟩
+    rw [h heap h_disjoint]
 
 end QSL

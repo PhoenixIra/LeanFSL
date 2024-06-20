@@ -20,6 +20,10 @@ instance : Entailment (StateProp Var) := ⟨fun P Q => P ≤ Q⟩
 
 variable {Var : Type}
 
+def slTrue : StateProp Var := λ _ => true
+
+def slFalse : StateProp Var := λ _ => false
+
 def slEmp : StateProp Var := λ ⟨_,h⟩ => h = ∅
 
 def slPointsTo (loc val : ValueExp Var) : StateProp Var :=
@@ -42,13 +46,15 @@ def slSepCon (P Q : StateProp Var) : StateProp Var :=
   λ ⟨s,h⟩ => ∃ h₁ h₂, P ⟨s, h₁⟩ ∧ Q ⟨s, h₂⟩ ∧ disjoint h₁ h₂ ∧ h₁ ∪ h₂ = h
 
 def slSepImp (P Q : StateProp Var) : StateProp Var :=
-  λ ⟨s,h⟩ => ∀ h', P ⟨s,h'⟩ → disjoint h h' → Q ⟨s,(h ∪ h')⟩
+  λ ⟨s,h⟩ => ∀ h', disjoint h h' → P ⟨s,h'⟩ → Q ⟨s,(h ∪ h')⟩
 
 
 open Lean
 
 declare_syntax_cat sl
 
+syntax "sTrue" : sl
+syntax "sFalse" : sl
 syntax "emp" : sl
 syntax term " ↦ " term : sl
 syntax term:51 " = " term:51 : sl
@@ -69,6 +75,8 @@ syntax "`[sl " term " | " sl " ]" : term
 syntax "`[sl " term  " | " sl " ⊢ " sl " ]" : term
 
 macro_rules
+  | `(term| `[sl| sTrue]) => `(slTrue)
+  | `(term| `[sl| sFalse]) => `(slFalse)
   | `(term| `[sl| emp]) => `(slEmp)
   | `(term| `[sl| $l:term ↦ $r:term]) => `(slPointsTo $l $r)
   | `(term| `[sl| $l:term = $r:term]) => `(slEquals $l $r)
@@ -83,6 +91,8 @@ macro_rules
   | `(term| `[sl| ($f:sl)]) => `(`[sl|$f])
   | `(term| `[sl| $l:sl ⊢ $r:sl]) => `(`[sl|$l] ≤ `[sl|$r])
 
+  | `(term| `[sl $v:term| sTrue]) => `(@slTrue $v)
+  | `(term| `[sl $v:term| sFalse]) => `(@slFalse $v)
   | `(term| `[sl $v:term| emp]) => `(@slEmp $v)
   | `(term| `[sl $v:term| $l:term ↦ $r:term]) => `(@slPointsTo $v $l $r)
   | `(term| `[sl $v:term| $l:term = $r:term]) => `(@slEquals $v $l $r)
@@ -99,6 +109,13 @@ macro_rules
 
 open Lean PrettyPrinter Delaborator
 
+@[app_unexpander slTrue]
+def unexpandSlTrue : Unexpander
+  | `($_) => `(`[sl| sTrue])
+
+@[app_unexpander slFalse]
+def unexpandSlFalse : Unexpander
+  | `($_) => `(`[sl| sFalse])
 
 @[app_unexpander slEmp]
 def unexpandSlEmp : Unexpander

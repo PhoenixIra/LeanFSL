@@ -13,9 +13,9 @@ theorem monotone_slSepCon {P₁ P₂ Q₁ Q₂ : StateProp Var} (h_P : P₁ ⊢ 
 
 theorem monotone_slSepImp {P₁ P₂ Q₁ Q₂ : StateProp Var} (h_P : P₂ ⊢ P₁) (h_Q : Q₁ ⊢ Q₂) :
     `[sl| [[P₁]] -∗ [[Q₁]] ⊢ [[P₂]] -∗ [[Q₂]]] := by
-  intro ⟨s,heap⟩ h heap_P h_P₂ h_disjoint
+  intro ⟨s,heap⟩ h heap_P h_disjoint h_P₂
   obtain h_P₁ := h_P ⟨s,heap_P⟩ h_P₂
-  exact h_Q ⟨s,heap ∪ heap_P⟩ <| h heap_P h_P₁ h_disjoint
+  exact h_Q ⟨s,heap ∪ heap_P⟩ <| h heap_P h_disjoint h_P₁
 
 -- adjointness of sepcon and sepimp
 theorem le_slSepImp_iff_slSepCon_le (P₁ P₂ P₃ : StateProp Var) :
@@ -24,9 +24,9 @@ theorem le_slSepImp_iff_slSepCon_le (P₁ P₂ P₃ : StateProp Var) :
   case mp =>
     rintro h ⟨s,heap⟩ ⟨heap₁, heap₂, h_P₁, h_P₂, h_disjoint, h_union⟩
     rw [← h_union]
-    exact h ⟨s, heap₁⟩ h_P₁ heap₂ h_P₂ h_disjoint
+    exact h ⟨s, heap₁⟩ h_P₁ heap₂ h_disjoint h_P₂
   case mpr =>
-    rintro h ⟨s,heap⟩ h_P₁ heap₂ h_P₂ h_disjoint
+    rintro h ⟨s,heap⟩ h_P₁ heap₂ h_disjoint h_P₂
     have : `[sl| [[P₁]] ∗ [[P₂]]] ⟨s,heap ∪ heap₂⟩ := by {exists heap, heap₂}
     exact h ⟨s,heap ∪ heap₂ ⟩ this
 
@@ -34,7 +34,7 @@ theorem le_slSepImp_iff_slSepCon_le (P₁ P₂ P₃ : StateProp Var) :
 theorem slSepCon_slSepImp_entail (P₁ P₂ : StateProp Var) :
     `[sl| ([[P₁]] -∗ [[P₂]]) ∗ [[P₁]] ⊢ [[P₂]]] := by
   rintro ⟨s,heap⟩ ⟨heap₂, heap₁, h, h₁, h_disjoint, rfl⟩
-  exact h heap₁ h₁ h_disjoint
+  exact h heap₁ h_disjoint h₁
 
 open State
 

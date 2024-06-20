@@ -19,6 +19,10 @@ instance : Entailment (StateRV Var) := ⟨fun P Q => P ≤ Q⟩
 
 variable {Var : Type}
 
+noncomputable def qslTrue : StateRV Var := λ _ => 1
+
+noncomputable def qslFalse : StateRV Var := λ _ => 0
+
 noncomputable def qslEmp : StateRV Var := λ ⟨_,h⟩ => iteOneZero (h = ∅)
 
 noncomputable def qslPointsTo (loc val : ValueExp Var) : StateRV Var :=
@@ -49,12 +53,14 @@ noncomputable def qslSepMul (P Q : StateRV Var) : StateRV Var :=
   fun s => sSup { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap ∧ x = P ⟨s.stack, h₁⟩ * Q ⟨s.stack, h₂⟩}
 
 noncomputable def qslSepDiv (P Q : StateRV Var) : StateRV Var :=
-  fun s => sInf { x | ∃ h', disjoint s.heap h' ∧ 0 < P ⟨s.stack,h'⟩ ∧ x = Q ⟨s.stack,s.heap ∪ h'⟩ / P ⟨s.stack,h'⟩ }
+  fun s => sInf { x | ∃ h', disjoint s.heap h' ∧ x = Q ⟨s.stack,s.heap ∪ h'⟩ / P ⟨s.stack,h'⟩ }
 
 open Lean
 
 declare_syntax_cat qsl
 
+syntax "qTrue" : qsl
+syntax "qFalse" : qsl
 syntax "emp" : qsl
 syntax term " ↦ " term : qsl
 syntax term:51 " = " term:51 : qsl
@@ -79,6 +85,8 @@ syntax "`[qsl " term " | " qsl " ]" : term
 syntax "`[qsl " term " | " qsl " ⊢ " qsl " ]" : term
 
 macro_rules
+  | `(term| `[qsl| qTrue]) => `(qslTrue)
+  | `(term| `[qsl| qFalse]) => `(qslFalse)
   | `(term| `[qsl| emp]) => `(qslEmp)
   | `(term| `[qsl| $l:term ↦ $r:term]) => `(qslPointsTo $l $r)
   | `(term| `[qsl| $l:term = $r:term]) => `(qslEquals $l $r)
@@ -97,6 +105,8 @@ macro_rules
   | `(term| `[qsl| ($f:qsl)]) => `(`[qsl|$f])
   | `(term| `[qsl| $l:qsl ⊢ $r:qsl]) => `(`[qsl|$l] ≤ `[qsl|$r])
 
+  | `(term| `[qsl $v:term | qTrue]) => `(@qslTrue $v)
+  | `(term| `[qsl $v:term | qFalse]) => `(@qslFalse $v)
   | `(term| `[qsl $v:term| emp]) => `(@qslEmp $v)
   | `(term| `[qsl $v:term| $l:term ↦ $r:term]) => `(@qslPointsTo $v $l $r)
   | `(term| `[qsl $v:term| $l:term = $r:term]) => `(@qslEquals $v $l $r)
@@ -117,6 +127,14 @@ macro_rules
 
 
 open Lean PrettyPrinter Delaborator
+
+@[app_unexpander qslTrue]
+def unexpandQslTrue : Unexpander
+  | `($_) => `(`[qsl| qTrue])
+
+@[app_unexpander qslFalse]
+def unexpandQslFalse : Unexpander
+  | `($_) => `(`[qsl| qFalse])
 
 @[app_unexpander qslEmp]
 def unexpandQslEmp : Unexpander
