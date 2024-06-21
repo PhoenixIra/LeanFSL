@@ -13,6 +13,113 @@ open unitInterval State QSL SL Syntax
 
 variable {Var : Type}
 
+-- Theorems deriving helpful preconditions
+
+theorem nonempty_StateRV_set {α : Type} (f : α → StateRV Var) (s : State Var)
+    (h_nonempty : Nonempty α) : Set.Nonempty { i | ∃ x, f x s = i} := by
+  let x := Classical.choice h_nonempty
+  use (f x s), x
+
+theorem sSup_mem_of_nonempty {α : Type} {f : α → StateRV Var} {s : State Var}
+    (h_nonempty : Nonempty α) (h_finite : Set.Finite {i | ∃ x, f x s = i}) :
+    sSup {i | ∃ y, f y s = i} ∈ {i | ∃ y, f y s = i} :=
+  Set.Nonempty.csSup_mem (nonempty_StateRV_set f s h_nonempty) h_finite
+
+lemma sSup_in_closure_of_subset (s s' : Set I) (h_nonempty : Set.Nonempty s) (h : s ⊆ s') :
+    sSup s ∈ closure s' := by
+  apply Set.mem_of_subset_of_mem (closure_mono h)
+  exact sSup_mem_closure h_nonempty
+
+theorem sInf_mem_of_nonempty {α : Type} {f : α → StateRV Var} {s : State Var}
+    (h_nonempty : Nonempty α) (h_finite : Set.Finite {i | ∃ x, f x s = i}) :
+    sInf {i | ∃ y, f y s = i} ∈ {i | ∃ y, f y s = i} :=
+  Set.Nonempty.csInf_mem (nonempty_StateRV_set f s h_nonempty) h_finite
+
+lemma sInf_in_closure_of_subset (s s' : Set I) (h_nonempty : Set.Nonempty s) (h : s ⊆ s') :
+    sInf s ∈ closure s' := by
+  apply Set.mem_of_subset_of_mem (closure_mono h)
+  exact sInf_mem_closure h_nonempty
+
+theorem lt_sInf_of_valuesOf {values : Set I} (h_fin : Set.Finite (values)) {i : I} (h_lt : 0 < i) :
+    σ i < sInf {j ∈ values | σ i < j } := by
+  have h_fin : Set.Finite {j ∈ values | σ i < j } := Set.Finite.subset h_fin (Set.sep_subset values (fun j => σ i < j))
+  by_cases Set.Nonempty {j ∈ values | σ i < j }
+  case neg h_empty =>
+    rw [← unitInterval.symm_one, symm_lt_iff_symm_lt] at h_lt
+    apply lt_of_lt_of_le h_lt
+    apply le_sInf
+    intro j h_j
+    exact (h_empty ⟨j, h_j⟩).elim
+  case pos h_nonempty =>
+    rw [lt_iff_le_and_ne]
+    apply And.intro
+    · apply le_sInf
+      rintro j ⟨_, h_lt⟩
+      exact le_of_lt h_lt
+    · intro h
+      have h_mem := Set.Nonempty.csInf_mem h_nonempty h_fin
+      rw [← h] at h_mem
+      clear h_nonempty h_fin h
+      simp only [Set.mem_setOf_eq, lt_self_iff_false, and_false] at h_mem
+
+theorem exists_heaps_max_of_finite_heap {f₁ f₂ : StateRV Var} {s : State Var}
+    (h_finite : Heap.Finite s.heap):
+    `[qsl| [[f₁]] ⋆ [[f₂]]] s ∈ { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap
+    ∧ x = f₁ ⟨s.stack, h₁⟩ * f₂ ⟨s.stack, h₂⟩} := by
+  rw [qslSepMul]
+  apply Set.Nonempty.csSup_mem
+  · use (f₁ ⟨s.stack,∅⟩ * f₂ s), ∅, s.heap, emptyHeap_disjoint', emptyHeap_union'
+  · apply Set.Finite.subset
+    · have : Set.Finite {heap | ∃ heap', disjoint heap heap' ∧ heap ∪ heap' = s.heap} := by {
+        apply Set.Finite.subset (Finite.finite_of_subheaps h_finite)
+        intro heap ⟨heap', _, h_union⟩
+        use heap'
+      }
+      apply Set.Finite.mul
+      · exact Set.Finite.image (fun heap => f₁ ⟨s.stack,heap⟩) this
+      · exact Set.Finite.image (fun heap => f₂ ⟨s.stack,heap⟩) this
+    · intro i ⟨heap₁, heap₂, h_disjoint, h_union, h⟩
+      rw [Set.mem_mul]
+      use (f₁ ⟨s.stack,heap₁⟩)
+      apply And.intro (by use heap₁; refine And.intro ?_ rfl; use heap₂)
+      use (f₂ ⟨s.stack,heap₂⟩)
+      refine And.intro ?_ h.symm
+      use heap₂
+      refine And.intro ?_ rfl
+      use heap₁
+      rw [disjoint_comm heap₂ heap₁, union_comm heap₂ heap₁ h_disjoint.symm]
+      trivial
+
+theorem exists_qslSepMul_max_of_finite_values {f₁ f₂ : StateRV Var} (s : State Var)
+    (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)):
+    `[qsl| [[f₁]] ⋆ [[f₂]]] s ∈ { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap
+    ∧ x = f₁ ⟨s.stack, h₁⟩ * f₂ ⟨s.stack, h₂⟩} := by
+  rw [qslSepMul]
+  apply Set.Nonempty.csSup_mem
+  · use (f₁ ⟨s.stack,∅⟩ * f₂ s), ∅, s.heap, emptyHeap_disjoint', emptyHeap_union'
+  · apply Set.Finite.subset (Set.Finite.mul h_finite₁ h_finite₂)
+    rintro _ ⟨heap₁, heap₂, _, _, rfl⟩
+    simp only [Set.mem_mul]
+    use (f₁ ⟨s.stack, heap₁⟩), (Set.mem_range_self _), (f₂ ⟨s.stack, heap₂⟩), (Set.mem_range_self _)
+
+theorem exists_qslSepDiv_min_of_finite_values {f₁ f₂ : StateRV Var} (s : State Var)
+    (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)) :
+    `[qsl| [[f₁]] -⋆ [[f₂]]] s ∈ { x | ∃ heap, disjoint s.heap heap
+      ∧ x = f₂ ⟨s.stack, s.heap ∪ heap⟩ / f₁ ⟨s.stack, heap⟩} := by
+  rw [qslSepDiv]
+  apply Set.Nonempty.csInf_mem
+  · use ((f₂ s) / (f₁ ⟨s.stack, ∅⟩)), ∅, disjoint_emptyHeap'
+    rw [union_emptyHeap']
+  · apply Set.Finite.subset (Set.Finite.image2 Div.div h_finite₂ h_finite₁)
+    rintro _ ⟨heap, _, rfl⟩
+    simp only [Set.mem_image2, Set.mem_range, exists_exists_eq_and]
+    use ⟨s.stack, s.heap ∪ heap⟩, ⟨s.stack, heap⟩
+    rfl
+
+
+
+
+
 -- Theorems related to range and their approximation
 
 theorem nonempty_range {f : StateRV Var} : Set.Nonempty (Set.range f) := by
@@ -110,14 +217,236 @@ theorem range_of_qslIverson : Set.range `[qsl Var | ⁅p⁆] ⊆ {0,1} := by
   rw [Or.comm]
   exact Classical.em _
 
-theorem range_of_qslNot : Set.range `[qsl| ~[[f]]] = { x | ∃ s, σ (f s) = x} := by sorry
+theorem range_of_qslNot : Set.range `[qsl| ~[[f]]] = σ '' Set.range f := by
+  rw [Set.ext_iff]
+  intro i
+  apply Iff.intro
+  · rintro ⟨s, rfl⟩
+    simp only [Set.mem_image, Set.mem_range, exists_exists_eq_and]
+    use s
+    rfl
+  · simp only [Set.mem_image, Set.mem_range, exists_exists_eq_and, forall_exists_index]
+    rintro s rfl
+    use s
+    rfl
 
+theorem range_of_qslMin :
+    Set.range `[qsl| [[f₁]] ⊓ [[f₂]]] ⊆ Set.image2 min (Set.range f₁) (Set.range f₂) := by
+  rintro i ⟨s, rfl⟩
+  simp only [Set.mem_image2, Set.mem_range, exists_exists_eq_and]
+  use s, s
+  rfl
 
+theorem range_of_qslMax :
+    Set.range `[qsl| [[f₁]] ⊔ [[f₂]]] ⊆ Set.image2 max (Set.range f₁) (Set.range f₂) := by
+  rintro i ⟨s, rfl⟩
+  simp only [Set.mem_image2, Set.mem_range, exists_exists_eq_and]
+  use s, s
+  rfl
 
+theorem range_of_qslAdd :
+    Set.range `[qsl| [[f₁]] + [[f₂]]] ⊆ Set.image2 truncatedAdd (Set.range f₁) (Set.range f₂) := by
+  rintro i ⟨s, rfl⟩
+  simp only [Set.mem_image2, Set.mem_range, exists_exists_eq_and]
+  use s, s
+  rfl
 
+theorem range_of_qslMul :
+    Set.range `[qsl| [[f₁]] · [[f₂]]] ⊆ Set.image2 Mul.mul (Set.range f₁) (Set.range f₂) := by
+  rintro i ⟨s, rfl⟩
+  simp only [Set.mem_image2, Set.mem_range, exists_exists_eq_and]
+  use s, s
+  rfl
+
+theorem range_of_qslSup {f : α → StateRV Var} (h_nonempty : Nonempty α) :
+    Set.range `[qsl| S x. [[f x]]] ⊆ closure ({ i | ∃ x, i ∈ Set.range (f x)}) := by
+  rintro i ⟨s, rfl⟩
+  rw [qslSup]
+  apply sSup_in_closure_of_subset
+  · obtain ⟨_, ⟨x, _⟩⟩ := (nonempty_StateRV_set f s h_nonempty)
+    use (f x s)
+    simp only [Set.range, Subtype.exists, exists_prop, Set.mem_setOf_eq]
+    use (f x)
+    apply And.intro
+    · use x
+    · rfl
+  · simp only [Set.range, Subtype.exists, exists_prop, Set.mem_setOf_eq, Set.setOf_subset_setOf,
+    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+    rintro _ ⟨x,rfl⟩
+    use x, s
+
+theorem range_of_qslSup_empty {f : α → StateRV Var} (h_empty : IsEmpty α) :
+    Set.range `[qsl| S x. [[f x]]] = {0} := by
+  rw [Set.ext_iff]
+  intro i
+  apply Iff.intro
+  · rintro ⟨s, rfl⟩
+    simp only [Set.mem_singleton_iff]
+    apply le_antisymm
+    · apply sSup_le
+      simp only [Set.range, IsEmpty.exists_iff, Set.setOf_false, isEmpty_subtype,
+        Set.mem_empty_iff_false, not_false_eq_true, implies_true, false_implies]
+    · exact nonneg'
+  · simp only [Set.mem_singleton_iff, Set.mem_range]
+    rintro rfl
+    use inhabited_state.default
+    apply le_antisymm
+    · apply sSup_le
+      simp only [Set.mem_range, IsEmpty.exists_iff, Set.setOf_false, isEmpty_subtype,
+        Set.mem_empty_iff_false, not_false_eq_true, implies_true, false_implies]
+    · exact nonneg'
+
+theorem range_of_qslSup_of_finite {f : α → StateRV Var}
+    (h_nonempty : Nonempty α) (h_finite : Set.Finite { i | ∃ x, i ∈ Set.range (f x)}):
+    Set.range `[qsl| S x. [[f x]]] ⊆ { i | ∃ x, i ∈ Set.range (f x)} := by
+  rintro _ ⟨s, rfl⟩
+  rw [qslSup]
+  have h_nonempty : Set.Nonempty { i | ∃ x, i = f x s} := by {
+    let x := Classical.choice h_nonempty
+    use (f x s), x
+  }
+  have h_finite : Set.Finite { i | ∃ x, i = f x s} := by {
+    apply Set.Finite.subset h_finite
+    rintro i ⟨x,rfl⟩
+    use x, s
+  }
+  obtain ⟨x,h⟩ := Set.Nonempty.csSup_mem h_nonempty h_finite
+  use x, s
+  rw [← h]
+  apply le_antisymm
+  · apply sSup_le_sSup
+    rintro _ ⟨x, rfl⟩
+    simp only [Set.mem_range, Subtype.exists, exists_prop]
+    use (f x)
+    apply And.intro
+    · use x
+    · rfl
+  · apply sSup_le_sSup
+    rintro _ ⟨⟨fx,⟨x',h_fx⟩⟩,rfl⟩
+    simp only [Set.mem_setOf_eq]
+    use x'
+    rw [h_fx]
+
+theorem range_of_qslInf {f : α → StateRV Var} (h_nonempty : Nonempty α) :
+    Set.range `[qsl| I x. [[f x]]] ⊆ closure ({ i | ∃ x, i ∈ Set.range (f x)}) := by
+  rintro i ⟨s, rfl⟩
+  rw [qslInf]
+  apply sInf_in_closure_of_subset
+  · obtain ⟨_, ⟨x, _⟩⟩ := (nonempty_StateRV_set f s h_nonempty)
+    use (f x s)
+    simp only [Set.range, Subtype.exists, exists_prop, Set.mem_setOf_eq]
+    use (f x)
+    apply And.intro
+    · use x
+    · rfl
+  · simp only [Set.range, Subtype.exists, exists_prop, Set.mem_setOf_eq, Set.setOf_subset_setOf,
+    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+    rintro _ ⟨x,rfl⟩
+    use x, s
+
+theorem range_of_qslInf_empty {f : α → StateRV Var} (h_empty : IsEmpty α) :
+    Set.range `[qsl| I x. [[f x]]] = {1} := by
+  rw [Set.ext_iff]
+  intro i
+  apply Iff.intro
+  · rintro ⟨s, rfl⟩
+    simp only [Set.mem_singleton_iff]
+    apply le_antisymm
+    · exact le_one'
+    · apply le_sInf
+      simp only [Set.range, IsEmpty.exists_iff, Set.setOf_false, isEmpty_subtype,
+        Set.mem_empty_iff_false, not_false_eq_true, implies_true, false_implies]
+  · simp only [Set.mem_singleton_iff, Set.mem_range]
+    rintro rfl
+    use inhabited_state.default
+    apply le_antisymm
+    · exact le_one'
+    · apply le_sInf
+      simp only [Set.mem_range, IsEmpty.exists_iff, Set.setOf_false, isEmpty_subtype,
+        Set.mem_empty_iff_false, not_false_eq_true, implies_true, false_implies]
+
+theorem range_of_qslInf_of_finite {f : α → StateRV Var}
+    (h_nonempty : Nonempty α) (h_finite : Set.Finite { i | ∃ x, i ∈ Set.range (f x)}):
+    Set.range `[qsl| I x. [[f x]]] ⊆ { i | ∃ x, i ∈ Set.range (f x)} := by
+  rintro _ ⟨s, rfl⟩
+  rw [qslInf]
+  have h_nonempty : Set.Nonempty { i | ∃ x, i = f x s} := by {
+    let x := Classical.choice h_nonempty
+    use (f x s), x
+  }
+  have h_finite : Set.Finite { i | ∃ x, i = f x s} := by {
+    apply Set.Finite.subset h_finite
+    rintro i ⟨x,rfl⟩
+    use x, s
+  }
+  obtain ⟨x,h⟩ := Set.Nonempty.csInf_mem h_nonempty h_finite
+  use x, s
+  rw [← h]
+  apply le_antisymm
+  · apply sInf_le_sInf
+    rintro _ ⟨⟨fx,⟨x',h_fx⟩⟩,rfl⟩
+    simp only [Set.mem_setOf_eq]
+    use x'
+    rw [h_fx]
+  · apply sInf_le_sInf
+    rintro _ ⟨x, rfl⟩
+    simp only [Set.mem_range, Subtype.exists, exists_prop]
+    use (f x)
+    apply And.intro
+    · use x
+    · rfl
+
+theorem range_of_qslSepMul :
+    Set.range `[qsl| [[f₁]] ⋆ [[f₂]]] ⊆ closure (Set.image2 Mul.mul (Set.range f₁) (Set.range f₂)) := by
+  intro i ⟨s,h⟩
+  rw [← h]
+  apply sSup_in_closure_of_subset
+  · use (f₁ ⟨s.stack, ∅⟩) * (f₂ s)
+    use ∅, s.heap, emptyHeap_disjoint', emptyHeap_union'
+  · rintro _ ⟨heap₁, heap₂, _, _, rfl⟩
+    simp only [Set.image2, Set.mem_range, exists_exists_eq_and, Set.mem_setOf_eq]
+    use ⟨s.stack, heap₁⟩, ⟨s.stack, heap₂⟩
+    rfl
+
+theorem range_of_qslSepMul_of_finite_range
+    (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)) :
+    Set.range `[qsl| [[f₁]] ⋆ [[f₂]]] ⊆ Set.image2 Mul.mul (Set.range f₁) (Set.range f₂) := by
+  simp only [Set.range, Set.image2, Set.mem_setOf_eq, exists_exists_eq_and, Set.setOf_subset_setOf,
+    forall_exists_index, forall_apply_eq_imp_iff]
+  intro s
+  obtain ⟨heap₁, heap₂, _, _, h⟩ := exists_qslSepMul_max_of_finite_values s h_finite₁ h_finite₂
+  rw [h]
+  use ⟨s.stack, heap₁⟩, ⟨s.stack, heap₂⟩
+  rfl
+
+theorem range_of_qslSepInf :
+    Set.range `[qsl| [[f₁]] -⋆ [[f₂]]] ⊆ closure (Set.image2 Div.div (Set.range f₂) (Set.range f₁)) := by
+  intro i ⟨s,h⟩
+  rw [← h]
+  apply sInf_in_closure_of_subset
+  · use (f₂ s) / (f₁ ⟨s.stack, ∅⟩)
+    use ∅
+    rw [State.disjoint_comm]
+    use emptyHeap_disjoint'
+    rw [union_emptyHeap']
+  · rintro _ ⟨heap, _, rfl⟩
+    simp only [Set.image2, Set.mem_range, exists_exists_eq_and, Set.mem_setOf_eq]
+    use ⟨s.stack, s.heap ∪ heap⟩, ⟨s.stack, heap⟩
+    rfl
+
+theorem range_of_qslSepDiv_of_finite_range
+    (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)) :
+    Set.range `[qsl| [[f₁]] -⋆ [[f₂]]] ⊆ Set.image2 Div.div (Set.range f₂) (Set.range f₁) := by
+  simp only [Set.range, Set.image2, Set.mem_setOf_eq, exists_exists_eq_and, Set.setOf_subset_setOf,
+    forall_exists_index, forall_apply_eq_imp_iff]
+  intro s
+  obtain ⟨heap, _, h⟩ := exists_qslSepDiv_min_of_finite_values s h_finite₁ h_finite₂
+  rw [h]
+  use ⟨s.stack, s.heap ∪ heap⟩, ⟨s.stack, heap⟩
+  rfl
 
 /-- Theorem to translate an qsl entailment into a sl entailment -/
-theorem qsl_entail_if_at_least_ (f g : StateRV Var) {values : Set I} (h_subset : Set.range f ⊆ values) :
+theorem qsl_entail_if_at_least (f g : StateRV Var) {values : Set I} (h_subset : Set.range f ⊆ values) :
     f ⊢ g ↔ ∀ i ∈ values, `[sl| [[λ s => i ≤ f s]] ⊢ [[fun s => i ≤ g s]]] := by
   apply Iff.intro
   · intro h i _ s h_f
@@ -215,28 +544,6 @@ theorem atLeast_qslNot_of_slNot {i : I } {f : StateRV Var} {s : State Var} {valu
   apply And.intro
   · exact Set.mem_of_subset_of_mem h_subset (Set.mem_range_self _)
   · exact h_lt
-
-theorem lt_sInf_of_valuesOf {values : Set I} (h_fin : Set.Finite (values)) {i : I} (h_lt : 0 < i) :
-    σ i < sInf {j ∈ values | σ i < j } := by
-  have h_fin : Set.Finite {j ∈ values | σ i < j } := Set.Finite.subset h_fin (Set.sep_subset values (fun j => σ i < j))
-  by_cases Set.Nonempty {j ∈ values | σ i < j }
-  case neg h_empty =>
-    rw [← unitInterval.symm_one, symm_lt_iff_symm_lt] at h_lt
-    apply lt_of_lt_of_le h_lt
-    apply le_sInf
-    intro j h_j
-    exact (h_empty ⟨j, h_j⟩).elim
-  case pos h_nonempty =>
-    rw [lt_iff_le_and_ne]
-    apply And.intro
-    · apply le_sInf
-      rintro j ⟨_, h_lt⟩
-      exact le_of_lt h_lt
-    · intro h
-      have h_mem := Set.Nonempty.csInf_mem h_nonempty h_fin
-      rw [← h] at h_mem
-      clear h_nonempty h_fin h
-      simp only [Set.mem_setOf_eq, lt_self_iff_false, and_false] at h_mem
 
 theorem atLeast_qslNot_iff {i : I} {f : StateRV Var} {s : State Var} {values : Set I}
   (h_subset : Set.range f ⊆ values) (h_min : σ i < sInf {j ∈ values | σ i < j }) :
@@ -342,14 +649,6 @@ theorem atLeast_qslSup_if {α : Type} { i : I } {f : α → StateRV Var} {s : St
   _ ≤ f x s := h
   _ ≤ j := hj x
 
-theorem sSup_mem_of_nonempty {α : Type} {f : α → StateRV Var} {s : State Var}
-    (h_nonempty : Nonempty α) (h_finite : Set.Finite {i | ∃ x, f x s = i}) :
-    sSup {i | ∃ y, f y s = i} ∈ {i | ∃ y, f y s = i} := by
-  apply Set.Nonempty.csSup_mem
-  · have x := Classical.choice h_nonempty
-    use (f x s), x
-  · exact h_finite
-
 theorem atLeast_qslSup_iff {α : Type} { i : I } {f : α → StateRV Var} {s : State Var}
     (h_max : sSup { i | ∃ y, f y s = i } ∈ { i | ∃ y, f y s = i }) :
     i ≤ `[qsl| S x. [[f x]]] s ↔ `[sl| ∃ x. [[fun s => i ≤ f x s]]] s := by
@@ -390,46 +689,6 @@ theorem atLeast_qslSepMul_if { i : I } {f₁ f₂ : StateRV Var} {s : State Var}
   _ ≤ (f₁ ⟨s.stack, heap₁⟩) * j₂ := mul_le_mul_of_nonneg_right h₁ nonneg'
   _ ≤ (f₁ ⟨s.stack, heap₁⟩) * (f₂ ⟨s.stack, heap₂⟩) := mul_le_mul_of_nonneg_left h₂ nonneg'
   _ ≤ j := (h heap₁ heap₂ h_disjoint h_union rfl)
-
-theorem exists_heaps_max_of_finite_heap {f₁ f₂ : StateRV Var} {s : State Var}
-    (h_finite : Heap.Finite s.heap):
-    `[qsl| [[f₁]] ⋆ [[f₂]]] s ∈ { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap
-    ∧ x = f₁ ⟨s.stack, h₁⟩ * f₂ ⟨s.stack, h₂⟩} := by
-  rw [qslSepMul]
-  apply Set.Nonempty.csSup_mem
-  · use (f₁ ⟨s.stack,∅⟩ * f₂ s), ∅, s.heap, emptyHeap_disjoint', emptyHeap_union'
-  · apply Set.Finite.subset
-    · have : Set.Finite {heap | ∃ heap', disjoint heap heap' ∧ heap ∪ heap' = s.heap} := by {
-        apply Set.Finite.subset (Finite.finite_of_subheaps h_finite)
-        intro heap ⟨heap', _, h_union⟩
-        use heap'
-      }
-      apply Set.Finite.mul
-      · exact Set.Finite.image (fun heap => f₁ ⟨s.stack,heap⟩) this
-      · exact Set.Finite.image (fun heap => f₂ ⟨s.stack,heap⟩) this
-    · intro i ⟨heap₁, heap₂, h_disjoint, h_union, h⟩
-      rw [Set.mem_mul]
-      use (f₁ ⟨s.stack,heap₁⟩)
-      apply And.intro (by use heap₁; refine And.intro ?_ rfl; use heap₂)
-      use (f₂ ⟨s.stack,heap₂⟩)
-      refine And.intro ?_ h.symm
-      use heap₂
-      refine And.intro ?_ rfl
-      use heap₁
-      rw [disjoint_comm heap₂ heap₁, union_comm heap₂ heap₁ h_disjoint.symm]
-      trivial
-
-theorem exists_heaps_max_of_finite_values {f₁ f₂ : StateRV Var} {s : State Var}
-    (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)):
-    `[qsl| [[f₁]] ⋆ [[f₂]]] s ∈ { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap
-    ∧ x = f₁ ⟨s.stack, h₁⟩ * f₂ ⟨s.stack, h₂⟩} := by
-  rw [qslSepMul]
-  apply Set.Nonempty.csSup_mem
-  · use (f₁ ⟨s.stack,∅⟩ * f₂ s), ∅, s.heap, emptyHeap_disjoint', emptyHeap_union'
-  · apply Set.Finite.subset (Set.Finite.mul h_finite₁ h_finite₂)
-    rintro _ ⟨heap₁, heap₂, _, _, rfl⟩
-    simp only [Set.mem_mul]
-    use (f₁ ⟨s.stack, heap₁⟩), (Set.mem_range_self _), (f₂ ⟨s.stack, heap₂⟩), (Set.mem_range_self _)
 
 theorem atLeast_qslSepMul_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {values₁ values₂ : Set I}
     (h_subset₁ : Set.range f₁ ⊆ values₁) (h_subset₂ : Set.range f₂ ⊆ values₂)

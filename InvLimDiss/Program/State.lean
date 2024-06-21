@@ -492,10 +492,23 @@ theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
 
   theorem emptyHeap_disjoint' {heap : Heap} : disjoint ∅ heap := emptyHeap_disjoint heap
 
+  theorem disjoint_emptyHeap (heap : Heap) : disjoint heap ∅ := by
+    rw [disjoint_comm]; exact emptyHeap_disjoint'
+
+  theorem disjoint_emptyHeap' {heap : Heap} : disjoint heap ∅ := disjoint_emptyHeap heap
+
+
   theorem emptyHeap_union (heap : Heap) : ∅ ∪ heap = heap := by
   apply funext; intro n; simp only [union, emptyHeap]
 
   theorem emptyHeap_union' {heap : Heap} : ∅ ∪ heap = heap := emptyHeap_union heap
+
+  theorem union_emptyHeap (heap : Heap) : heap ∪ ∅ = heap := by
+  rw [union_comm]
+  · exact emptyHeap_union'
+  · exact disjoint_emptyHeap'
+
+  theorem union_emptyHeap' {heap : Heap} : heap ∪ ∅ = heap := union_emptyHeap heap
 
   theorem union_eq_emptyHeap_iff {heap heap' : Heap} :
       heap ∪ heap' = ∅ ↔ heap = ∅ ∧ heap' = ∅ := by
