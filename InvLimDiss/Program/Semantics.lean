@@ -78,7 +78,7 @@ noncomputable def compareAndSetSmallStepSemantics (v : Variable) (e_loc e_cmp e_
 /-- allocate succeeds if the location m and n spaces afterwards are allocated and sets the values
     to the default value 0. -/
 @[simp]
-noncomputable def allocateSmallStepSemantics (v : Variable) (n : ℕ) :
+noncomputable def allocateSmallStepSemantics (v : Variable) (n : ℕ):
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' =>
     iteOneZero (c = [Prog| ↓] ∧ ∃ m, a = Action.allocation m ∧ isNotAlloc s m n
@@ -139,7 +139,7 @@ noncomputable def programSmallStepSemantics :
   | [Prog| e_loc *≔ e_val] => manipulateSmallStepSemantics e_loc e_val
   | [Prog| v ≔* e] => lookupSmallStepSemantics v e
   | [Prog| v ≔ cas(e_loc, e_cmp, e_val)] => compareAndSetSmallStepSemantics v e_loc e_cmp e_val
-  | [Prog| v ≔ alloc(n)] => allocateSmallStepSemantics v n
+  | [Prog| v ≔ alloc] => allocateSmallStepSemantics v 2
   | [Prog| free(e,n)] => freeSmallStepSemantics e n
   | [Prog| pif e then [[c₁]] else [[c₂]] fi] => probabilisticChoiceSmallStepSemantics e c₁ c₂
   | [Prog| if e then [[c₁]] else [[c₂]] fi] => conditionalChoiceSmallStepSemantics e c₁ c₂
