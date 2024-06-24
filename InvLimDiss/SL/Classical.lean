@@ -70,7 +70,7 @@ syntax:30 sl:31 " ∨ " sl:30 : sl
 syntax:max "∃ " explicitBinders ". " sl : sl
 syntax:max "∀ " explicitBinders ". " sl : sl
 syntax:35 sl:36 " ∗ " sl:35 : sl
-syntax:36 "[∗] " binderIdent "∈ {0 ... "term" }, " sl:36 : sl
+syntax:36 "[∗] " binderIdent "∈ {0 ... "term" }. " sl:36 : sl
 syntax:25 sl:26 " -∗ " sl:25 : sl
 syntax "("sl")" : sl
 
@@ -93,9 +93,9 @@ macro_rules
   | `(term| `[sl| ∃ $xs. $f:sl]) => do expandExplicitBinders ``slExists xs (← `(`[sl|$f]))
   | `(term| `[sl| ∀ $xs. $f:sl]) => do expandExplicitBinders ``slAll xs (← `(`[sl|$f]))
   | `(term| `[sl| $l:sl ∗ $r:sl]) => `(slSepCon `[sl|$l] `[sl|$r])
-  | `(term| `[sl| [∗] $x:ident ∈ {0 ... $m}, $f:sl]) =>
+  | `(term| `[sl| [∗] $x:ident ∈ {0 ... $m}. $f:sl]) =>
       `(slBigSepCon $m (fun $x ↦ `[sl| $f]))
-  | `(term| `[sl| [∗] $_:hole ∈ {0 ... $m}, $f:sl]) =>
+  | `(term| `[sl| [∗] $_:hole ∈ {0 ... $m}. $f:sl]) =>
       `(slBigSepCon $m (fun _ ↦ `[sl| $f]))
   | `(term| `[sl| $l:sl -∗ $r:sl]) => `(slSepImp `[sl|$l] `[sl|$r])
   | `(term| `[sl| ($f:sl)]) => `(`[sl|$f])
@@ -113,9 +113,9 @@ macro_rules
   | `(term| `[sl $v:term| ∃ $xs. $f:sl]) => do expandExplicitBinders ``slExists xs (← `(`[sl $v|$f]))
   | `(term| `[sl $v:term| ∀ $xs. $f:sl]) => do expandExplicitBinders ``slAll xs (← `(`[sl $v|$f]))
   | `(term| `[sl $v:term| $l:sl ∗ $r:sl]) => `(slSepCon `[sl $v|$l] `[sl $v|$r])
-  | `(term| `[sl $v:term| [∗] $x:ident ∈ {0 ... $m}, $f:sl]) =>
+  | `(term| `[sl $v:term| [∗] $x:ident ∈ {0 ... $m}. $f:sl]) =>
       `(slBigSepCon $m (fun $x ↦ `[sl $v| $f]))
-  | `(term| `[sl $v:term| [∗] $_:hole ∈ {0 ... $m}, $f:sl]) =>
+  | `(term| `[sl $v:term| [∗] $_:hole ∈ {0 ... $m}. $f:sl]) =>
       `(slBigSepCon $m (fun _ ↦ `[sl $v| $f]))
   | `(term| `[sl $v:term| $l:sl -∗ $r:sl]) => `(slSepImp `[sl $v|$l] `[sl $v|$r])
   | `(term| `[sl $v:term| ($f:sl)]) => `(`[sl $v|$f])
@@ -164,7 +164,7 @@ def unexpandSlNot : Unexpander
 def requireBracketsAnd : TSyntax `sl → Bool
   | `(sl| ¬ $_:sl) => false
   | `(sl| $_:sl ∗ $_:sl) => false
-  | `(sl| [∗] $_ ∈ {0 ... $_}, $_) => false
+  | `(sl| [∗] $_ ∈ {0 ... $_}. $_) => false
   | `(sl| $_:sl ∧ $_:sl) => false
   | `(sl| $f:sl) => !isAtom f
 
@@ -212,7 +212,7 @@ def unexpandSlSepCon : Unexpander
 @[app_unexpander slBigSepCon]
 def unexpandBigSepCon : Unexpander
   | `($_ $n fun $x:ident => $f) => do
-      `(`[sl| [∗] $x:ident ∈ {0 ... $n}, $(← bracketsAnd f)])
+      `(`[sl| [∗] $x:ident ∈ {0 ... $n}. $(← bracketsAnd f)])
   | _ => throw ()
 
 def requireBracketsSepImp : TSyntax `sl → Bool

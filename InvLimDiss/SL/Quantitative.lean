@@ -52,6 +52,11 @@ noncomputable def qslInf {α : Type} (P : α → StateRV Var) : StateRV Var := s
 noncomputable def qslSepMul (P Q : StateRV Var) : StateRV Var :=
   fun s => sSup { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap ∧ x = P ⟨s.stack, h₁⟩ * Q ⟨s.stack, h₂⟩}
 
+noncomputable def qslBigSepMul (n : Nat) (P : ℕ → StateRV Var) : StateRV Var :=
+  match n with
+  | 0 => (P 0)
+  | n+1 => qslSepMul (P (n+1)) (qslBigSepMul n P)
+
 noncomputable def qslSepDiv (P Q : StateRV Var) : StateRV Var :=
   fun s => sInf { x | ∃ h', disjoint s.heap h' ∧ x = Q ⟨s.stack,s.heap ∪ h'⟩ / P ⟨s.stack,h'⟩ }
 
@@ -75,6 +80,7 @@ syntax:35 qsl:36 " · " qsl:35 : qsl
 syntax:max "S " explicitBinders ". " qsl : qsl
 syntax:max "I " explicitBinders ". " qsl : qsl
 syntax:35 qsl:36 " ⋆ " qsl:35 : qsl
+syntax:36 "[⋆] " binderIdent "∈ {0 ... "term" }. " qsl:36 : qsl
 syntax:25 qsl:26 " -⋆ " qsl:25 : qsl
 syntax "("qsl")" : qsl
 
@@ -101,6 +107,10 @@ macro_rules
   | `(term| `[qsl| S $xs. $f:qsl]) => do expandExplicitBinders ``qslSup xs (← `(`[qsl|$f]))
   | `(term| `[qsl| I $xs. $f:qsl]) => do expandExplicitBinders ``qslInf xs (← `(`[qsl|$f]))
   | `(term| `[qsl| $l:qsl ⋆ $r:qsl]) => `(qslSepMul `[qsl|$l] `[qsl|$r])
+  | `(term| `[qsl| [⋆] $x:ident ∈ {0 ... $m}. $f:qsl]) =>
+      `(qslBigSepMul $m (fun $x ↦ `[qsl| $f]))
+  | `(term| `[qsl| [⋆] $_:hole ∈ {0 ... $m}. $f:qsl]) =>
+      `(qslBigSepMul $m (fun _ ↦ `[qsl| $f]))
   | `(term| `[qsl| $l:qsl -⋆ $r:qsl]) => `(qslSepDiv `[qsl|$l] `[qsl|$r])
   | `(term| `[qsl| ($f:qsl)]) => `(`[qsl|$f])
   | `(term| `[qsl| $l:qsl ⊢ $r:qsl]) => `(`[qsl|$l] ≤ `[qsl|$r])
@@ -121,6 +131,10 @@ macro_rules
   | `(term| `[qsl $v:term| S $xs. $f:qsl]) => do expandExplicitBinders ``qslSup xs (← `(`[qsl $v|$f]))
   | `(term| `[qsl $v:term| I $xs. $f:qsl]) => do expandExplicitBinders ``qslInf xs (← `(`[qsl $v|$f]))
   | `(term| `[qsl $v:term| $l:qsl ⋆ $r:qsl]) => `(qslSepMul `[qsl $v|$l] `[qsl $v|$r])
+  | `(term| `[qsl $v:term| [⋆] $x:ident ∈ {0 ... $m}. $f:qsl]) =>
+      `(qslBigSepMul $m (fun $x ↦ `[qsl $v| $f]))
+  | `(term| `[qsl $v:term| [⋆] $_:hole ∈ {0 ... $m}. $f:qsl]) =>
+      `(qslBigSepMul $m (fun _ ↦ `[qsl $v| $f]))
   | `(term| `[qsl $v:term| $l:qsl -⋆ $r:qsl]) => `(qslSepDiv `[qsl $v|$l] `[qsl $v|$r])
   | `(term| `[qsl $v:term| ($f:qsl)]) => `(`[qsl $v|$f])
   | `(term| `[qsl $v:term | $l:qsl ⊢ $r:qsl]) => `(`[qsl $v|$l] ≤ `[qsl $v|$r])
@@ -180,6 +194,7 @@ def requireBracketsMin : TSyntax `qsl → Bool
   | `(qsl| $_:qsl ⋆ $_:qsl) => false
   | `(qsl| $_:qsl ⊓ $_:qsl) => false
   | `(qsl| $_:qsl · $_:qsl) => false
+  | `(qsl| [⋆] $_ ∈ {0 ... $_}. $_) => false
   | `(qsl| $f:qsl) => !isAtom f
 
 def bracketsMin [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
@@ -231,6 +246,12 @@ def unexpandQslInf : Unexpander
 @[app_unexpander qslSepMul]
 def unexpandQslSepMul : Unexpander
   | `($_ $l $r) => do `(`[qsl| $(← bracketsMin l) ⋆ $(← bracketsMin r)])
+  | _ => throw ()
+
+@[app_unexpander qslBigSepMul]
+def unexpandBigSepCon : Unexpander
+  | `($_ $n fun $x:ident => $f) => do
+      `(`[qsl| [⋆] $x:ident ∈ {0 ... $n}. $(← bracketsMin f)])
   | _ => throw ()
 
 def requireBracketsSepDiv : TSyntax `qsl → Bool
