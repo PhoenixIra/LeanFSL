@@ -21,7 +21,7 @@ inductive Program where
   | lookup : Vars → (ValueExp Vars) → Program
   | compareAndSet :
     Vars → (ValueExp Vars) → (ValueExp Vars) → (ValueExp Vars) → Program
-  | allocate: Vars → Program
+  | allocate: Vars → ℕ → Program
   | free' : (ValueExp Vars) → ℕ → Program
   | probabilisticChoice : (ProbExp Vars) → Program → Program → Program
   | conditionalChoice : (BoolExp Vars) → Program → Program → Program
@@ -44,7 +44,7 @@ syntax term " ≔ " term : program
 syntax  term " *≔ " term : program
 syntax term " ≔* " term : program
 syntax term " ≔ " "cas" "(" term ", " term ", " term ")" : program
-syntax term " ≔ alloc" : program
+syntax term " ≔ alloc " term : program
 syntax "free" "(" term ", " term ")": program
 syntax program " ; " program : program
 syntax " pif " term " then " program " else " program " fi " : program
@@ -64,7 +64,7 @@ macro_rules
   | `(term| [Prog| $l:term *≔ $r:term]) => `(Program.manipulate $l $r)
   | `(term| [Prog| $l:term ≔* $r:term]) => `(Program.lookup $l $r)
   | `(term| [Prog| $l:term ≔ cas ( $a:term , $b:term , $c:term )]) => `(Program.compareAndSet $l $a $b $c)
-  | `(term| [Prog| $l:term ≔ alloc]) => `(Program.allocate $l)
+  | `(term| [Prog| $l:term ≔ alloc $r:term]) => `(Program.allocate $l $r)
   | `(term| [Prog| free ( $a:term , $b:term )]) => `(Program.free' $a $b)
   | `(term| [Prog| pif $p:term then $l else $r fi]) => `(Program.probabilisticChoice $p [Prog| $l] [Prog| $r])
   | `(term| [Prog| if $b:term then $l:program else $r:program fi]) => `(Program.conditionalChoice $b [Prog| $l] [Prog| $r])
@@ -110,7 +110,7 @@ def unexpandCAS : Unexpander
 
 @[app_unexpander Program.allocate]
 def unexpandAlloc : Unexpander
-  | `($_ $l) => `([Prog| $l:term ≔ alloc])
+  | `($_ $l $r) => `([Prog| $l:term ≔ alloc($r:term)])
   | _ => throw ()
 
 @[app_unexpander Program.free']

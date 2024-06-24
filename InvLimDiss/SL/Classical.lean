@@ -2,6 +2,7 @@ import InvLimDiss.Program.State
 import InvLimDiss.Program.Expressions
 import InvLimDiss.SL.Entailment
 import Lean.PrettyPrinter
+import Mathlib.Algebra.BigOperators.Group.Finset
 
 /-
 This file contains definitions and lemmas about classical (i.e. Prop) separation logic
@@ -9,7 +10,7 @@ This file contains definitions and lemmas about classical (i.e. Prop) separation
 
 namespace SL
 
-open State Syntax
+open State Syntax BigOperators
 
 
 def StateProp (Var : Type) : Type := State Var → Prop
@@ -45,6 +46,12 @@ def slAll {α : Type} (P : α → StateProp Var) : StateProp Var := sInf {P x | 
 def slSepCon (P Q : StateProp Var) : StateProp Var :=
   λ ⟨s,h⟩ => ∃ h₁ h₂, P ⟨s, h₁⟩ ∧ Q ⟨s, h₂⟩ ∧ disjoint h₁ h₂ ∧ h₁ ∪ h₂ = h
 
+def slBigSepCon (n : Nat) (P : ℕ → StateProp Var) : StateProp Var :=
+  match n with
+  | 0 => (P 0)
+  | n+1 => slSepCon (P (n+1)) (slBigSepCon n P)
+
+
 def slSepImp (P Q : StateProp Var) : StateProp Var :=
   λ ⟨s,h⟩ => ∀ h', disjoint h h' → P ⟨s,h'⟩ → Q ⟨s,(h ∪ h')⟩
 
@@ -65,6 +72,7 @@ syntax:30 sl:31 " ∨ " sl:30 : sl
 syntax:max "∃ " explicitBinders ". " sl : sl
 syntax:max "∀ " explicitBinders ". " sl : sl
 syntax:35 sl:36 " ∗ " sl:35 : sl
+syntax:35 "[∗] " binderIdent "∈ { "term" , "term" }, " sl:36 : sl
 syntax:25 sl:26 " -∗ " sl:25 : sl
 syntax "("sl")" : sl
 
@@ -106,6 +114,13 @@ macro_rules
   | `(term| `[sl $v:term| $l:sl -∗ $r:sl]) => `(slSepImp `[sl $v|$l] `[sl $v|$r])
   | `(term| `[sl $v:term| ($f:sl)]) => `(`[sl $v|$f])
   | `(term| `[sl $v:term | $l:sl ⊢ $r:sl]) => `(`[sl $v|$l] ≤ `[sl $v|$r])
+
+macro_rules
+  | `(term| `[sl| [∗] $bs:bigOpBinders, $v:sl]) => do
+    let processed ← processBigOpBinders bs
+    let x ← bigOpBindersPattern processed
+    let s ← bigOpBindersProd processed
+    `(slBigSepCon $s (fun $x ↦ `[sl| $v]))
 
 open Lean PrettyPrinter Delaborator
 
