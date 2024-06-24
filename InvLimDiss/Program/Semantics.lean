@@ -78,11 +78,16 @@ noncomputable def compareAndSetSmallStepSemantics (v : Variable) (e_loc e_cmp e_
 /-- allocate succeeds if the location m and n spaces afterwards are allocated and sets the values
     to the default value 0. -/
 @[simp]
-noncomputable def allocateSmallStepSemantics (v : Variable) (n : ℕ) :
+noncomputable def allocateSmallStepSemantics (v : Variable) (e : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
-  fun s a c s' =>
-    iteOneZero (c = [Prog| ↓] ∧ ∃ m, a = Action.allocation m ∧ isNotAlloc s m n
-      ∧ substituteStack (substituteHeap s m n) v m = s')
+  fun s a c s' => match c with
+  | [Prog| ↓] =>
+    iteOneZero (∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack
+      ∧ isNotAlloc s m n ∧ substituteStack (substituteHeap s m n) v m = s')
+  | [Prog| ↯] =>
+    iteOneZero (a = Action.deterministic ∧ ¬ ∃ n : ℕ, n = e s.stack)
+  | _ => 0
+
 
 /-- free succeeds if the expression is well-defined and the location is up to n positions allocated.
     free fails if an expression is not well-defined or some location between l and l+n is not allocated. -/

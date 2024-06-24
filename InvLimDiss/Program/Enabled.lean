@@ -14,7 +14,9 @@ def enabledAction : (Program Variable) → (State Variable) → Set Action
   | [Prog| _ *≔ _], _           => { Action.deterministic }
   | [Prog| _ ≔* _], _           => { Action.deterministic }
   | [Prog| _ ≔ cas(_, _, _)], _ => { Action.deterministic }
-  | [Prog| _ ≔ alloc(n)], s     => { a | ∃ m, a = Action.allocation m ∧ isNotAlloc s m n }
+  | [Prog| _ ≔ alloc(e)], s     => if ∃ n : ℕ, n = e s.stack
+    then { a | ∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack ∧ isNotAlloc s m n }
+    else { Action.deterministic }
   | [Prog| free(_,_)], _        => { Action.deterministic }
   | [Prog| [[c₁]] ; [[_]]], s   => if c₁ = [Prog| ↓] then { Action.deterministic } else enabledAction c₁ s
   | [Prog| pif _ then [[_]] else [[_]] fi], _   => { Action.deterministic }
@@ -66,13 +68,31 @@ theorem zero_probability_of_not_enabledAction
       pick_goal 3; rfl
       all_goals (rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h)
     | allocate v n =>
-      simp only [enabledAction, Set.mem_setOf_eq, not_exists, not_and] at h
-      simp only [programSmallStepSemantics, allocateSmallStepSemantics]
-      rw [iteOneZero_neg]
-      simp only [not_exists, not_and]
-      intro _ x h_act h_nalloc
-      exfalso
-      exact h x h_act h_nalloc
+      simp only [enabledAction] at h
+      split at h
+      case isTrue h_n =>
+        simp only [Set.mem_setOf_eq, not_exists, not_and] at h
+        obtain ⟨n, h_n⟩ := h_n
+        simp only [programSmallStepSemantics, allocateSmallStepSemantics, not_exists]
+        split
+        · simp only [iteOneZero_eq_zero_def, not_exists, not_and]
+          rintro m h_m n' h_n' h_alloc h_sub
+          exact h m h_m n' h_n' h_alloc
+        · simp only [iteOneZero_eq_zero_def, not_and, not_forall, Decidable.not_not]
+          rintro rfl
+          use n
+        · rfl
+      case isFalse h_n =>
+        simp only [programSmallStepSemantics, allocateSmallStepSemantics, not_exists]
+        split
+        · simp only [iteOneZero_eq_zero_def, not_exists, not_and]
+          intro m h_m n' h_n' h_alloc h_subst
+          apply h_n
+          use n'
+        · simp only [iteOneZero_eq_zero_def, not_and, not_forall, Decidable.not_not]
+          rintro rfl
+          simp only [Set.mem_singleton_iff, not_true_eq_false] at h
+        · rfl
 
   | probabilisticChoice e c₁ c₂ _ _ =>
     rw [enabledAction, Set.mem_singleton_iff] at h
@@ -107,7 +127,9 @@ theorem zero_probability_of_not_enabledAction
         case h_1 =>
           split
           case isTrue _ =>
-          exact ih₁ h _
+            exact ih₁ h _
+          case isFalse _ =>
+            rfl
         case h_2 =>
           rfl
 
@@ -149,8 +171,8 @@ theorem zero_probability_of_not_enabledAction
       case h_2 a₁ a₂ =>
         have ha₂ : a₂ ∉ enabledAction c₂ s := by {
           intro h
-          specialize h_left a₂ h
-          simp only [not_true_eq_false] at h_left
+          specialize h_right a₂ h
+          simp only [not_true_eq_false] at h_right
         }
         split
         case isTrue h_error' =>

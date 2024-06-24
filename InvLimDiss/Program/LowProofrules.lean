@@ -126,23 +126,35 @@ theorem compareAndSet_mem_zero_one :
     iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
   case h_3 _ _ _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
-theorem allocate_eq_one_iff : programSmallStepSemantics [Prog| v ≔ alloc n] s a c' s' = 1
-    ↔ (c' = [Prog| ↓] ∧ ∃ m, a = Action.allocation m ∧ isNotAlloc s m n
-      ∧ substituteStack (substituteHeap s m n) v m = s') := by
+theorem allocate_eq_one_iff : programSmallStepSemantics [Prog| v ≔ alloc e] s a c' s' = 1
+    ↔ (c' = [Prog| ↓] ∧ ∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack
+      ∧ isNotAlloc s m n ∧ substituteStack (substituteHeap s m n) v m = s')
+    ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ ¬ ∃ n : ℕ, n = e s.stack) := by
   rw [programSmallStepSemantics, allocateSmallStepSemantics]
-  simp only [iteOneZero_eq_one_def]
+  split
+  case h_1 => simp only [iteOneZero_eq_one_def, true_and, not_exists, false_and, or_false]
+  case h_2 => simp only [not_exists, iteOneZero_eq_one_def, false_and, true_and, false_or]
+  case h_3 h_n_term h_n_err =>
+    simp only [zero_ne_one, not_exists, false_iff, not_or, not_and, not_forall, Decidable.not_not]
+    apply And.intro
+    · rintro rfl; exfalso
+      apply h_n_term; rfl
+    · rintro rfl; exfalso
+      apply h_n_err; rfl
 
 theorem allocate_mem_zero_one :
-    programSmallStepSemantics [Prog| v ≔ alloc n] s a c' s' ∈ ({0, 1} : Set I) := by
+    programSmallStepSemantics [Prog| v ≔ alloc e] s a c' s' ∈ ({0, 1} : Set I) := by
   rw [programSmallStepSemantics, allocateSmallStepSemantics]
-  simp only [mem_insert_iff, iteOneZero_eq_zero_def, not_and, not_exists, mem_singleton_iff,
-    iteOneZero_eq_one_def]
-  cases eq_or_ne c' [Prog| ↓] with
-  | inl h_c =>
-    by_cases h : ∃ m, a = Action.allocation m ∧ isNotAlloc s m n ∧ substituteStack (substituteHeap s m n) v m = s'
-    case pos => apply Or.inr; exact ⟨h_c, h⟩
-    case neg => apply Or.inl; intro _; simp only [not_exists, not_and] at h; exact h
-  | inr h_c => apply Or.inl; intro h; exfalso; exact h_c h
+  simp only [not_exists, mem_insert_iff, mem_singleton_iff]
+  split
+  · by_cases h : ∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack
+      ∧ isNotAlloc s m n ∧ substituteStack (substituteHeap s m n) v m = s'
+    case pos => apply Or.inr; rw [iteOneZero_eq_one_def]; exact h
+    case neg => apply Or.inl; rw [iteOneZero_eq_zero_def]; exact h
+  · by_cases h : a = Action.deterministic ∧ ∀ n : ℕ, ¬n = e s.stack
+    case pos => apply Or.inr; rw [iteOneZero_eq_one_def]; exact h
+    case neg => apply Or.inl; rw [iteOneZero_eq_zero_def]; exact h
+  · apply Or.inl; rfl
 
 theorem free_eq_one_iff : programSmallStepSemantics [Prog| free(e, n)] s a c' s' = 1
     ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic

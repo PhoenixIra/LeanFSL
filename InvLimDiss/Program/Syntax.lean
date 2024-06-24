@@ -21,7 +21,7 @@ inductive Program where
   | lookup : Vars → (ValueExp Vars) → Program
   | compareAndSet :
     Vars → (ValueExp Vars) → (ValueExp Vars) → (ValueExp Vars) → Program
-  | allocate: Vars → ℕ → Program
+  | allocate: Vars → (ValueExp Vars) → Program
   | free' : (ValueExp Vars) → ℕ → Program
   | probabilisticChoice : (ProbExp Vars) → Program → Program → Program
   | conditionalChoice : (BoolExp Vars) → Program → Program → Program
