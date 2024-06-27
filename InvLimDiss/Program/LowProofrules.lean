@@ -271,30 +271,31 @@ theorem probabilisticChoice_eq_one_iff:
   apply Iff.intro
   · intro h
     simp only [ite_eq_right_iff, and_imp] at h
-    simp only [ite_def] at h
-    cases h with
-    | inl h =>
-      let ⟨⟨h_a, h_s⟩, h_c⟩ := h; clear h
-      cases h_c with
-      | inl h_c =>
-        exact Or.inl ⟨h_a, h_s, h_c.left⟩
-      | inr h_c =>
-        let ⟨h_ne_c₁₂, h_c⟩ := h_c
-        cases h_c with
-        | inl h_c =>
-          let ⟨h_c₁, h_e⟩ := h_c
-          rw [not_and] at h_ne_c₁₂
-          specialize h_ne_c₁₂ h_c₁
-          exact Or.inr <| Or.inl ⟨h_a, h_s, h_c₁, h_ne_c₁₂, h_e⟩
-        | inr h_c =>
-          let ⟨h_c₁, h_c₂⟩ := h_c; clear h_c
-          cases h_c₂ with
-          | inl h_c₂ =>
-            let ⟨h_c₂, h_e⟩ := h_c₂
-            rw [eq_zero_iff_sym_eq_one] at h_e
-            exact Or.inr <| Or.inr ⟨h_a, h_s, h_c₁, h_c₂, h_e⟩
-          | inr h_c₂ => exfalso; exact zero_ne_one h_c₂.right
-    | inr h => exfalso; exact zero_ne_one h.right
+    split at h
+    case isTrue h' =>
+      obtain ⟨rfl, rfl⟩ := h'
+      split at h
+      case isTrue h_c' =>
+        obtain ⟨rfl, rfl⟩ := h_c'
+        apply Or.inl
+        trivial
+      case isFalse h_c' =>
+        simp only [not_and] at h_c'
+        split at h
+        case isTrue h_c₁ =>
+          specialize h_c' h_c₁
+          apply Or.inr; apply Or.inl
+          trivial
+        case isFalse h_c₁ =>
+          split at h
+          case isTrue h_c₂ =>
+            rw [eq_zero_iff_sym_eq_one] at h
+            apply Or.inr; apply Or.inr
+            trivial
+          case isFalse h_c₂ =>
+            simp only [zero_ne_one] at h
+    case isFalse h' =>
+      simp only [zero_ne_one] at h
   · intro h
     cases h with
     | inl h =>
