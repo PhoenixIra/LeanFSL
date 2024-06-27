@@ -1,11 +1,24 @@
 import Mathlib.Data.Rat.Defs
 import Mathlib.Data.Set.Finite
+import Mathlib.Data.PNat.Basic
 import Mathlib.Algebra.Order.Ring.Nat
 import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
 
 /-
 This file contains definitions and lemmas about program states, i.e. stack-heap pairs.
 -/
+
+namespace PNat
+  theorem add_right_nat {n : PNat} {m : Nat} : 0 < n + m := Nat.add_pos_left n.prop m
+  theorem add_left_nat {n : Nat} {m : PNat} : 0 < n + m := Nat.add_pos_right n m.prop
+
+  instance : HAdd PNat Nat PNat where
+    hAdd n m := ⟨n + m, PNat.add_right_nat⟩
+
+  instance : HAdd Nat PNat PNat where
+    hAdd n m := ⟨n + m, PNat.add_left_nat⟩
+end PNat
+
 
 
 open Rat Classical
@@ -19,10 +32,9 @@ open HeapValue
 instance : Coe ℚ HeapValue where
   coe := fun q => val q
 
-
 def Stack (Variable : Type) : Type := Variable → ℚ
 
-def Heap : Type := ℕ → HeapValue
+def Heap : Type := PNat → HeapValue
 
 structure State (Variable : Type) where
   stack : Stack Variable
@@ -82,15 +94,15 @@ theorem substituteStack_def {s s' : State Var} {v : Var} {q : ℚ} :
 
 
 noncomputable def substituteHeap
-    (s : State Var) (l : ℕ) (q : ℚ) : State Var :=
+    (s : State Var) (l : PNat) (q : ℚ) : State Var :=
   ⟨s.stack, fun l' => if l = l' then val q else s.heap l'⟩
 
-theorem substituteHeap_stack {s : State Var} {l : ℕ} {q : ℚ} :
+theorem substituteHeap_stack {s : State Var} {l : PNat} {q : ℚ} :
     (substituteHeap s l q).stack = s.stack := by
   unfold substituteHeap
   simp only
 
-theorem substituteHeap_heap {s : State Var} {l : ℕ} {q : ℚ} :
+theorem substituteHeap_heap {s : State Var} {l : PNat} {q : ℚ} :
     (∀ l', l ≠ l' → (substituteHeap s l q).heap l' = s.heap l')
     ∧ (∀ l', l = l' → (substituteHeap s l q).heap l' = val q) := by
   unfold substituteHeap
@@ -125,15 +137,15 @@ theorem substituteHeap_def {s s' : State Var} {q : ℚ} :
 
 
 noncomputable def removeLocationHeap
-    (s : State Var) (l : ℕ) : State Var :=
+    (s : State Var) (l : PNat) : State Var :=
   ⟨s.stack, fun l' => if l = l' then undef else s.heap l'⟩
 
-theorem removeLocationHeap_stack {s : State Var} {l : ℕ} :
+theorem removeLocationHeap_stack {s : State Var} {l : PNat} :
     (removeLocationHeap s l).stack = s.stack := by
   unfold removeLocationHeap
   simp only
 
-theorem removeLocationHeap_heap {s : State Var} {l : ℕ} :
+theorem removeLocationHeap_heap {s : State Var} {l : PNat} :
     (∀ l', l ≠ l' → (removeLocationHeap s l).heap l' = s.heap l')
     ∧ (∀ l', l = l' → (removeLocationHeap s l).heap l' = undef) := by
   unfold removeLocationHeap
@@ -147,7 +159,7 @@ theorem removeLocationHeap_heap {s : State Var} {l : ℕ} :
     exfalso
     exact h_ne h_eq
 
-lemma removeLocationHeap_def {s s' : State Var} {l : ℕ} :
+lemma removeLocationHeap_def {s s' : State Var} {l : PNat} :
     removeLocationHeap s l = s' ↔ s'.stack = s.stack
       ∧ (∀ l', l ≠ l' → s'.heap l' = s.heap l')
       ∧ (∀ l', l = l' → s'.heap l' = undef) := by
@@ -170,12 +182,12 @@ lemma removeLocationHeap_def {s s' : State Var} {l : ℕ} :
         exact (h_remain l' h_ne).symm
 
 noncomputable def isNotAlloc
-    (s : State Var) (l : ℕ) (n : ℕ): Prop :=
+    (s : State Var) (l : PNat) (n : ℕ): Prop :=
   match n with
   | Nat.zero => true
-  | Nat.succ n => s.heap (l+n) = undef ∧ isNotAlloc s l n
+  | Nat.succ n => s.heap ⟨l+n,PNat.add_right_nat⟩ = undef ∧ isNotAlloc s l n
 
-theorem isNotAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
+theorem isNotAlloc_def (s : State Var) (l : PNat) (n : ℕ) :
     isNotAlloc s l n ↔ ∀ l', l ≤ l' → l' < l+n → s.heap l' = undef := by
   induction n with
   | zero =>
@@ -188,14 +200,17 @@ theorem isNotAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
     apply Iff.intro
     · rintro ⟨h_none, h_alloc⟩ l' h_le h_lt
       rw [Nat.add_succ, Nat.lt_succ] at h_lt
-      by_cases h : l' = l + n
+      by_cases h : l' = ⟨l + n, PNat.add_right_nat⟩
       · rw [h]; exact h_none
-      · exact ih.mp h_alloc l' h_le (lt_of_le_of_ne h_lt h)
+      · apply ih.mp h_alloc l' h_le
+        rw [← PNat.coe_inj, PNat.mk_coe] at h
+        exact lt_of_le_of_ne h_lt h
     · intro h
       rw [Nat.add_succ] at h
       apply And.intro
-      · apply h (l+n)
-        · exact le_self_add
+      · apply h ⟨l+n,PNat.add_right_nat⟩
+        · rw [← PNat.coe_le_coe, PNat.mk_coe]
+          exact le_self_add
         · exact(Nat.lt_succ.mpr le_rfl)
       · have : ∀ l', l ≤ l' → l' < l + n → s.heap l' = undef := by
           intro l' h_le h_lt
@@ -203,12 +218,12 @@ theorem isNotAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
         exact ih.mpr this
 
 noncomputable def allocateHeap
-    (s : State Var) (l : ℕ) (n : ℕ) : State Var :=
+    (s : State Var) (l : PNat) (n : ℕ) : State Var :=
   match n with
   | Nat.zero => s
-  | Nat.succ n => substituteHeap (allocateHeap s l n) (l+n) 0
+  | Nat.succ n => substituteHeap (allocateHeap s l n) ⟨l+n,PNat.add_right_nat⟩ 0
 
-theorem allocateHeap_stack {s : State Var} {l : ℕ} {n : ℕ} :
+theorem allocateHeap_stack {s : State Var} {l : PNat} {n : ℕ} :
     (allocateHeap s l n).stack = s.stack := by
   induction n with
   | zero => simp only [allocateHeap]
@@ -217,7 +232,7 @@ theorem allocateHeap_stack {s : State Var} {l : ℕ} {n : ℕ} :
     rw [substituteHeap_stack]
     exact ih
 
-theorem allocateHeap_heap {s : State Var} {l : ℕ} {n : ℕ} :
+theorem allocateHeap_heap {s : State Var} {l : PNat} {n : ℕ} :
       (∀ l', (l' < l ∨ l+n ≤ l') → (allocateHeap s l n).heap l' = s.heap l')
       ∧ (∀ l', l ≤ l' → l' < l+n → (allocateHeap s l n).heap l' = val 0) := by
   apply And.intro
@@ -230,13 +245,18 @@ theorem allocateHeap_heap {s : State Var} {l : ℕ} {n : ℕ} :
       | inl h_lt =>
         rw [substituteHeap_heap.left l']
         · exact ih l' (Or.inl h_lt)
-        · intro h_eq; rw [← h_eq, add_lt_iff_neg_left] at h_lt; exact not_lt_zero' h_lt
+        · intro h_eq
+          rw [← PNat.coe_inj, PNat.mk_coe] at h_eq
+          rw [← PNat.coe_lt_coe, ← h_eq, add_lt_iff_neg_left] at h_lt
+          exact not_lt_zero' h_lt
       | inr h_le =>
         rw [substituteHeap_heap.left l']
         · rw [Nat.add_succ, Nat.succ_le_iff] at h_le
           apply le_of_lt at h_le
           exact ih l' (Or.inr h_le)
-        · intro h_eq; rw [← h_eq, add_le_add_iff_left, Nat.succ_le, ← not_le] at h_le
+        · intro h_eq
+          rw [← PNat.coe_inj, PNat.mk_coe] at h_eq
+          rw [← h_eq, add_le_add_iff_left, Nat.succ_le, ← not_le] at h_le
           exact h_le le_rfl
   · intro l' h_l₁ h_l₂
     induction n with
@@ -250,13 +270,18 @@ theorem allocateHeap_heap {s : State Var} {l : ℕ} {n : ℕ} :
       | inl h_lt =>
         specialize ih h_lt
         unfold allocateHeap
-        rw [substituteHeap_heap.left l' (ne_of_lt h_lt).symm]
-        exact ih
+        rw [substituteHeap_heap.left l']
+        · exact ih
+        · intro h
+          rw [← PNat.coe_inj, PNat.mk_coe] at h
+          exact (ne_of_lt h_lt).symm h
       | inr h_eq =>
         unfold allocateHeap
-        exact substituteHeap_heap.right l' h_eq.symm
+        apply substituteHeap_heap.right l'
+        rw [← PNat.coe_inj, PNat.mk_coe]
+        exact h_eq.symm
 
-lemma allocateHeap_remain (s : State Var) (l : ℕ) (n : ℕ) :
+lemma allocateHeap_remain (s : State Var) (l : PNat) (n : ℕ) :
     ∀ l', (l' < l ∨ l+n ≤ l') → (allocateHeap s l n).heap l' = s.heap l' := by
   induction n with
   | zero => intro l' _; unfold allocateHeap; rfl
@@ -265,29 +290,40 @@ lemma allocateHeap_remain (s : State Var) (l : ℕ) (n : ℕ) :
     unfold allocateHeap
     cases h_l' with
     | inl h =>
-      have : l+n ≠ l' := by intro h_eq; rw [← h_eq, add_lt_iff_neg_left] at h; exact not_lt_zero' h
+      have : ⟨l+n,PNat.add_right_nat⟩ ≠ l' := by {
+        intro h_eq
+        rw [← PNat.coe_lt_coe, ← h_eq, PNat.mk_coe, add_lt_iff_neg_left] at h
+        exact not_lt_zero' h
+      }
       rw [substituteHeap_heap.left l' this]
       exact ih l' (Or.inl h)
     | inr h =>
       rw [Nat.add_succ, Nat.succ_le] at h
-      cases eq_or_ne (l+n) l' with
-      | inl h_eq => exfalso; exact (ne_of_lt h) h_eq
+      cases eq_or_ne ⟨l+n,PNat.add_right_nat⟩ l' with
+      | inl h_eq =>
+        exfalso
+        rw [← PNat.coe_inj, PNat.mk_coe] at h_eq
+        exact (ne_of_lt h) h_eq
       | inr h_ne => rw [substituteHeap_heap.left l' h_ne]; exact ih l' (Or.inr <| le_of_lt h)
 
-lemma allocateHeap_change (s : State Var) (l : ℕ) (n : ℕ) :
-    ∀ l', l ≤ l' → l' < l+n → (allocateHeap s l n).heap l' = val 0 := by
+lemma allocateHeap_change (s : State Var) (l : PNat) (n : ℕ) :
+    ∀ l', l ≤ l' → l' < ⟨l+n,PNat.add_right_nat⟩ → (allocateHeap s l n).heap l' = val 0 := by
   induction n with
-  | zero => intro l' h_le h_lt; rw [add_zero] at h_lt; exfalso; exact not_le_of_lt h_lt h_le
+  | zero =>
+    intro l' h_le h_lt
+    rw [← PNat.coe_lt_coe, PNat.mk_coe, add_zero] at h_lt
+    exfalso
+    exact not_le_of_lt h_lt h_le
   | succ n ih =>
     intro l' h_le h_lt
     unfold allocateHeap
-    rw [Nat.add_succ, Nat.lt_succ] at h_lt
-    by_cases h : l' = l + n
+    rw [← PNat.coe_lt_coe, PNat.mk_coe, Nat.add_succ, Nat.lt_succ] at h_lt
+    by_cases h : l' = ⟨l + n, PNat.add_right_nat⟩
     · exact substituteHeap_heap.right l' h.symm
     · rw [substituteHeap_heap.left l' (Ne.symm h)]
       exact ih l' h_le (lt_of_le_of_ne h_lt h)
 
-theorem allocateHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
+theorem allocateHeap_def {s s' : State Var} {l : PNat} {n : ℕ} :
     allocateHeap s l n = s' ↔ s.stack = s'.stack
       ∧ (∀ l', (l' < l ∨ l+n ≤ l') → s'.heap l' = s.heap l')
       ∧ (∀ l', l ≤ l' → l' < l+n → s'.heap l' = val 0) := by
@@ -307,12 +343,12 @@ theorem allocateHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
       exact allocateHeap_change s l n l' h_le h_lt
 
 
-noncomputable def isAlloc (s : State Var) (l : ℕ) (n : ℕ) : Prop :=
+noncomputable def isAlloc (s : State Var) (l : PNat) (n : ℕ) : Prop :=
   match n with
   | 0 => true
-  | Nat.succ n => (∃ v, s.heap (l+n) = val v) ∧ isAlloc s l n
+  | Nat.succ n => (∃ v, s.heap ⟨l+n,PNat.add_right_nat⟩ = val v) ∧ isAlloc s l n
 
-theorem isAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
+theorem isAlloc_def (s : State Var) (l : PNat) (n : ℕ) :
     isAlloc s l n ↔ ∀ l', l ≤ l' → l' < l+n → ∃ x, s.heap l' = val x := by
   induction n with
   | zero =>
@@ -325,13 +361,17 @@ theorem isAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
     apply Iff.intro
     · rintro ⟨⟨x, h_some⟩, h_alloc⟩ l' h_le h_lt
       rw [Nat.add_succ, Nat.lt_succ] at h_lt
-      by_cases h : l' = l + n
+      by_cases h : l' = ⟨l + n, PNat.add_right_nat⟩
       · use x; rw [h]; exact h_some
-      · exact ih.mp h_alloc l' h_le (lt_of_le_of_ne h_lt h)
+      · apply ih.mp h_alloc l' h_le
+        rw [← PNat.coe_inj, PNat.mk_coe] at h
+        exact lt_of_le_of_ne h_lt h
     · intro h
       rw [Nat.add_succ] at h
       apply And.intro
-      · exact h (l+n) le_self_add (Nat.lt_succ.mpr le_rfl)
+      · apply h ⟨l+n,PNat.add_right_nat⟩
+        · rw [← PNat.coe_le_coe, PNat.mk_coe]; exact le_self_add
+        · exact Nat.lt_succ.mpr le_rfl
       · have : ∀ l', l ≤ l' → l' < l + n → ∃ x, s.heap l' = val x := by
           intro l' h_le h_lt
           exact h l' h_le (Nat.lt_succ.mpr <| le_of_lt h_lt)
@@ -339,12 +379,12 @@ theorem isAlloc_def (s : State Var) (l : ℕ) (n : ℕ) :
 
 
 noncomputable def freeHeap
-    (s : State Var) (l : ℕ) (n : ℕ) : State Var :=
+    (s : State Var) (l : PNat) (n : ℕ) : State Var :=
   match n with
   | 0 => s
-  | Nat.succ n => removeLocationHeap (freeHeap s l n) (l+n)
+  | Nat.succ n => removeLocationHeap (freeHeap s l n) ⟨l+n,PNat.add_right_nat⟩
 
-theorem freeHeap_stack {s : State Var} {l : ℕ} {n : ℕ} :
+theorem freeHeap_stack {s : State Var} {l : PNat} {n : ℕ} :
     (freeHeap s l n).stack = s.stack := by
   induction n with
   | zero => simp only [freeHeap]
@@ -353,7 +393,7 @@ theorem freeHeap_stack {s : State Var} {l : ℕ} {n : ℕ} :
     rw [removeLocationHeap_stack]
     exact ih
 
-theorem freeHeap_heap {s : State Var} {l : ℕ} {n : ℕ} :
+theorem freeHeap_heap {s : State Var} {l : PNat} {n : ℕ} :
       (∀ l', (l' < l ∨ l+n ≤ l') → (freeHeap s l n).heap l' = s.heap l')
       ∧ (∀ l', l ≤ l' → l' < l+n → (freeHeap s l n).heap l' = undef) := by
   apply And.intro
@@ -366,13 +406,15 @@ theorem freeHeap_heap {s : State Var} {l : ℕ} {n : ℕ} :
       | inl h_lt =>
         rw [removeLocationHeap_heap.left l']
         · exact ih l' (Or.inl h_lt)
-        · intro h_eq; rw [← h_eq, add_lt_iff_neg_left] at h_lt; exact not_lt_zero' h_lt
+        · intro h_eq
+          rw [ ← h_eq, ← PNat.coe_lt_coe, PNat.mk_coe, add_lt_iff_neg_left] at h_lt
+          exact not_lt_zero' h_lt
       | inr h_le =>
         rw [removeLocationHeap_heap.left l']
         · rw [Nat.add_succ, Nat.succ_le_iff] at h_le
           apply le_of_lt at h_le
           exact ih l' (Or.inr h_le)
-        · intro h_eq; rw [← h_eq, add_le_add_iff_left, Nat.succ_le, ← not_le] at h_le
+        · intro h_eq; rw [← h_eq, PNat.mk_coe, add_le_add_iff_left, Nat.succ_le, ← not_le] at h_le
           exact h_le le_rfl
   · intro l' h_l₁ h_l₂
     induction n with
@@ -386,13 +428,17 @@ theorem freeHeap_heap {s : State Var} {l : ℕ} {n : ℕ} :
       | inl h_lt =>
         specialize ih h_lt
         unfold freeHeap
-        rw [removeLocationHeap_heap.left l' (ne_of_lt h_lt).symm]
-        exact ih
+        rw [removeLocationHeap_heap.left l']
+        · exact ih
+        · rw [ne_eq, ← PNat.coe_inj, PNat.mk_coe]
+          exact (ne_of_lt h_lt).symm
       | inr h_eq =>
         unfold freeHeap
-        exact removeLocationHeap_heap.right l' h_eq.symm
+        apply removeLocationHeap_heap.right l'
+        rw [← PNat.coe_inj, PNat.mk_coe]
+        exact h_eq.symm
 
-lemma freeHeap_remain (s : State Var) (l : ℕ) (n : ℕ) :
+lemma freeHeap_remain (s : State Var) (l : PNat) (n : ℕ) :
     ∀ l', (l' < l ∨ l+n ≤ l') → (freeHeap s l n).heap l' = s.heap l' := by
   induction n with
   | zero => intro l' _; unfold freeHeap; rfl
@@ -401,16 +447,23 @@ lemma freeHeap_remain (s : State Var) (l : ℕ) (n : ℕ) :
     unfold freeHeap
     cases h_l' with
     | inl h =>
-      have : l+n ≠ l' := by intro h_eq; rw [← h_eq, add_lt_iff_neg_left] at h; exact not_lt_zero' h
+      have : ⟨l+n,PNat.add_right_nat⟩ ≠ l' := by {
+        intro h_eq
+        rw [← PNat.coe_lt_coe, ← h_eq, PNat.mk_coe, add_lt_iff_neg_left] at h
+        exact not_lt_zero' h
+      }
       rw [removeLocationHeap_heap.left l' this]
       exact ih l' (Or.inl h)
     | inr h =>
       rw [Nat.add_succ, Nat.succ_le] at h
-      cases eq_or_ne (l+n) l' with
-      | inl h_eq => exfalso; exact (ne_of_lt h) h_eq
+      cases eq_or_ne ⟨l+n, PNat.add_right_nat⟩ l' with
+      | inl h_eq =>
+        exfalso
+        rw [← PNat.coe_inj, PNat.mk_coe] at h_eq
+        exact (ne_of_lt h) h_eq
       | inr h_ne => rw [removeLocationHeap_heap.left l' h_ne]; exact ih l' (Or.inr <| le_of_lt h)
 
-lemma freeHeap_change (s : State Var) (l : ℕ) (n : ℕ) :
+lemma freeHeap_change (s : State Var) (l : PNat) (n : ℕ) :
     ∀ l', l ≤ l' → l' < l+n → (freeHeap s l n).heap l' = undef := by
   induction n with
   | zero => intro l' h_le h_lt; rw [add_zero] at h_lt; exfalso; exact not_le_of_lt h_lt h_le
@@ -418,12 +471,14 @@ lemma freeHeap_change (s : State Var) (l : ℕ) (n : ℕ) :
     intro l' h_le h_lt
     unfold freeHeap
     rw [Nat.add_succ, Nat.lt_succ] at h_lt
-    by_cases h : l' = l + n
+    by_cases h : l' = ⟨l + n, PNat.add_right_nat⟩
     · exact removeLocationHeap_heap.right l' h.symm
     · rw [removeLocationHeap_heap.left l' (Ne.symm h)]
-      exact ih l' h_le (lt_of_le_of_ne h_lt h)
+      apply ih l' h_le
+      rw [← PNat.coe_inj, PNat.mk_coe] at h
+      exact lt_of_le_of_ne h_lt h
 
-theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
+theorem freeHeap_def {s s' : State Var} {l : PNat} {n : ℕ} :
     freeHeap s l n = s' ↔ s.stack = s'.stack
       ∧ (∀ l', (l' < l ∨ l+n ≤ l') → s'.heap l' = s.heap l')
       ∧ (∀ l', l ≤ l' → l' < l+n → s'.heap l' = undef) := by
@@ -540,22 +595,18 @@ theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
 
   namespace Finite
 
-  -- private lemma prod_finite (heap : Heap) (h_finite : Heap.Finite heap) :
-  --   Set.Finite ({ l : ℕ | heap l ≠ undef} ×ˢ {true, false}) := by
-  -- apply Set.Finite.prod h_finite (Set.toFinite {true, false})
-
   private lemma powerset_finite (heap : Heap) (h_finite : Heap.Finite heap) :
-      Set.Finite ({ns : Set ℕ | ∀ n ∈ ns, heap n ≠ undef }) := by
+      Set.Finite ({ns : Set PNat | ∀ n ∈ ns, heap n ≠ undef }) := by
     exact Set.Finite.finite_subsets h_finite
 
 
   open Classical
 
-  private noncomputable def surjectiv_func (heap : Heap) (ns : Set ℕ ) : Heap :=
+  private noncomputable def surjectiv_func (heap : Heap) (ns : Set PNat ) : Heap :=
     fun n => if n ∈ ns then heap n else undef
 
   private lemma powerset_surjection (heap : Heap) (h_finite : Heap.Finite heap) :
-      Set.Finite (surjectiv_func heap '' { ns : Set ℕ | ∀ n ∈ ns, heap n ≠ undef}) := by
+      Set.Finite (surjectiv_func heap '' { ns : Set PNat | ∀ n ∈ ns, heap n ≠ undef}) := by
     apply Set.Finite.of_surjOn (surjectiv_func heap)
     · intro g h
       exact h
@@ -592,19 +643,6 @@ theorem freeHeap_def {s s' : State Var} {l : ℕ} {n : ℕ} :
           exact h_heap₁ q h₁
         case h_2 h₁ =>
           exact h₁.symm
-
-
-
-
-
-
-
-
-
-
-
-
-  --     case isFalse h => sorry
 
   end Finite
 

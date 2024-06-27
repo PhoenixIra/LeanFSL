@@ -57,7 +57,7 @@ example : False := by
   split at h_j₂
   case h_1 _ =>
     split at h_j₂
-    case isTrue x h_x =>
+    case isTrue x h_x h_x' =>
       norm_cast at h_x
       let heap_small : Heap := fun l => if l = 1 then HeapValue.val (x/2) else HeapValue.undef
       specialize h heap_small
@@ -65,20 +65,22 @@ example : False := by
       unfold_let f₁ at h_j₁
       simp only at h_j₁
       rw [← h_j₁] at h
-      specialize h nonneg' emptyHeap_disjoint'
+      specialize h emptyHeap_disjoint' nonneg'
       rw [← h_j₂] at h
       unfold_let f₂ at h
       simp only [Rat.cast_div, Rat.cast_ofNat] at h
       have : (0:ℝ) < ↑x / 2 ∧ ↑x / 2 ≤ (1:ℝ) := by {
           norm_cast
           apply And.intro
-          · linarith
-          · linarith
+          · rify
+            linarith
+          · rify
+            linarith
       }
       rw [dif_pos this] at h
       rw [Subtype.mk_le_mk, ← not_lt] at h
       norm_cast at h
-      have : x / 2 < x := div_two_lt_of_pos h_x.left
+      have : x / 2 < x := by rify; exact div_two_lt_of_pos h_x'.left
       exact h this
     case isFalse x h_x =>
       let heap_small : Heap := fun l => if l = 1 then HeapValue.val (1/2) else HeapValue.undef
@@ -87,7 +89,7 @@ example : False := by
       unfold_let f₁ at h_j₁
       simp only at h_j₁
       rw [← h_j₁] at h
-      specialize h nonneg' emptyHeap_disjoint'
+      specialize h emptyHeap_disjoint' nonneg'
       rw [← h_j₂] at h
       unfold_let f₂ at h
       simp only [one_div, Rat.cast_inv, Rat.cast_ofNat, inv_pos, Nat.ofNat_pos, true_and] at h
@@ -102,7 +104,7 @@ example : False := by
     unfold_let f₁ at h_j₁
     simp only at h_j₁
     rw [← h_j₁] at h
-    specialize h nonneg' emptyHeap_disjoint'
+    specialize h emptyHeap_disjoint' nonneg'
     rw [← h_j₂] at h
     unfold_let f₂ at h
     simp only [one_div, Rat.cast_inv, Rat.cast_ofNat, inv_pos, Nat.ofNat_pos, true_and] at h

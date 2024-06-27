@@ -14,8 +14,8 @@ def enabledAction : (Program Variable) → (State Variable) → Set Action
   | [Prog| _ *≔ _], _           => { Action.deterministic }
   | [Prog| _ ≔* _], _           => { Action.deterministic }
   | [Prog| _ ≔ cas(_, _, _)], _ => { Action.deterministic }
-  | [Prog| _ ≔ alloc(e)], s     => if ∃ n : ℕ, n = e s.stack
-    then { a | ∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack ∧ isNotAlloc s m n }
+  | [Prog| _ ≔ alloc(e)], s     => if ∃ n : ℕ+, n = e s.stack
+    then { a | ∃ m, a = Action.allocation m ∧ ∃ n : ℕ+, n = e s.stack ∧ isNotAlloc s m n }
     else { Action.deterministic }
   | [Prog| free(_,_)], _        => { Action.deterministic }
   | [Prog| [[c₁]] ; [[_]]], s   => if c₁ = [Prog| ↓] then { Action.deterministic } else enabledAction c₁ s
@@ -76,7 +76,7 @@ theorem zero_probability_of_not_enabledAction
         simp only [programSmallStepSemantics, allocateSmallStepSemantics, not_exists]
         split
         · simp only [iteOneZero_eq_zero_def, not_exists, not_and]
-          rintro m h_m n' h_n' h_alloc h_sub
+          rintro m h_m n' h_n' h_alloc _
           exact h m h_m n' h_n' h_alloc
         · simp only [iteOneZero_eq_zero_def, not_and, not_forall, Decidable.not_not]
           rintro rfl
@@ -86,7 +86,7 @@ theorem zero_probability_of_not_enabledAction
         simp only [programSmallStepSemantics, allocateSmallStepSemantics, not_exists]
         split
         · simp only [iteOneZero_eq_zero_def, not_exists, not_and]
-          intro m h_m n' h_n' h_alloc h_subst
+          intro m _ n' h_n' _ _
           apply h_n
           use n'
         · simp only [iteOneZero_eq_zero_def, not_and, not_forall, Decidable.not_not]

@@ -27,7 +27,7 @@ def slFalse : StateProp Var := λ _ => false
 def slEmp : StateProp Var := λ ⟨_,h⟩ => h = ∅
 
 def slPointsTo (loc val : ValueExp Var) : StateProp Var :=
-    λ ⟨s,h⟩ => ∃ n : ℕ, n = (loc s) ∧ h n = HeapValue.val (val s)
+    λ ⟨s,h⟩ => ∃ n : ℕ+, n = (loc s) ∧ h n = HeapValue.val (val s)
 
 def slEquals (e e' : ValueExp Var) : StateProp Var :=
     λ ⟨s,_⟩ => e s = e' s
@@ -220,7 +220,7 @@ def requireBracketsSepImp : TSyntax `sl → Bool
   | `(sl| $_:sl -∗ $_:sl) => false
   | `(sl| $_:sl ∧ $_:sl) => false
   | `(sl| $_:sl ∗ $_:sl) => false
-  | `(sl| [∗] $_ ∈ {0 ... $_}, $_) => false
+  | `(sl| [∗] $_ ∈ {0 ... $_}. $_) => false
   | `(sl| $_:sl ∨ $_:sl) => false
   | `(sl| $f:sl) => !isAtom f
 

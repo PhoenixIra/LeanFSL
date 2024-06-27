@@ -15,7 +15,7 @@ variable {Variable : Type}
 
 inductive Action where
   | deterministic : Action
-  | allocation : ℕ → Action
+  | allocation : ℕ+ → Action
   | concurrentLeft : Action → Action
   | concurrentRight : Action → Action
 
@@ -41,9 +41,9 @@ noncomputable def manipulateSmallStepSemantics (e_loc e_val : ValueExp Variable)
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero (a = Action.deterministic ∧
-      ∃ l : ℕ, (e_loc s.stack) = l ∧ s.heap l ≠ undef ∧ substituteHeap s l (e_val s.stack) = s')
+      ∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l ≠ undef ∧ substituteHeap s l (e_val s.stack) = s')
   | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
-      ∧ ((∃ l : ℕ, (e_loc s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e_loc s.stack).isInt ∨ 0 ≤ (e_loc s.stack)))
+      ∧ ((∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e_loc s.stack).isInt ∨ 0 ≤ (e_loc s.stack)))
   | _ => 0
 
 /-- lookup succeeds if the expression is well-defined and an allocated location is looked up.
@@ -54,9 +54,9 @@ noncomputable def lookupSmallStepSemantics (v : Variable) (e : ValueExp Variable
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero ( a = Action.deterministic ∧
-      ∃ l : ℕ, l = (e s.stack) ∧ ∃ value, s.heap l = val value ∧ substituteStack s v value = s' )
+      ∃ l : ℕ+, l = (e s.stack) ∧ ∃ value, s.heap l = val value ∧ substituteStack s v value = s' )
   | [Prog| ↯] => iteOneZero ( a = Action.deterministic ∧ s = s'
-      ∧ ((∃ l : ℕ, (e s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack)))
+      ∧ ((∃ l : ℕ+, (e s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack)))
   | _ => 0
 
 /-- compareAndSet succeeds if all expressions are well-defined and the location is allocated.
@@ -68,11 +68,11 @@ noncomputable def compareAndSetSmallStepSemantics (v : Variable) (e_loc e_cmp e_
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero ( a = Action.deterministic
-      ∧ ∃ l : ℕ, l = (e_loc s.stack) ∧ ∃ old_val, s.heap l = val old_val
+      ∧ ∃ l : ℕ+, l = (e_loc s.stack) ∧ ∃ old_val, s.heap l = val old_val
       ∧ ((old_val = e_cmp s.stack ∧ substituteStack (substituteHeap s l (e_val s.stack)) v 1 = s')
         ∨ old_val ≠ e_cmp s.stack ∧ substituteStack s v 0 = s'))
   | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
-      ∧ (∃ l : ℕ, (e_loc s.stack) = l ∧ s.heap l = undef))
+      ∧ (∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l = undef))
   | _ => 0
 
 /-- allocate succeeds if the location m and n spaces afterwards are allocated and sets the values
@@ -82,10 +82,10 @@ noncomputable def allocateSmallStepSemantics (v : Variable) (e : ValueExp Variab
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] =>
-    iteOneZero (∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack
+    iteOneZero (∃ m, a = Action.allocation m ∧ ∃ n : ℕ+, n = e s.stack
       ∧ isNotAlloc s m n ∧ substituteStack (substituteHeap s m n) v m = s')
   | [Prog| ↯] =>
-    iteOneZero (a = Action.deterministic ∧ ¬ ∃ n : ℕ, n = e s.stack)
+    iteOneZero (a = Action.deterministic ∧ ¬ ∃ n : ℕ+, n = e s.stack)
   | _ => 0
 
 
@@ -96,9 +96,9 @@ noncomputable def freeSmallStepSemantics (e : ValueExp Variable) (n : ℕ) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero (a = Action.deterministic
-    ∧ ∃ l : ℕ, l = (e s.stack) ∧ isAlloc s l n ∧ freeHeap s l n = s')
+    ∧ ∃ l : ℕ+, l = (e s.stack) ∧ isAlloc s l n ∧ freeHeap s l n = s')
   | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
-    ∧ (∃ l : ℕ, (e s.stack) = l ∧ ¬isAlloc s l n ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack)))
+    ∧ (∃ l : ℕ+, (e s.stack) = l ∧ ¬isAlloc s l n ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack)))
   | _ => 0
 
 /-- probabilisticChoice succeeds if the expression is well-defined and picks one program with the given probability.

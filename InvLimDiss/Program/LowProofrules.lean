@@ -53,10 +53,10 @@ theorem assign_mem_zero_one : programSmallStepSemantics [Prog| v ≔ e] s a c' s
   case h_2 _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
 theorem manipulate_eq_one_iff : programSmallStepSemantics [Prog| e_loc *≔ e_val] s a c' s' = 1
-    ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic ∧ ∃ l:ℕ, (e_loc s.stack) = l ∧ s.heap l ≠ undef
+    ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic ∧ ∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l ≠ undef
         ∧ substituteHeap s l (e_val s.stack) = s')
       ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
-        ∧ ((∃ l : ℕ, (e_loc s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e_loc s.stack).isInt ∨ 0 ≤ (e_loc s.stack)))
+        ∧ ((∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e_loc s.stack).isInt ∨ 0 ≤ (e_loc s.stack)))
     := by
   rw [programSmallStepSemantics, manipulateSmallStepSemantics]
   split
@@ -78,9 +78,9 @@ theorem manipulate_mem_zero_one : programSmallStepSemantics [Prog| e_loc *≔ e_
 
 theorem lookup_eq_one_iff : programSmallStepSemantics [Prog| v ≔* e] s a c' s' = 1
     ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic ∧
-      ∃ l : ℕ, l = (e s.stack) ∧ ∃ value, s.heap l = val value ∧ substituteStack s v value = s' )
+      ∃ l : ℕ+, l = (e s.stack) ∧ ∃ value, s.heap l = val value ∧ substituteStack s v value = s' )
       ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
-      ∧ ((∃ l : ℕ, (e s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack)))
+      ∧ ((∃ l : ℕ+, (e s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack)))
     := by
   rw [programSmallStepSemantics, lookupSmallStepSemantics]
   split
@@ -102,11 +102,11 @@ theorem lookup_mem_zero_one : programSmallStepSemantics [Prog| v ≔* e] s a c' 
 
 theorem compareAndSet_eq_one_iff : programSmallStepSemantics [Prog| v ≔ cas (e_loc, e_cmp, e_val)] s a c' s' = 1
     ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic
-      ∧ ∃ l : ℕ, l = (e_loc s.stack) ∧ ∃ old_val, s.heap l = val old_val
+      ∧ ∃ l : ℕ+, l = (e_loc s.stack) ∧ ∃ old_val, s.heap l = val old_val
         ∧ ((old_val = (e_cmp s.stack) ∧ substituteStack (substituteHeap s l (e_val s.stack)) v 1 = s')
           ∨ old_val ≠ (e_cmp s.stack) ∧ substituteStack s v 0 = s'))
       ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
-        ∧ (∃ l : ℕ, (e_loc s.stack) = l ∧ s.heap l = undef)) := by
+        ∧ (∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l = undef)) := by
   rw [programSmallStepSemantics, compareAndSetSmallStepSemantics]
   split
   case h_1 => simp only [ne_eq, iteOneZero_eq_one_def, true_and, false_and, or_false]
@@ -127,9 +127,9 @@ theorem compareAndSet_mem_zero_one :
   case h_3 _ _ _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
 theorem allocate_eq_one_iff : programSmallStepSemantics [Prog| v ≔ alloc e] s a c' s' = 1
-    ↔ (c' = [Prog| ↓] ∧ ∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack
+    ↔ (c' = [Prog| ↓] ∧ ∃ m, a = Action.allocation m ∧ ∃ n : ℕ+, n = e s.stack
       ∧ isNotAlloc s m n ∧ substituteStack (substituteHeap s m n) v m = s')
-    ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ ¬ ∃ n : ℕ, n = e s.stack) := by
+    ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ ¬ ∃ n : ℕ+, n = e s.stack) := by
   rw [programSmallStepSemantics, allocateSmallStepSemantics]
   split
   case h_1 => simp only [iteOneZero_eq_one_def, true_and, not_exists, false_and, or_false]
@@ -147,20 +147,20 @@ theorem allocate_mem_zero_one :
   rw [programSmallStepSemantics, allocateSmallStepSemantics]
   simp only [not_exists, mem_insert_iff, mem_singleton_iff]
   split
-  · by_cases h : ∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack
+  · by_cases h : ∃ m, a = Action.allocation m ∧ ∃ n : ℕ+, n = e s.stack
       ∧ isNotAlloc s m n ∧ substituteStack (substituteHeap s m n) v m = s'
     case pos => apply Or.inr; rw [iteOneZero_eq_one_def]; exact h
     case neg => apply Or.inl; rw [iteOneZero_eq_zero_def]; exact h
-  · by_cases h : a = Action.deterministic ∧ ∀ n : ℕ, ¬n = e s.stack
+  · by_cases h : a = Action.deterministic ∧ ∀ n : ℕ+, ¬n = e s.stack
     case pos => apply Or.inr; rw [iteOneZero_eq_one_def]; exact h
     case neg => apply Or.inl; rw [iteOneZero_eq_zero_def]; exact h
   · apply Or.inl; rfl
 
 theorem free_eq_one_iff : programSmallStepSemantics [Prog| free(e, n)] s a c' s' = 1
     ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic
-      ∧ ∃ l : ℕ, l = (e s.stack) ∧ isAlloc s l n ∧ freeHeap s l n = s')
+      ∧ ∃ l : ℕ+, l = (e s.stack) ∧ isAlloc s l n ∧ freeHeap s l n = s')
     ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
-      ∧ (∃ l : ℕ, (e s.stack) = l ∧ ¬isAlloc s l n ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack))) := by
+      ∧ (∃ l : ℕ+, (e s.stack) = l ∧ ¬isAlloc s l n ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack))) := by
   rw [programSmallStepSemantics, freeSmallStepSemantics]
   split
   case h_1 _ => simp only [iteOneZero_eq_one_def, true_and, false_and, or_false]
