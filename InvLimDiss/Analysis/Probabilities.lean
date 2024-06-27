@@ -1,4 +1,5 @@
 import Mathlib.Topology.UnitInterval
+import Mathlib.Tactic.Rify
 
 /-
 This file contains lemmas and definitions used
@@ -274,6 +275,78 @@ theorem le_truncatedAdd (i j k : I) : i ≤ truncatedAdd j k ↔ i ≤ (j:ℝ) +
   · intro h
     simp only [le_min_iff]
     exact ⟨le_one', h⟩
+
+theorem zero_truncatedAdd (i : I) : truncatedAdd 0 i = i := by
+  simp only [truncatedAdd, coe_zero, zero_add, min_def]
+  split
+  case isTrue h => exact le_antisymm h le_one'
+  case isFalse _ => rfl
+
+theorem truncatedAdd_zero (i : I) : truncatedAdd i 0 = i := by
+  simp only [truncatedAdd, coe_zero, add_zero, min_def]
+  split
+  case isTrue h => exact le_antisymm h le_one'
+  case isFalse _ => rfl
+
+theorem truncatedAdd_assoc (i j k : I) :
+    truncatedAdd (truncatedAdd i j) k = truncatedAdd i ( truncatedAdd j k) := by
+  simp only [truncatedAdd, min_def, Subtype.mk.injEq]
+  split
+  case isTrue h_ij =>
+    rw [if_pos]
+    pick_goal 2
+    . calc (1:ℝ)
+      _ = 1 + 0 := Eq.symm (AddLeftCancelMonoid.add_zero 1)
+      _ ≤ 1 + k := add_le_add le_rfl nonneg'
+    · split
+      case isTrue h_jk =>
+        rw [if_pos]
+        calc (1:ℝ)
+        _ = 0 + 1 := Eq.symm (AddLeftCancelMonoid.zero_add 1)
+        _ ≤ i + 1 := add_le_add nonneg' le_rfl
+      case isFalse h_jk =>
+        rw [if_pos]
+        rw [← add_assoc]
+        calc (1:ℝ)
+        _ = 1 + 0 := Eq.symm (AddLeftCancelMonoid.add_zero 1)
+        _ ≤ i + j + k := add_le_add h_ij nonneg'
+  case isFalse h_ij =>
+    split
+    case isTrue h_ijk =>
+      split
+      case isTrue h_jk =>
+        rw [if_pos]
+        calc (1:ℝ)
+        _ = 0 + 1 := Eq.symm (AddLeftCancelMonoid.zero_add 1)
+        _ ≤ i + 1 := add_le_add nonneg' le_rfl
+      case isFalse h_jk =>
+        rw [← add_assoc, if_pos h_ijk]
+    case isFalse h_ijk =>
+      split
+      case isTrue h_jk =>
+        exfalso
+        rw [add_assoc] at h_ijk
+        apply h_ijk
+        calc (1:ℝ)
+        _ = 0 + 1 := Eq.symm (AddLeftCancelMonoid.zero_add 1)
+        _ ≤ i + (j + k) := add_le_add nonneg' h_jk
+      case isFalse h_jk =>
+        rw [← add_assoc, if_neg h_ijk]
+
+theorem truncatedAdd_comm (i j : I) :
+    (truncatedAdd i j) = truncatedAdd j i := by
+  simp only [truncatedAdd, min_def, Subtype.mk.injEq]
+  rw [add_comm]
+
+noncomputable instance : Add unitInterval where
+  add := truncatedAdd
+
+noncomputable instance : AddCommMonoid unitInterval where
+  add_assoc := truncatedAdd_assoc
+  add_comm := truncatedAdd_comm
+  zero_add := zero_truncatedAdd
+  add_zero := truncatedAdd_zero
+  nsmul := nsmulRec
 
 theorem le_symm_if_le_symm (i j : I) : i ≤ σ j → j ≤ σ i := by
   intro h
