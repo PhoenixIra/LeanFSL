@@ -6,6 +6,7 @@ open Syntax Classical State Program unitInterval
 
 variable {Variable : Type}
 
+@[simp]
 def enabledAction : (Program Variable) → (State Variable) → Set Action
   | [Prog| ↓], _                => ∅
   | [Prog| ↯], _                => ∅
@@ -14,8 +15,8 @@ def enabledAction : (Program Variable) → (State Variable) → Set Action
   | [Prog| _ *≔ _], _           => { Action.deterministic }
   | [Prog| _ ≔* _], _           => { Action.deterministic }
   | [Prog| _ ≔ cas(_, _, _)], _ => { Action.deterministic }
-  | [Prog| _ ≔ alloc(e)], s     => if ∃ n : ℕ+, n = e s.stack
-    then { a | ∃ m, a = Action.allocation m ∧ ∃ n : ℕ+, n = e s.stack ∧ isNotAlloc s m n }
+  | [Prog| _ ≔ alloc(e)], s     => if ∃ n : ℕ, n = e s.stack
+    then { a | ∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack ∧ isNotAlloc s m n }
     else { Action.deterministic }
   | [Prog| free(_,_)], _        => { Action.deterministic }
   | [Prog| [[c₁]] ; [[_]]], s   => if c₁ = [Prog| ↓] then { Action.deterministic } else enabledAction c₁ s

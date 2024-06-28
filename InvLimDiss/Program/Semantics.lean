@@ -43,7 +43,7 @@ noncomputable def manipulateSmallStepSemantics (e_loc e_val : ValueExp Variable)
   | [Prog| ↓] => iteOneZero (a = Action.deterministic ∧
       ∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l ≠ undef ∧ substituteHeap s l (e_val s.stack) = s')
   | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
-      ∧ ((∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e_loc s.stack).isInt ∨ 0 ≤ (e_loc s.stack)))
+      ∧ ((∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l = undef) ∨ ¬ (∃ l : ℕ+, (e_loc s.stack) = l)))
   | _ => 0
 
 /-- lookup succeeds if the expression is well-defined and an allocated location is looked up.
@@ -56,7 +56,7 @@ noncomputable def lookupSmallStepSemantics (v : Variable) (e : ValueExp Variable
   | [Prog| ↓] => iteOneZero ( a = Action.deterministic ∧
       ∃ l : ℕ+, l = (e s.stack) ∧ ∃ value, s.heap l = val value ∧ substituteStack s v value = s' )
   | [Prog| ↯] => iteOneZero ( a = Action.deterministic ∧ s = s'
-      ∧ ((∃ l : ℕ+, (e s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack)))
+      ∧ ((∃ l : ℕ+, (e s.stack) = l ∧ s.heap l = undef) ∨ ¬ (∃ l : ℕ+, (e s.stack) = l)))
   | _ => 0
 
 /-- compareAndSet succeeds if all expressions are well-defined and the location is allocated.
@@ -72,7 +72,7 @@ noncomputable def compareAndSetSmallStepSemantics (v : Variable) (e_loc e_cmp e_
       ∧ ((old_val = e_cmp s.stack ∧ substituteStack (substituteHeap s l (e_val s.stack)) v 1 = s')
         ∨ old_val ≠ e_cmp s.stack ∧ substituteStack s v 0 = s'))
   | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
-      ∧ (∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l = undef))
+      ∧ ((∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l = undef) ∨ ¬ (∃ l : ℕ+, (e_loc s.stack) = l)))
   | _ => 0
 
 /-- allocate succeeds if the location m and n spaces afterwards are allocated and sets the values
@@ -82,23 +82,25 @@ noncomputable def allocateSmallStepSemantics (v : Variable) (e : ValueExp Variab
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] =>
-    iteOneZero (∃ m, a = Action.allocation m ∧ ∃ n : ℕ+, n = e s.stack
+    iteOneZero (∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack
       ∧ isNotAlloc s m n ∧ substituteStack (substituteHeap s m n) v m = s')
   | [Prog| ↯] =>
-    iteOneZero (a = Action.deterministic ∧ ¬ ∃ n : ℕ+, n = e s.stack)
+    iteOneZero (a = Action.deterministic ∧ ¬ ∃ n : ℕ, n = e s.stack)
   | _ => 0
 
 
 /-- free succeeds if the expression is well-defined and the location is up to n positions allocated.
     free fails if an expression is not well-defined or some location between l and l+n is not allocated. -/
 @[simp]
-noncomputable def freeSmallStepSemantics (e : ValueExp Variable) (n : ℕ) :
+noncomputable def freeSmallStepSemantics (e_loc e_n : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero (a = Action.deterministic
-    ∧ ∃ l : ℕ+, l = (e s.stack) ∧ isAlloc s l n ∧ freeHeap s l n = s')
+    ∧ ∃ l : ℕ+, l = (e_loc s.stack) ∧ ∃ n : ℕ, n = (e_n s.stack) ∧ isAlloc s l n ∧ freeHeap s l n = s')
   | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
-    ∧ (∃ l : ℕ+, (e s.stack) = l ∧ ¬isAlloc s l n ∨ ¬ (e s.stack).isInt ∨ 0 ≤ (e s.stack)))
+    ∧ ((∃ l : ℕ+, (e_loc s.stack) = l ∧ ∃ n : ℕ, n = e_n s.stack ∧ ¬isAlloc s l n)
+      ∨ (∃ l : ℕ+, (e_loc s.stack) = l ∧ ¬ ∃ n : ℕ, n = e_n s.stack)
+      ∨ (¬ ∃ l : ℕ+, (e_loc s.stack) = l)))
   | _ => 0
 
 /-- probabilisticChoice succeeds if the expression is well-defined and picks one program with the given probability.
@@ -145,7 +147,7 @@ noncomputable def programSmallStepSemantics :
   | [Prog| v ≔* e] => lookupSmallStepSemantics v e
   | [Prog| v ≔ cas(e_loc, e_cmp, e_val)] => compareAndSetSmallStepSemantics v e_loc e_cmp e_val
   | [Prog| v ≔ alloc(n)] => allocateSmallStepSemantics v n
-  | [Prog| free(e,n)] => freeSmallStepSemantics e n
+  | [Prog| free(e_loc,e_n)] => freeSmallStepSemantics e_loc e_n
   | [Prog| pif e then [[c₁]] else [[c₂]] fi] => probabilisticChoiceSmallStepSemantics e c₁ c₂
   | [Prog| if e then [[c₁]] else [[c₂]] fi] => conditionalChoiceSmallStepSemantics e c₁ c₂
   | [Prog| while e begin [[c]] fi] => loopSmallStepSemantics e c

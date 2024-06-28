@@ -36,6 +36,19 @@ def Stack (Variable : Type) : Type := Variable → ℚ
 
 def Heap : Type := PNat → HeapValue
 
+def getVal (heap : Heap) (l : PNat) (h : heap l ≠ undef) : ℚ :=
+  match h_eq : heap l with
+  | val q => q
+  | undef => by exfalso; exact h h_eq
+
+theorem getVal_eq_self {heap heap' : Heap} {l l' : PNat} (h : heap l ≠ undef) (h_eq : heap' l' = heap l) :
+    val (getVal heap l h) = heap' l' := by
+  rw [h_eq]
+  unfold getVal
+  split
+  case h_1 h => exact h.symm
+  case h_2 h'=> exfalso; exact h h'
+
 structure State (Variable : Type) where
   stack : Stack Variable
   heap : Heap
