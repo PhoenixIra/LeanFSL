@@ -1,5 +1,6 @@
 import Mathlib.Topology.UnitInterval
 import Mathlib.Tactic.Rify
+import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-
 This file contains lemmas and definitions used
@@ -338,15 +339,39 @@ theorem truncatedAdd_comm (i j : I) :
   simp only [truncatedAdd, min_def, Subtype.mk.injEq]
   rw [add_comm]
 
+theorem truncatedAdd_le_truncatedAdd_left (i j : I) (h_le : i ≤ j) :
+    ∀ k, truncatedAdd k i ≤ truncatedAdd k j := by
+  intro k
+  unfold truncatedAdd
+  rw [Subtype.mk_le_mk] at h_le
+  simp only [min_def, Subtype.mk_le_mk]
+  split
+  case isTrue h_ki =>
+    rw [if_pos]
+    calc (1:ℝ)
+    _ ≤ k + i := h_ki
+    _ ≤ k + j := (add_le_add_iff_left ↑k).mpr h_le
+  case isFalse h_ki =>
+    rw [not_le] at h_ki
+    split
+    case isTrue h_kj =>
+      exact le_of_lt h_ki
+    case isFalse h_kj =>
+      exact (add_le_add_iff_left ↑k).mpr h_le
+
+
 noncomputable instance : Add unitInterval where
   add := truncatedAdd
 
-noncomputable instance : AddCommMonoid unitInterval where
+noncomputable instance : OrderedAddCommMonoid unitInterval where
   add_assoc := truncatedAdd_assoc
   add_comm := truncatedAdd_comm
   zero_add := zero_truncatedAdd
   add_zero := truncatedAdd_zero
   nsmul := nsmulRec
+  add_le_add_left := truncatedAdd_le_truncatedAdd_left
+
+theorem unitInterval_summable (f : α → I) : Summable I := by sorry
 
 theorem le_symm_if_le_symm (i j : I) : i ≤ σ j → j ≤ σ i := by
   intro h

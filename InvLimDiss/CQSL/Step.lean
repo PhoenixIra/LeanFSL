@@ -3,6 +3,7 @@ import InvLimDiss.SL.Quantitative
 import InvLimDiss.Program.Support
 import InvLimDiss.Program.Enabled
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
+import Mathlib.Topology.Algebra.InfiniteSum.Order
 
 open Syntax Semantics QSL unitInterval Action State HeapValue
 
@@ -16,6 +17,18 @@ noncomputable abbrev semantics := @programSmallStepSemantics Var
 noncomputable def step (c : Program Var) (inner : Program Var → StateRV Var) : StateRV Var :=
     fun s => sInf { x | ∃ a ∈ enabledAction c s,
       ∑' cs : progState, (semantics c s a cs.1 cs.2) * inner cs.1 cs.2 = x}
+
+theorem monotone_step (c : Program Var) : Monotone (step c) := by
+  intro X X' h_X
+  rw [Pi.le_def]
+  intro s
+  apply le_sInf
+  rintro _ ⟨a, h_a, rfl⟩
+  apply sInf_le_of_le
+  · use a
+  · apply tsum_mono
+  -- use a, h_a
+  --
 
 
 theorem tsum_skip_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
