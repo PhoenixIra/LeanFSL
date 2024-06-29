@@ -25,6 +25,8 @@ theorem wrlp_monotone (post : StateRV Var) (resource : StateRV Var) : Monotone (
   case h_1 => exact le_rfl
   case h_2 => exact le_rfl
   case h_3 =>
+    apply monotone_qslSepImp le_rfl
+
 
 noncomputable def wrlp (program : Program Var) (post : StateRV Var) (resource : StateRV Var) := gfp wrlp_step
 

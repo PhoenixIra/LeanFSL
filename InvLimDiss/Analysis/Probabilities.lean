@@ -1,6 +1,7 @@
 import Mathlib.Topology.UnitInterval
 import Mathlib.Tactic.Rify
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
+import Mathlib.Topology.Order.MonotoneConvergence
 
 /-
 This file contains lemmas and definitions used
@@ -363,6 +364,12 @@ theorem truncatedAdd_le_truncatedAdd_left (i j : I) (h_le : i ≤ j) :
 noncomputable instance : Add unitInterval where
   add := truncatedAdd
 
+@[simp]
+theorem coe_truncatedAdd {i j : I} : ↑(i + j) = min 1 ((i:ℝ) + j) := by
+  conv => left; congr; rw [HAdd.hAdd, instHAdd, Add.add, instAddElemReal_invLimDiss]
+  simp only
+  rw [truncatedAdd]
+
 noncomputable instance : OrderedAddCommMonoid unitInterval where
   add_assoc := truncatedAdd_assoc
   add_comm := truncatedAdd_comm
@@ -371,7 +378,65 @@ noncomputable instance : OrderedAddCommMonoid unitInterval where
   nsmul := nsmulRec
   add_le_add_left := truncatedAdd_le_truncatedAdd_left
 
-theorem unitInterval_summable (f : α → I) : Summable I := by sorry
+theorem truncatedSub_mem_unitInterval {i j : I} : max 0 ((i:ℝ) - j) ∈ I := by
+  simp only [Set.mem_Icc, le_max_iff, le_refl, sub_nonneg, Subtype.coe_le_coe, true_or, max_le_iff,
+    zero_le_one, tsub_le_iff_right, true_and]
+  calc (i:ℝ)
+  _ ≤ 1 := le_one'
+  _ = 1 + 0 := (add_zero 1).symm
+  _ ≤ 1 + j := add_le_add le_rfl nonneg'
+
+noncomputable def truncatedSub (i j : I) : I := ⟨max 0 ((i:ℝ) - j), truncatedSub_mem_unitInterval⟩
+
+@[simp]
+theorem coe_truncatedSub {i j : I} : ↑(truncatedSub i j) = max 0 ((i:ℝ) - j) := by
+  rw [truncatedSub]
+
+theorem add_truncatedSub {i j : I} (h : j ≤ i) : j + truncatedSub i j = i := by
+  rw [Subtype.mk_eq_mk]
+  simp only [coe_truncatedAdd, coe_truncatedSub]
+  rw [min_def, max_def]
+  split
+  case isTrue h_ij =>
+    split
+    case isTrue h_jij =>
+      apply le_antisymm
+      · rw [add_sub_cancel] at h_jij
+        exact h_jij
+      · exact le_one'
+    case isFalse h_jij =>
+      rw [add_sub_cancel]
+  case isFalse h_ij =>
+    simp only [sub_nonneg, Subtype.coe_le_coe] at h_ij
+    exfalso
+    exact h_ij h
+
+theorem exists_truncatedAdd_of_le {i j : I} (h : i ≤ j) : ∃ k, j = i + k := by
+  cases eq_or_ne i 1
+  case inl h_eq =>
+    rw [h_eq] at h ⊢
+    have := le_antisymm le_one' h
+    rw [this]
+    use 0
+    rw [Subtype.mk_eq_mk]
+    simp only [coe_one, coe_truncatedAdd, coe_zero, add_zero, min_self]
+  case inr h_ne =>
+    use truncatedSub j i
+    rw [add_truncatedSub h]
+
+theorem le_self_truncatedAdd (i j : I) : i ≤ i + j := by
+  rw [Subtype.mk_le_mk]
+  simp only [coe_truncatedAdd, le_min_iff, le_add_iff_nonneg_right]
+  exact ⟨le_one', nonneg'⟩
+
+noncomputable instance : CanonicallyOrderedAddCommMonoid unitInterval where
+  exists_add_of_le := exists_truncatedAdd_of_le
+  le_self_add := le_self_truncatedAdd
+
+theorem hasSum (f : α → I) : HasSum f (⨆ s : Finset α, ∑ a ∈ s, f a) :=
+  tendsto_atTop_iSup fun _ _ => Finset.sum_le_sum_of_subset
+
+theorem isSummable (f : α → I) : Summable f := ⟨_,hasSum f⟩
 
 theorem le_symm_if_le_symm (i j : I) : i ≤ σ j → j ≤ σ i := by
   intro h

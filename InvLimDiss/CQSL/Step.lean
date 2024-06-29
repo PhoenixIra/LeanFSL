@@ -27,8 +27,9 @@ theorem monotone_step (c : Program Var) : Monotone (step c) := by
   apply sInf_le_of_le
   · use a
   · apply tsum_mono
-  -- use a, h_a
-  --
+    · exact isSummable _
+    · exact isSummable _
+    · sorry
 
 
 theorem tsum_skip_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
