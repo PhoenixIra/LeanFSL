@@ -1,6 +1,7 @@
 import InvLimDiss.CQSL.Step
 import InvLimDiss.SL.Quantitative
 import InvLimDiss.SL.QuantitativeProofrules
+import InvLimDiss.Program.AtomicFinal
 import Mathlib.Order.FixedPoints
 
 
@@ -31,39 +32,44 @@ theorem wrlp_monotone (post : StateRV Var) (resource : StateRV Var) : Monotone (
     intro c
     rw [Pi.le_def]
     intro s
-    rw [qslSepMul, qslSepMul]
-    simp only [sSup_le_iff, Set.mem_setOf_eq, forall_exists_index, and_imp]
-    rintro i heap₁ heap₂ h_disjoint h_union rfl
-    have : X' c ⟨s.stack, heap₁⟩ * resource ⟨s.stack, heap₂⟩ ∈
-      { x | ∃ heap₁ heap₂, State.disjoint heap₁ heap₂ ∧ heap₁ ∪ heap₂ = s.heap
-        ∧ x = X' c ⟨s.stack, heap₁⟩ * resource ⟨s.stack, heap₂⟩} := by {
-      use heap₁, heap₂
-    }
-    apply le_sSup_of_le this
-    rw [Subtype.mk_le_mk, Set.Icc.coe_mul, Set.Icc.coe_mul]
-    cases eq_or_ne (resource ⟨s.stack, heap₂⟩) 0 with
-    | inl h_eq =>
-      rw [h_eq, Set.Icc.coe_zero, mul_zero, mul_zero]
-    | inr h_ne =>
-      rw [mul_le_mul_right]
-      · rw [Pi.le_def] at h_X
-        specialize h_X c
-        rw [Pi.le_def] at h_X
-        exact h_X ⟨s.stack, heap₁⟩
-      · apply lt_of_le_of_ne nonneg'
-        exact Ne.symm h_ne
+    apply monotone_qslSepCon
+    · rw [Pi.le_def] at h_X
+      exact h_X c
+    · exact le_rfl
 
-noncomputable def wrlp (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :=
+noncomputable def wrlp' (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :=
   gfp ⟨wrlp_step post resource, wrlp_monotone post resource⟩ program
 
+syntax "wrlp [" term "] (" qsl " | " qsl ")" : qsl
+macro_rules
+  | `(term| `[qsl| wrlp [$c:term] ($p:qsl | $r:qsl)]) => `(wrlp' $c `[qsl| $p] `[qsl| $r])
+  | `(term| `[qsl $v| wrlp [$c:term] ($p:qsl | $r:qsl)]) => `(wrlp' $c `[qsl $v| $p] `[qsl $v| $r])
+
+open Lean PrettyPrinter Delaborator
+
+def makeBrackets [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
+  | `(term| `[qsl|$f:qsl]) => `(qsl| ( $f ) )
+  | `(term| $t:term) => `(qsl|[[$t]])
+
+@[app_unexpander wrlp']
+def unexpanderWrlp : Unexpander
+  | `($_ $c:term $p $r) =>
+      do `(`[qsl| wrlp [$c:term] ($(← makeBrackets p):qsl | $(← makeBrackets r):qsl )])
+  | _ => throw ()
+
+
 theorem wrlp_unroll (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :
-    wrlp program post resource = match program with
+    `[qsl| wrlp [program] ([[post]] | [[resource]])] = match program with
   | [Prog| ↓ ] => post
   | [Prog| ↯ ] => `[qsl| qFalse]
   | program => `[qsl| [[resource]] -⋆ [[step program
-    (fun c => `[qsl| [[wrlp c post resource]] ⋆ [[resource]] ]) ]] ] := by sorry
+    (fun c => `[qsl| wrlp [c] ([[post]] | [[resource]]) ⋆ [[resource]] ]) ]] ] := by sorry
 
-theorem wrlp_skip : P ⊢ wrlp [Prog| skip] P RI := by
+theorem wrlp_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrlp [c] ([[P]] ⋆ [[resource]] | emp)])
+    (h_atom : c ∈ atomicProgram):
+    `[qsl| [[P]] ⊢ wrlp [c] ([[P]] | emp)] := by sorry
+
+theorem wrlp_skip : `[qsl| [[P]] ⊢ wrlp [ [Prog| skip] ] ([[P]] | [[RI]])] := by
   rw [wrlp_unroll]
   split
   case h_1 h_eq => cases h_eq
