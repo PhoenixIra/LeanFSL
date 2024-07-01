@@ -60,7 +60,7 @@ theorem tsum_skip_of_deterministic (s : State Var) (inner : Program Var → Stat
     unfold programSmallStepSemantics skipSmallStepSemantics iteOneZero ite_unit
     simp only [and_self, ↓reduceIte, one_mul]
 
-theorem inf_tsum_skip_of_state (s : State Var) (inner : Program Var → StateRV Var) :
+theorem inf_tsum_skip (inner : Program Var → StateRV Var) :
     step [Prog| skip] inner s = inner [Prog| ↓] s := by
   unfold step
   apply le_antisymm
@@ -72,12 +72,6 @@ theorem inf_tsum_skip_of_state (s : State Var) (inner : Program Var → StateRV 
     rintro _ ⟨a, h_a, rfl⟩
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_skip_of_deterministic s inner]
-
-theorem inf_tsum_skip (inner : Program Var → StateRV Var) :
-    step [Prog| skip] inner = inner [Prog| ↓] := by
-  apply funext
-  intro s
-  exact inf_tsum_skip_of_state s inner
 
 theorem tsum_assign_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : progState,

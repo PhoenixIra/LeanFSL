@@ -35,6 +35,9 @@ noncomputable def qslReal (e : ProbExp Var) : StateRV Var := λ ⟨s,_⟩ => e s
 
 noncomputable def qslIverson (P : State Var → Prop) : StateRV Var := λ s => iteOneZero (P s)
 
+noncomputable def qslSubst (P : StateRV Var) (v : Var) (e : ValueExp Var) : StateRV Var :=
+  fun s => P (s.substituteStack v (e s.stack))
+
 noncomputable def qslNot (P : StateRV Var) : StateRV Var := λ s => σ (P s)
 
 noncomputable def qslMin (P Q : StateRV Var) : StateRV Var := P ⊓ Q
@@ -72,7 +75,8 @@ syntax term:51 " = " term:51 : qsl
 syntax "<" term:51 ">" : qsl
 syntax "[[" term "]]" : qsl
 syntax "⁅" term "⁆" : qsl
-syntax:max "~" qsl : qsl
+syntax qsl:min "[ " term " ↦ " term " ]" : qsl
+syntax "~" qsl:min : qsl
 syntax:35 qsl:36 " ⊓ " qsl:35 : qsl
 syntax:30 qsl:31 " ⊔ " qsl:30 : qsl
 syntax:30 qsl:31 " + " qsl:30 : qsl
@@ -99,6 +103,7 @@ macro_rules
   | `(term| `[qsl| [[$t:term]]]) => `($t)
   | `(term| `[qsl| < $t:term >]) => `(qslReal $t)
   | `(term| `[qsl| ⁅$t:term⁆]) => `(qslIverson $t)
+  | `(term| `[qsl| $f[ $x:term ↦ $e ] ]) => `(qslSubst `[qsl|$f] $x $e)
   | `(term| `[qsl| ~ $f:qsl]) => `(qslNot `[qsl|$f])
   | `(term| `[qsl| $l:qsl ⊓ $r:qsl]) => `(qslMin `[qsl|$l] `[qsl|$r])
   | `(term| `[qsl| $l:qsl ⊔ $r:qsl]) => `(qslMax `[qsl|$l] `[qsl|$r])
@@ -123,6 +128,7 @@ macro_rules
   | `(term| `[qsl $_| [[$t:term]]]) => `($t)
   | `(term| `[qsl $v:term| <$t:term>]) => `(@qslReal $v $t)
   | `(term| `[qsl $v:term| ⁅$t:term⁆]) => `(@qslIverson $v $t)
+  | `(term| `[qsl $v:term| $f[ $x:term ↦ $e ] ]) => `(@qslSubst $v `[qsl $v|$f] $x $e)
   | `(term| `[qsl $v:term| ~ $f:qsl]) => `(qslNot `[qsl $v|$f])
   | `(term| `[qsl $v:term| $l:qsl ⊓ $r:qsl]) => `(qslMin `[qsl $v|$l] `[qsl $v|$r])
   | `(term| `[qsl $v:term| $l:qsl ⊔ $r:qsl]) => `(qslMax `[qsl $v|$l] `[qsl $v|$r])
@@ -180,6 +186,8 @@ def isAtom : TSyntax `qsl → Bool
   | `(qsl| $_:term = $_:term) => true
   | `(qsl| <$_:term>) => true
   | `(qsl| ⁅$_:term⁆) => true
+  | `(qsl| ~$_:qsl) => true
+  | `(qsl| $_:qsl[ $_ ↦ $_]) => true
   | `(qsl| $_ ) => false
 
 @[app_unexpander qslNot]
@@ -187,6 +195,13 @@ def unexpandQslNot : Unexpander
   | `($_ `[qsl|$t]) =>
     if isAtom t then `(`[qsl| ~ $t]) else `(`[qsl| ~ ($t)])
   | `($_ $t) => `(`[qsl| ~ [[$t]]])
+  | _ => throw ()
+
+@[app_unexpander qslSubst]
+def unexpandQslSubst : Unexpander
+  | `($_ `[qsl|$f] $v:term $e:term) =>
+    if isAtom f then `(`[qsl| $f[ $v ↦ $e] ]) else `(`[qsl| ($f) [ $v:term ↦ $e:term] ])
+  | `($_ $f $v $e) => `(`[qsl| [[$f]][ $v ↦ $e] ])
   | _ => throw ()
 
 def requireBracketsMin : TSyntax `qsl → Bool
@@ -282,5 +297,7 @@ def unexpandQslSepDiv : Unexpander
 
 -- example : `[qsl Var| emp ⊔ I (x:ℚ). ~ (emp ⊔ (emp ⊔ emp) ⋆ emp) ⊢ (S (x:ℚ). emp -⋆ emp + emp -⋆ emp) ⊓ emp] := sorry
 
+
+example : `[qsl Var| qFalse ⊢ (emp ⋆ emp)[x ↦ e] ] := sorry
 
 end QSL

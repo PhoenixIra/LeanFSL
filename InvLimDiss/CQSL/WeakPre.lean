@@ -184,12 +184,17 @@ theorem wrlp_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrlp [c] ([[P]] ⋆ [[r
       rw [this, wrlp_eq_of_term, wrlp_eq_of_term, qslSepMul_qslEmp_eq]
 
 theorem wrlp_skip : `[qsl| [[P]] ⊢ wrlp [ [Prog| skip] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_def]
-  split
-  case h_1 h_eq => cases h_eq
-  case h_2 h_eq => cases h_eq
-  case h_3 _ _ =>
-    rw [le_qslSepImp_iff_qslSepCon_le, inf_tsum_skip, wrlp_eq_of_term]
+  rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
+  rw [le_qslSepImp_iff_qslSepCon_le, Pi.le_def]
+  intro s
+  rw [inf_tsum_skip, wrlp_eq_of_term]
+
+theorem wrlp_assign : `[qsl| [[P]] ⊢ wrlp [ [Prog| x ≔ e] ] ([[P]] | [[RI]])] := by
+  rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
+  rw [le_qslSepImp_iff_qslSepCon_le, Pi.le_def]
+  intro s
+  rw [inf_tsum_assign, wrlp_eq_of_term]
+  sorry
 
 
 
