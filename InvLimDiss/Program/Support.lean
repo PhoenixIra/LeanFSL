@@ -10,12 +10,17 @@ variable {Var : Type}
 abbrev progState := (Program Var) × (State Var)
 noncomputable abbrev semantics := @programSmallStepSemantics Var
 
-theorem mul_support_superset {f g : α → I} {s : Set α} (h : f.support ⊆ s) :
+theorem mul_support_superset_left {f g : α → I} {s : Set α} (h : f.support ⊆ s) :
     (fun x => f x * g x).support ⊆ s := by
   rintro x h_x
   apply Set.mem_of_subset_of_mem h
   simp only [Function.support, Pi.mul_apply, ne_eq, mul_eq_zero, not_or, Set.mem_setOf_eq] at h_x
   exact h_x.left
+
+theorem mul_support_superset_right {f g : α → I} {s : Set α} (h : g.support ⊆ s) :
+    (fun x => f x * g x).support ⊆ s := by
+  conv => left; intro a; left; intro a; rw [mul_comm]
+  exact mul_support_superset_left h
 
 theorem tsum_skip_support_superset (s : State Var) :
     (fun cs : progState => semantics [Prog| skip] s deterministic cs.1 cs.2).support

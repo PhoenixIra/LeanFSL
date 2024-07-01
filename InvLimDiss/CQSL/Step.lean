@@ -47,21 +47,20 @@ theorem monotone_step (c : Program Var) : Monotone (step c) := by
         apply Ne.symm
         exact h_ne
 
-
 theorem tsum_skip_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : progState,
     (semantics [Prog| skip] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
     = inner [Prog| ↓] s := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
-  · apply mul_support_superset
+  · apply mul_support_superset_left
     exact tsum_skip_support_superset s
   · rw [tsum_singleton (⟨[Prog| ↓], s⟩ : progState)
       (fun cs : progState => semantics [Prog| skip] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
     unfold programSmallStepSemantics skipSmallStepSemantics iteOneZero ite_unit
     simp only [and_self, ↓reduceIte, one_mul]
 
-theorem inf_tsum_skip (s : State Var) (inner : Program Var → StateRV Var) :
+theorem inf_tsum_skip_of_state (s : State Var) (inner : Program Var → StateRV Var) :
     step [Prog| skip] inner s = inner [Prog| ↓] s := by
   unfold step
   apply le_antisymm
@@ -74,13 +73,19 @@ theorem inf_tsum_skip (s : State Var) (inner : Program Var → StateRV Var) :
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_skip_of_deterministic s inner]
 
+theorem inf_tsum_skip (inner : Program Var → StateRV Var) :
+    step [Prog| skip] inner = inner [Prog| ↓] := by
+  apply funext
+  intro s
+  exact inf_tsum_skip_of_state s inner
+
 theorem tsum_assign_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : progState,
     (semantics [Prog| v ≔ e] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
     = inner [Prog| ↓] (substituteStack s v (e s.stack)) := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
-  · apply mul_support_superset
+  · apply mul_support_superset_left
     exact tsum_assign_support_superset s
   · rw [tsum_singleton (⟨[Prog| ↓], (substituteStack s v (e s.stack))⟩ : progState)
       (fun cs : progState => semantics [Prog| v ≔ e] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
@@ -107,7 +112,7 @@ theorem tsum_manipulate_of_deterministic (s : State Var) (inner : Program Var �
     = inner [Prog| ↓] (substituteHeap s l (e_val s.stack)) := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
-  · apply mul_support_superset
+  · apply mul_support_superset_left
     exact tsum_manipulate_support_superset s h_l h_alloc
   · rw [tsum_singleton (⟨[Prog| ↓], (substituteHeap s l (e_val s.stack))⟩ : progState)
       (fun cs : progState => semantics [Prog| e_loc *≔ e_val] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
@@ -138,7 +143,7 @@ theorem tsum_lookup_of_deterministic (s : State Var) (inner : Program Var → St
     = inner [Prog| ↓] (substituteStack s v value) := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
-  · apply mul_support_superset
+  · apply mul_support_superset_left
     exact tsum_lookup_support_superset s h_l h_alloc
   · rw [tsum_singleton (⟨[Prog| ↓], (substituteStack s v value)⟩ : progState)
       (fun cs : progState => semantics [Prog| v ≔* e_loc] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
@@ -169,7 +174,7 @@ theorem tsum_cas_of_eq_of_deterministic (s : State Var) (inner : Program Var →
     = inner [Prog| ↓] (substituteStack (substituteHeap s l (e_val s.stack)) v 1) := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
-  · apply mul_support_superset
+  · apply mul_support_superset_left
     exact tsum_cas_of_eq_support_superset s h_l h_alloc
   · rw [tsum_singleton (⟨[Prog| ↓], (substituteStack (substituteHeap s l (e_val s.stack)) v 1)⟩ : progState)
       (fun cs : progState => semantics [Prog| v ≔ cas(e_loc, e_cmp, e_val)] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
@@ -203,7 +208,7 @@ theorem tsum_cas_of_neq_of_deterministic (s : State Var) (inner : Program Var �
     = inner [Prog| ↓] (substituteStack s v 0) := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
-  · apply mul_support_superset
+  · apply mul_support_superset_left
     exact tsum_cas_of_neq_support_superset s h_l h_alloc h_ne
   · rw [tsum_singleton (⟨[Prog| ↓], (substituteStack s v 0)⟩ : progState)
       (fun cs : progState => semantics [Prog| v ≔ cas(e_loc, e_cmp, e_val)] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
@@ -241,7 +246,7 @@ theorem tsum_alloc_of_allocation (s : State Var) (inner : Program Var → StateR
     = inner [Prog| ↓] (substituteStack (substituteHeap s l n) v l) := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
-  · apply mul_support_superset
+  · apply mul_support_superset_left
     exact tsum_alloc_support_superset s h_n
   · rw [tsum_singleton (⟨[Prog| ↓], (substituteStack (substituteHeap s l n) v l)⟩ : progState)
       (fun cs : progState => semantics [Prog| v ≔ alloc(e)] s (allocation l) cs.1 cs.2 * inner cs.1 cs.2)]
@@ -283,7 +288,7 @@ theorem tsum_free_of_deterministic (s : State Var) (inner : Program Var → Stat
     = inner [Prog| ↓] (freeHeap s l n) := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
-  · apply mul_support_superset
+  · apply mul_support_superset_left
     exact tsum_free_support_superset s h_l h_n h_alloc
   · rw [tsum_singleton (⟨[Prog| ↓], (freeHeap s l n)⟩ : progState)
       (fun cs : progState => semantics [Prog| free(e_loc, e_val)] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]

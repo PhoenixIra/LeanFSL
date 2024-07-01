@@ -2,6 +2,7 @@ import Mathlib.Topology.UnitInterval
 import Mathlib.Tactic.Rify
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Topology.Order.MonotoneConvergence
+import Mathlib.Algebra.Field.Defs
 
 /-
 This file contains lemmas and definitions used
@@ -34,6 +35,17 @@ instance : MulPosMono I where
     · exact Eq.ge rfl
     · exact nonneg'
     · exact nonneg'
+
+lemma unit_mul_comm (i j : I) : i * j = j * i := by
+  rw [Subtype.mk_eq_mk, coe_mul, coe_mul]
+  exact mul_comm (i:ℝ) (j:ℝ)
+
+theorem unit_mul_le_mul {i₁ i₂ j₁ j₂ : I} (h_i : i₁ ≤ i₂) (h_j : j₁ ≤ j₂) : i₁ * j₁ ≤ i₂ * j₂ := by
+  apply mul_le_mul
+  · exact h_i
+  · exact h_j
+  · exact nonneg'
+  · exact nonneg'
 
 lemma nonneg_of_lt {i j : I} (h : i < j) : 0 < j :=
   lt_of_le_of_lt nonneg' h
@@ -121,6 +133,7 @@ lemma unit_le_div_iff_mul_le {i j k : I} : i ≤ j / k ↔ i * k ≤ j := by
         exact h_mul
     case isFalse => exact le_one'
 
+@[simp]
 lemma unit_div_zero (i : I) : i / 0 = 1 := by
   rw [Subtype.mk_eq_mk, coe_div]
   simp only [coe_zero, div_zero, coe_one, ite_eq_right_iff, zero_ne_one, imp_false, not_lt]
@@ -131,6 +144,7 @@ lemma zero_unit_div (i : I) (h : 0 < i) : 0 / i = 0 := by
   split_ifs
   simp only [coe_zero, zero_div]
 
+@[simp]
 lemma unit_div_one (i : I) : i / 1 = i := by
   rw [Subtype.mk_eq_mk, coe_div]
   split
@@ -171,6 +185,7 @@ lemma unit_div_eq_one_iff {i j : I} : i / j = 1 ↔ j ≤ i := by
     rw [if_neg (not_lt.mpr h)]
     rfl
 
+@[simp]
 lemma eq_zero_iff_sym_eq_one : σ x = 1 ↔ x = 0 := by
   apply Iff.intro
   · intro h
@@ -180,6 +195,7 @@ lemma eq_zero_iff_sym_eq_one : σ x = 1 ↔ x = 0 := by
     rw [h]
     exact symm_zero
 
+@[simp]
 lemma eq_one_iff_sym_eq_zero : σ x = 0 ↔ x = 1 := by
   apply Iff.intro
   · intro h
@@ -221,21 +237,27 @@ lemma iteOneZero_pos {P : Prop} (h : P) : iteOneZero P = 1 := by
   unfold iteOneZero
   exact ite_unit_pos 1 0 h
 
+@[simp]
 lemma iteOneZero_true : iteOneZero True = 1 := iteOneZero_pos True.intro
 
 lemma iteOneZero_neg {P : Prop} (h : ¬P) : iteOneZero P = 0 := by
   unfold iteOneZero
   exact ite_unit_neg 1 0 h
 
+@[simp]
 lemma iteOneZero_false : iteOneZero False = 0 := iteOneZero_neg (fun h => h.elim)
 
+@[simp]
 lemma iteOneZero_eq_one_def {P : Prop} : iteOneZero P = 1 ↔ P := by
   unfold iteOneZero
   exact (ite_unit_def_of_ne <| Ne.symm zero_ne_one).1
 
+@[simp]
 lemma iteOneZero_eq_zero_def {P : Prop} : iteOneZero P = 0 ↔ ¬ P := by
   unfold iteOneZero
   exact (ite_unit_def_of_ne <| Ne.symm zero_ne_one).2
+
+lemma iteOneZero_eq_iff {P : Prop} : iteOneZero P = if P then 1 else 0 := rfl
 
 lemma iteOneZero_def {P : Prop} : iteOneZero P = i ↔ i = 0 ∧ ¬ P ∨ i = 1 ∧ P := by
   apply Iff.intro

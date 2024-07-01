@@ -17,11 +17,9 @@ theorem monotone_qslSepCon {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₁ ⊢ P
   intro i h
   specialize h heap₁ heap₂ h_disjoint rfl rfl
   refine le_trans ?_ h; clear h
-  apply mul_le_mul
+  apply unit_mul_le_mul
   · exact h_P ⟨s,heap₁⟩
   · exact h_Q ⟨s,heap₂⟩
-  · exact nonneg'
-  · exact nonneg'
 
 theorem monotone_qslSepImp {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₂ ⊢ P₁) (h_Q : Q₁ ⊢ Q₂) :
     `[qsl| [[P₁]] -⋆ [[Q₁]] ⊢ [[P₂]] -⋆ [[Q₂]]] := by
@@ -135,5 +133,60 @@ theorem qslSepInv_eq_one (f₁ f₂ : StateRV Var) (s : State Var) :
     apply le_sInf
     rintro i ⟨heap, h_disjoint, rfl⟩
     rw [h heap h_disjoint]
+
+theorem qslSepDiv_symm (f g : StateRV Var) : `[qsl| [[f]] ⋆ [[g]] ⊢ [[g]] ⋆ [[f]]] := by
+  rw [Pi.le_def]
+  intro s
+  apply sSup_le
+  rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+  apply le_sSup
+  use heap₂, heap₁
+  rw [union_comm _ _ h_disjoint] at h_union
+  rw [State.disjoint_comm] at h_disjoint
+  use h_disjoint, h_union
+  exact unit_mul_comm _ _
+
+theorem qslSepDiv_comm (f g : StateRV Var) : `[qsl| [[f]] ⋆ [[g]]] = `[qsl| [[g]] ⋆ [[f]]] :=
+  le_antisymm (qslSepDiv_symm f g) (qslSepDiv_symm g f)
+
+theorem qslEmp_qslSepDiv_eq (f : StateRV Var) : `[qsl| emp -⋆ [[f]]] = f := by
+  apply funext
+  intro s
+  apply le_antisymm
+  · apply sInf_le
+    use ∅, disjoint_emptyHeap'
+    simp only [union_emptyHeap, qslEmp, iteOneZero_true, unit_div_one]
+  · apply le_sInf
+    rintro _ ⟨heap, _, rfl⟩
+    simp only [qslEmp, iteOneZero_eq_iff]
+    split
+    case isTrue h => rw [h, union_emptyHeap, unit_div_one]
+    case isFalse h => rw [unit_div_zero]; exact le_one'
+
+theorem qslSepMul_qslEmp_eq (f : StateRV Var) : `[qsl| [[f]] ⋆ emp] = f := by
+  apply funext
+  intro s
+  apply le_antisymm
+  · apply sSup_le
+    rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
+    simp only [qslEmp, iteOneZero_eq_iff, mul_ite, mul_one, mul_zero]
+    split
+    case isTrue h =>
+      rw [h, union_emptyHeap] at h_union
+      rw [h_union]
+    case isFalse h => exact nonneg'
+  · apply le_sSup
+    use s.heap, ∅, disjoint_emptyHeap', union_emptyHeap'
+    simp only [qslEmp, iteOneZero_true, mul_one]
+
+theorem qslSepMul_qslFalse_eq (f : StateRV Var) : `[qsl| [[f]] ⋆ qFalse] = `[qsl| qFalse] := by
+  apply funext
+  intro s
+  apply le_antisymm
+  · apply sSup_le
+    rintro _ ⟨_, _, _, _, rfl⟩
+    simp only [qslFalse, mul_zero, le_refl]
+  · simp only [qslFalse, zero_le]
+
 
 end QSL
