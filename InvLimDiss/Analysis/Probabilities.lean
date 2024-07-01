@@ -282,6 +282,20 @@ lemma iteOneZero_of_non_one {P : Prop}  (h : 0 ≠ iteOneZero P) : iteOneZero P 
   case isTrue h_P => exact iteOneZero_pos h_P
   case isFalse h_nP => exact (h rfl).elim
 
+lemma iteOneZero_eq_iteOneZero_iff {P Q : Prop} :
+    iteOneZero P = iteOneZero Q ↔ (P ↔ Q) := by
+  apply Iff.intro
+  · intro h
+    apply Iff.intro
+    · intro hp; rw [iteOneZero_pos hp, Eq.comm, iteOneZero_eq_one_def] at h; exact h
+    · intro hq; rw [iteOneZero_pos hq, iteOneZero_eq_one_def] at h; exact h
+  · intro h
+    rw [iteOneZero_eq_iff]
+    split
+    case isTrue hp => rw [Eq.comm, iteOneZero_eq_one_def]; exact h.mp hp
+    case isFalse hnp => rw [Eq.comm, iteOneZero_eq_zero_def]; exact (not_iff_not.mpr h).mp hnp
+
+
 theorem truncatedAdd_mem_unit (i j : I) : min 1 ((i:ℝ) + j) ∈ I := by
   apply And.intro
   · exact le_min zero_le_one (add_nonneg i.property.1 j.property.1)
