@@ -104,4 +104,11 @@ theorem wrlp_assign (h : x ∉ varStateRV RI) :
     = `[qsl| ([[P]] ⋆ [[RI]])(x ↦ e)] s := rfl
   rw [this, substituteStack_of_qslSepCon e h]
 
+theorem wrlp_manipulate :
+    `[qsl| (S (q : ℚ). e ↦ q) ⋆ (e ↦ e' -⋆ [[P]])
+          ⊢ wrlp [ [Prog| e *≔ e'] ] ([[P]] | [[RI]])] := by
+  rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
+  rw [le_qslSepDiv_iff_qslSepMul_le]
+
+
 end CQSL

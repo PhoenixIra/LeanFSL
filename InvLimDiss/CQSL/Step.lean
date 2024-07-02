@@ -1,9 +1,11 @@
 import InvLimDiss.Program.Semantics
 import InvLimDiss.SL.Quantitative
+import InvLimDiss.SL.Framing.Basic
 import InvLimDiss.Program.Support
 import InvLimDiss.Program.Enabled
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Order
+import Mathlib.Algebra.Order.Pointwise
 
 /-! This file features the step function and lemmas about it:
   * `step` which computes the next possible steps in a program
@@ -54,6 +56,26 @@ theorem monotone_step (c : Program Var) : Monotone (step c) := by
       · apply lt_of_le_of_ne nonneg'
         apply Ne.symm
         exact h_ne
+
+theorem inf_tsum_terminated (inner : Program Var → StateRV Var) :
+    step [Prog| ↓] inner s = 1 := by
+  unfold step
+  apply le_antisymm le_one'
+  apply le_sInf
+  rintro _ ⟨a, h_a, _⟩
+  exfalso
+  rw [enabledAction, Set.mem_empty_iff_false] at h_a
+  exact h_a
+
+theorem inf_tsum_error (inner : Program Var → StateRV Var) :
+    step [Prog| ↯] inner s = 1 := by
+  unfold step
+  apply le_antisymm le_one'
+  apply le_sInf
+  rintro _ ⟨a, h_a, _⟩
+  exfalso
+  rw [enabledAction, Set.mem_empty_iff_false] at h_a
+  exact h_a
 
 theorem tsum_skip_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : progState,
@@ -314,5 +336,34 @@ theorem inf_tsum_free (s : State Var) (inner : Program Var → StateRV Var)
     rintro _ ⟨a, h_a, rfl⟩
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_free_of_deterministic s inner h_l h_n h_alloc]
+
+
+
+
+theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅) :
+    `[qsl| [[step c inner]] ⋆ [[P]]] ⊢ step c (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+  rw [entailment_iff_le]
+  intro s
+  rw [qslSepMul]
+  apply sSup_le
+  rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+  induction c with
+  | terminated => rw [inf_tsum_terminated, inf_tsum_terminated]; exact le_one'
+  | error => rw [inf_tsum_error, inf_tsum_error]; exact le_one'
+  | skip' =>
+    rw [inf_tsum_skip, inf_tsum_skip]
+    apply le_sSup
+    use heap₁, heap₂
+  | assign v e =>
+    rw [inf_tsum_assign, inf_tsum_assign]
+    apply le_sSup_of_le
+    use heap₁, heap₂, h_disjoint, h_union
+    rw [Subtype.mk_le_mk]
+    simp only [substituteStack, Set.Icc.coe_mul]
+    rw [mul_le_mul_left]
+    simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
+    sorry
+
+
 
 end CQSL

@@ -16,6 +16,9 @@ variable (Variable : Type)
 /-- Value expressions, i.e. mappings to `ℚ`. -/
 def ValueExp := (Stack Variable) → ℚ
 
+instance : Coe ℚ (ValueExp Variable) where
+  coe q := fun _ => q
+
 /-- Substitution of values in the expression, which we leave unevaluated. -/
 @[simp]
 noncomputable def substVal {Var : Type}
@@ -31,6 +34,9 @@ noncomputable def varsValue {Var : Type} (e : ValueExp Var) : Set Var :=
 /-- Boolean expressions, i.e. mappings to `Bool`. -/
 def BoolExp := (Stack Variable) → Bool
 
+instance : Coe Bool (BoolExp Variable) where
+  coe b := fun _ => b
+
 /-- Substitution of values in the expression, which we leave unevaluated. -/
 @[simp]
 noncomputable def substBool {Var : Type}
@@ -45,6 +51,9 @@ noncomputable def varsBool {Var : Type} (e : BoolExp Var) : Set Var :=
 
 /-- Probabilistic expressions, i.e. mappings to `unitInterval`. -/
 def ProbExp := (Stack Variable) → I
+
+instance : Coe I (ProbExp Variable) where
+  coe i := fun _ => i
 
 /-- Substitution of values in the expression, which we leave unevaluated. -/
 @[simp]

@@ -1,6 +1,6 @@
 import InvLimDiss.SL.QuantitativeProofrules
 import InvLimDiss.Program.Semantics
-import InvLimDiss.SL.Framing.Defs
+import InvLimDiss.SL.Framing.Basic
 
 /-! Simplication lemmas (not necessary with the simp attribute) for variables occuring
 in programs and qsl objects and substitution of variables. -/
@@ -59,21 +59,6 @@ theorem varStateRV_of_qslPointsTo :
       have := h_n n h_n'
       rw [h, HeapValue.val.injEq] at this
       exact this
-
-
-theorem substituteStack_eq_of_not_varStateRV {f : StateRV Var} {v : Var} (h : v ∉ varStateRV f) :
-    ∀ q s, f (s.substituteStack v q) = f s := by
-  intro q s
-  simp only [varStateRV, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not] at h
-  exact (h s q).symm
-
-theorem qslSubst_eq_of_not_varStateRV {f : StateRV Var} {v : Var} (h : v ∉ varStateRV f) :
-    ∀ e, `[qsl| [[f]](v ↦ e)] = f := by
-  intro e
-  apply funext
-  intro s
-  rw [qslSubst]
-  exact substituteStack_eq_of_not_varStateRV h (e s.stack) s
 
 @[simp]
 theorem qslSubst_of_qslTrue : `[qsl| qTrue(v ↦ e)] = `[qsl| qTrue] := by

@@ -3,6 +3,7 @@ import InvLimDiss.SL.Quantitative
 /-!
   This file features various lemmas involing quantitative separation logic on the unit Interval.
   Especially we have:
+  * Simplification of Entailment relation
   * Theorems about separating operations like
      * Monotonicity
      * Adjointness
@@ -16,6 +17,15 @@ namespace QSL
 open unitInterval State
 
 variable {Var : Type}
+
+section Entailment
+
+theorem entailment_iff_le {P Q : StateRV Var} : P ⊢ Q ↔ ∀ s, P s ≤ Q s := by
+  unfold Entailment.entail instEntailmentStateRV
+  simp only
+  rw [Pi.le_def]
+
+end Entailment
 
 /-! We have here lemmas about separating multipication and division. -/
 section Separating

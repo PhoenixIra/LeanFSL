@@ -28,6 +28,10 @@ The unitInterval forms a complete lattice with a linear order.
 -/
 noncomputable instance unit_cl : CompleteLinearOrder I := Set.Icc.completeLinearOrder (by simp)
 
+theorem unit_top_eq_one : (⊤ : I) = (1 : I) := rfl
+
+theorem unit_bot_eq_zero : (⊥ : I) = (0 : I) := rfl
+
 /-!
   This section includes the following content:
   * Prove that multiplication is monotone. The typeclasses we prove suggest using `OrderedSemiring`.
@@ -67,6 +71,16 @@ theorem unit_mul_le_mul {i₁ i₂ j₁ j₂ : I} (h_i : i₁ ≤ i₂) (h_j : j
   · exact h_j
   · exact nonneg'
   · exact nonneg'
+
+instance : MulZeroClass I where
+  zero_mul i := by rw [Subtype.mk_eq_mk, coe_mul]; exact zero_mul (i:ℝ)
+  mul_zero i := by rw [unit_mul_comm]; exact zero_mul i
+
+instance : MulOneClass I where
+  one_mul i := by rw[Subtype.mk_eq_mk, coe_mul]; exact one_mul (i:ℝ)
+  mul_one i := by rw [unit_mul_comm]; exact one_mul i
+
+instance : CancelMonoidWithZero I := by infer_instance
 
 lemma div_le_one {a b : ℝ} (h_b_pos : 0 < b) (h_ab : a ≤ b): a/b ≤ 1 := by
   have h_b_nonneg : 0 ≤ b := by apply le_iff_lt_or_eq.mpr; left; exact h_b_pos
@@ -554,5 +568,68 @@ theorem hasSum (f : α → I) : HasSum f (⨆ s : Finset α, ∑ a ∈ s, f a) :
 theorem isSummable (f : α → I) : Summable f := ⟨_,hasSum f⟩
 
 end AddSub
+
+section Quantifier
+
+instance : SMul I (Set I) where
+  smul i s := {x | ∃ j ∈ s, x = i * j}
+
+theorem hSMul_def (i : I) (s : Set I) : i • s = {x | ∃ j ∈ s, x = i * j} := rfl
+
+theorem hSMul_emp (i : I) : i • (∅ : Set I) = ∅ := by
+  simp only [hSMul_def, Set.mem_empty_iff_false, false_and, exists_const, Set.setOf_false]
+
+theorem coe_sInf {s : Set I} (h : Set.Nonempty s) : (sInf s) = sInf (s : Set ℝ) := by
+  rw [Set.Icc.coe_sInf]
+  exact h
+
+open Pointwise in
+theorem smul_real_eq_smul_unit (i : I) (s : Set I) :
+    ((i : ℝ) • (Subtype.val '' s)) = ↑(i • s) := by
+  apply Set.ext
+  intro a
+  apply Iff.intro
+  · rintro ⟨_, ⟨j,h_s,rfl⟩, rfl⟩
+    simp only
+    use (i * j)
+    refine And.intro ?_ rfl
+    use j
+  · rintro ⟨_,⟨j,h_s,rfl⟩,rfl⟩
+    use j
+    simp only
+    refine And.intro ?_ rfl
+    use j
+
+theorem sInf_smul (a : I) (s : Set I) : a * sInf s ≤ sInf (a • s) := by
+  cases eq_or_ne s ∅ with
+  | inl h_emp => rw [h_emp, hSMul_emp,_root_.sInf_empty]; exact le_one'
+  | inr h_nonempty =>
+    rw [← Set.nonempty_iff_ne_empty] at h_nonempty
+    rw [hSMul_def, Subtype.mk_le_mk, coe_mul, coe_sInf h_nonempty]
+    rw [← smul_eq_mul, ← Real.sInf_smul_of_nonneg (nonneg a) (Subtype.val '' s)]
+    rw [smul_real_eq_smul_unit]
+    have : Set.Nonempty (a • s) := by {
+      obtain ⟨x, h_x⟩ := h_nonempty
+      use (a * x), x
+    }
+    rw [← coe_sInf this, Subtype.coe_le_coe]
+    apply le_rfl
+
+theorem sInf_smul_of_nonneg (a : I) {s : Set I} (h : s.Nonempty) :
+    a * sInf s = sInf (a • s) := by
+  apply le_antisymm
+  · exact sInf_smul a s
+  · rw [hSMul_def, Subtype.mk_le_mk, coe_mul, coe_sInf h]
+    rw [← smul_eq_mul, ← Real.sInf_smul_of_nonneg (nonneg a) (Subtype.val '' s)]
+    rw [smul_real_eq_smul_unit]
+    have : Set.Nonempty (a • s) := by {
+      obtain ⟨x, h_x⟩ := h
+      use (a * x), x
+    }
+    rw [← coe_sInf this, Subtype.coe_le_coe]
+    apply le_rfl
+
+
+end Quantifier
 
 end unitInterval
