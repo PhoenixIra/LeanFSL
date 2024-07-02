@@ -4,9 +4,18 @@ import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Topology.Order.MonotoneConvergence
 import Mathlib.Algebra.Field.Defs
 
-/-
-This file contains lemmas and definitions used
-in conjunction with unitInterval reasoning interpreted as probabilities
+/-!
+# Extended unitInterval
+
+This file contains lemmas and definitions used in conjunction with unitInterval.
+We usually interpret the unitInterval as probabilities.
+
+This file is features the following content:
+* `unit_cl` as an instantionation of a CompleteLinearOrder on the unitInterval
+* Section `MulDiv` featuring the truncated division (truncated to 1) and various lemmas of multiplication and truncated division on the unitInterval
+* Section `Symm` featuring lemmas about the symmetrie on the unitInterval, i.e. 1-x
+* Section `Ite` featuring definitions for quantitative if then else expressions, especially iverson brackets, i.e. if then else to one and zero, here called `IteZeroOne` and respective lemmas.
+* Section `AddSub` featuring truncated add (truncated to 1) and truncated sub (truncated to 0), lemmas involving them as well as lemmas around infinite additions, especially their existence.
 -/
 
 
@@ -14,7 +23,19 @@ namespace unitInterval
 
 open Classical Set.Icc
 
+/--
+The unitInterval forms a complete lattice with a linear order.
+-/
 noncomputable instance unit_cl : CompleteLinearOrder I := Set.Icc.completeLinearOrder (by simp)
+
+/-!
+  This section includes the following content:
+  * Prove that multiplication is monotone. The typeclasses we prove suggest using `OrderedSemiring`.
+  However, the unitInterval is not an `OrderedSemiring`.
+  * Various lemmas about multiplication on the unit interval
+  * The truncated division `unitDiv` as well as lemmas about its use
+-/
+section MulDiv
 
 instance : PosMulMono I where
   elim := by
@@ -46,9 +67,6 @@ theorem unit_mul_le_mul {i₁ i₂ j₁ j₂ : I} (h_i : i₁ ≤ i₂) (h_j : j
   · exact h_j
   · exact nonneg'
   · exact nonneg'
-
-lemma nonneg_of_lt {i j : I} (h : i < j) : 0 < j :=
-  lt_of_le_of_lt nonneg' h
 
 lemma div_le_one {a b : ℝ} (h_b_pos : 0 < b) (h_ab : a ≤ b): a/b ≤ 1 := by
   have h_b_nonneg : 0 ≤ b := by apply le_iff_lt_or_eq.mpr; left; exact h_b_pos
@@ -185,6 +203,13 @@ lemma unit_div_eq_one_iff {i j : I} : i / j = 1 ↔ j ≤ i := by
     rw [if_neg (not_lt.mpr h)]
     rfl
 
+end MulDiv
+
+/-!
+  Thie section contains lemmas about the symmetrie, written here as `σ`, but usually refered to as 1-x.
+-/
+section Symm
+
 @[simp]
 lemma eq_zero_iff_sym_eq_one : σ x = 1 ↔ x = 0 := by
   apply Iff.intro
@@ -204,6 +229,49 @@ lemma eq_one_iff_sym_eq_zero : σ x = 0 ↔ x = 1 := by
   · intro h
     rw [h]
     exact symm_one
+
+theorem le_symm_if_le_symm (i j : I) : i ≤ σ j → j ≤ σ i := by
+  intro h
+  rw [Subtype.mk_le_mk, coe_symm_eq] at h ⊢
+  apply le_sub_left_of_add_le
+  rw [add_comm]
+  apply add_le_of_le_sub_left
+  exact h
+
+theorem le_symm_iff_le_symm (i j : I) : i ≤ σ j ↔ j ≤ σ i := ⟨le_symm_if_le_symm i j, le_symm_if_le_symm j i⟩
+
+theorem symm_le_if_symm_le (i j : I) : σ i ≤ j → σ j ≤ i := by
+  intro h
+  rw [Subtype.mk_le_mk, coe_symm_eq] at h ⊢
+  rw [sub_le_iff_le_add, add_comm, ← sub_le_iff_le_add]
+  exact h
+
+theorem symm_le_iff_symm_le (i j : I) : σ i ≤ j ↔ σ j ≤ i := ⟨symm_le_if_symm_le i j, symm_le_if_symm_le j i⟩
+
+theorem lt_symm_if_lt_symm (i j : I) : i < σ j → j < σ i := by
+  intro h
+  rw [Subtype.mk_lt_mk, coe_symm_eq] at h ⊢
+  apply lt_sub_left_of_add_lt
+  rw [add_comm]
+  apply add_lt_of_lt_sub_left
+  exact h
+
+theorem lt_symm_iff_lt_symm (i j : I) : i < σ j ↔ j < σ i := ⟨lt_symm_if_lt_symm i j, lt_symm_if_lt_symm j i⟩
+
+theorem symm_lt_if_symm_lt (i j : I) : σ i < j → σ j < i := by
+  intro h
+  rw [Subtype.mk_lt_mk, coe_symm_eq] at h ⊢
+  rw [sub_lt_iff_lt_add, add_comm, ← sub_lt_iff_lt_add]
+  exact h
+
+theorem symm_lt_iff_symm_lt (i j : I) : σ i < j ↔ σ j < i := ⟨symm_lt_if_symm_lt i j, symm_lt_if_symm_lt j i⟩
+
+end Symm
+
+/-! This section contains if then else on the unit interval, especially if the result is either 1 or 0,
+  in which case we call it `iteOneZero`. We do not define fancy syntax for this but use it as is.
+  We also have lemmas about the usage of `iteOneZero`. -/
+section Ite
 
 noncomputable def ite_unit (P : Prop) (i j : I) : I := if P then i else j
 
@@ -295,6 +363,17 @@ lemma iteOneZero_eq_iteOneZero_iff {P Q : Prop} :
     case isTrue hp => rw [Eq.comm, iteOneZero_eq_one_def]; exact h.mp hp
     case isFalse hnp => rw [Eq.comm, iteOneZero_eq_zero_def]; exact (not_iff_not.mpr h).mp hnp
 
+end Ite
+
+
+/-!
+  This section contains truncated addition and truncated subtraction:
+  * The `truncatedAdd` operation, which truncated addition to 1 and lemmas about its use.
+  * The adjoint `truncatedSub` operation, which truncated subtraction to 0.
+  * A proof that `truncatedAdd` is an `CanonicallyOrderedAddCommMonoid`.
+  * A proof that every funtion on the unit interval is summable `isSummable`.
+-/
+section AddSub
 
 theorem truncatedAdd_mem_unit (i j : I) : min 1 ((i:ℝ) + j) ∈ I := by
   apply And.intro
@@ -474,40 +553,6 @@ theorem hasSum (f : α → I) : HasSum f (⨆ s : Finset α, ∑ a ∈ s, f a) :
 
 theorem isSummable (f : α → I) : Summable f := ⟨_,hasSum f⟩
 
-theorem le_symm_if_le_symm (i j : I) : i ≤ σ j → j ≤ σ i := by
-  intro h
-  rw [Subtype.mk_le_mk, coe_symm_eq] at h ⊢
-  apply le_sub_left_of_add_le
-  rw [add_comm]
-  apply add_le_of_le_sub_left
-  exact h
-
-theorem le_symm_iff_le_symm (i j : I) : i ≤ σ j ↔ j ≤ σ i := ⟨le_symm_if_le_symm i j, le_symm_if_le_symm j i⟩
-
-theorem symm_le_if_symm_le (i j : I) : σ i ≤ j → σ j ≤ i := by
-  intro h
-  rw [Subtype.mk_le_mk, coe_symm_eq] at h ⊢
-  rw [sub_le_iff_le_add, add_comm, ← sub_le_iff_le_add]
-  exact h
-
-theorem symm_le_iff_symm_le (i j : I) : σ i ≤ j ↔ σ j ≤ i := ⟨symm_le_if_symm_le i j, symm_le_if_symm_le j i⟩
-
-theorem lt_symm_if_lt_symm (i j : I) : i < σ j → j < σ i := by
-  intro h
-  rw [Subtype.mk_lt_mk, coe_symm_eq] at h ⊢
-  apply lt_sub_left_of_add_lt
-  rw [add_comm]
-  apply add_lt_of_lt_sub_left
-  exact h
-
-theorem lt_symm_iff_lt_symm (i j : I) : i < σ j ↔ j < σ i := ⟨lt_symm_if_lt_symm i j, lt_symm_if_lt_symm j i⟩
-
-theorem symm_lt_if_symm_lt (i j : I) : σ i < j → σ j < i := by
-  intro h
-  rw [Subtype.mk_lt_mk, coe_symm_eq] at h ⊢
-  rw [sub_lt_iff_lt_add, add_comm, ← sub_lt_iff_lt_add]
-  exact h
-
-theorem symm_lt_iff_symm_lt (i j : I) : σ i < j ↔ σ j < i := ⟨symm_lt_if_symm_lt i j, symm_lt_if_symm_lt j i⟩
+end AddSub
 
 end unitInterval

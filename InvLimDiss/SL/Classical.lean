@@ -3,8 +3,8 @@ import InvLimDiss.Program.Expressions
 import InvLimDiss.SL.Entailment
 import Lean.PrettyPrinter
 
-/-
-This file contains definitions and lemmas about classical (i.e. Prop) separation logic
+/-!
+This file contains definitions and syntax about classical (i.e. Prop) separation logic.
 -/
 
 namespace SL
@@ -233,21 +233,5 @@ def unexpandSlSepImp : Unexpander
   | `($_ `[sl| $l -∗ $r] $f) => do `(`[sl| ($l -∗ $r) -∗ $(← bracketsSepImp f)])
   | `($_ $l $r) => do `(`[sl| $(← bracketsSepImp l) -∗ $(← bracketsSepImp r)])
   | _ => throw ()
-
--- def bracketsEntailment [Monad m] [MonadRef m] [MonadQuotation m] : TSyntax `term → m (TSyntax `sl)
---   | `(term| `[sl|$f:sl]) => `(sl| $f)
---   | `(term| $f ) => `(sl| [[$f]])
-
--- @[app_unexpander LE.le]
--- def unexpandSlEntail : Unexpander
---   | `($_ $l $r) => do `(`[sl| $(← bracketsEntailment l) ⊢ $(← bracketsEntailment r)])
---   | _ => throw ()
-
-
--- example : `[sl Var| emp ∧ ∀ (x:ℚ). ¬ (emp ∨ (emp ∨ emp) ∗ emp) ⊢ (∃ (x:ℚ). emp -∗ emp ∧ emp -∗ emp) ∧ emp] := sorry
-
--- example : `[sl Var| [∗] n ∈ {0 ... 4}, (emp ∗ emp) ⊢ emp] := sorry
-
-
 
 end SL

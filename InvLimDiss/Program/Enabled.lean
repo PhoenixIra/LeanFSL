@@ -1,11 +1,16 @@
 import InvLimDiss.Program.Semantics
 
+/-! This file features enabled actions. This is important as we do not want to take the
+  infimum over non enabled actions, as we usually define them as 0.
+  We could also set all non-enabled actions to 1 -- but this may be more confusing. -/
+
 namespace Semantics
 
 open Syntax Classical State Program unitInterval
 
 variable {Variable : Type}
 
+/-- The definition of enabled Action hard coded. -/
 @[simp]
 def enabledAction : (Program Variable) → (State Variable) → Set Action
   | [Prog| ↓], _                => ∅
@@ -27,6 +32,7 @@ def enabledAction : (Program Variable) → (State Variable) → Set Action
     => if c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] then { Action.deterministic } else
       { Action.concurrentLeft a | a ∈ enabledAction c₁ s } ∪ { Action.concurrentRight a | a ∈ enabledAction c₂ s }
 
+/-- Disabled actions have trivial subdistributions. -/
 theorem zero_probability_of_not_enabledAction
     {c : Program Variable} {s : State Variable} {a : Action}
     (h : ¬ a ∈ enabledAction c s) (c' : Program Variable) (s' : State Variable) :

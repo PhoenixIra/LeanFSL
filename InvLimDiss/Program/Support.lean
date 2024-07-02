@@ -1,13 +1,20 @@
 import InvLimDiss.Program.Semantics
 import Mathlib.Algebra.Group.Support
 
+/-!
+  This file features lemmas about the support of the probability transition function.
+-/
+
 namespace Semantics
 
 open Action Syntax unitInterval State HeapValue
 
 variable {Var : Type}
 
+/-- A program state is a program with a state-/
 abbrev progState := (Program Var) × (State Var)
+
+/-- For nicer theorems, we abbreviate the probability transition function by semantics -/
 noncomputable abbrev semantics := @programSmallStepSemantics Var
 
 theorem mul_support_superset_left {f g : α → I} {s : Set α} (h : f.support ⊆ s) :

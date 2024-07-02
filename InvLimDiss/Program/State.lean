@@ -4,11 +4,19 @@ import Mathlib.Data.PNat.Basic
 import Mathlib.Algebra.Order.Ring.Nat
 import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
 
-/-
+/-!
 This file contains definitions and lemmas about program states, i.e. stack-heap pairs.
+We leave variables as a generic type to allow instantiating fancy variables.
+It features:
+* Lemmas about PNat as heap only have locations on PNat
+* A type for HeapValue, which is essentially isomorph to `Option ℚ`
+* Definition of `Stack` and `Heap`, which are functions from variables to `ℚ`,
+  and their Pair a `State`. `Heap` here is not necessarily finite, only partial.
+* Definitions and Lemmas about changing the values of `Stack` and `Heap` on the `State`.
 -/
 
 namespace PNat
+
 theorem add_right_nat {n : PNat} {m : Nat} : 0 < n + m := Nat.add_pos_left n.prop m
 theorem add_left_nat {n : Nat} {m : PNat} : 0 < n + m := Nat.add_pos_right n m.prop
 
@@ -17,12 +25,14 @@ instance : HAdd PNat Nat PNat where
 
 instance : HAdd Nat PNat PNat where
   hAdd n m := ⟨n + m, PNat.add_left_nat⟩
+
 end PNat
 
 
 
 open Rat Classical
 
+/-- Values of a heap, `undef` for partial values. -/
 inductive HeapValue
 | val : ℚ → HeapValue
 | undef : HeapValue
@@ -32,10 +42,13 @@ open HeapValue
 instance : Coe ℚ HeapValue where
 coe := fun q => val q
 
+/-- A Stack is a map from variables to their values -/
 def Stack (Variable : Type) : Type := Variable → ℚ
 
+/-- A Heap is a partial map from positive numbers to values-/
 def Heap : Type := PNat → HeapValue
 
+/-- Gets the value at a heap location, given that the heap location is not undefined -/
 def getVal (heap : Heap) (l : PNat) (h : heap l ≠ undef) : ℚ :=
 match h_eq : heap l with
 | val q => q
@@ -49,6 +62,7 @@ split
 case h_1 h => exact h.symm
 case h_2 h'=> exfalso; exact h h'
 
+/-- The state, a stack heap pair. -/
 structure State (Variable : Type) where
 stack : Stack Variable
 heap : Heap
@@ -63,10 +77,12 @@ instance inhabited_heap : Inhabited Heap := ⟨fun _ => undef⟩
 
 instance inhabited_state : Inhabited (State Var) := ⟨fun _ => 0, fun _ => undef⟩
 
+/-- Substitute the value of variable in the Stack-/
 @[simp]
 noncomputable def substituteVar (s : Stack Var) (v : Var) (q : ℚ) : Stack Var :=
   fun v' => if v = v' then q else s v'
 
+/-- Lifting of `substituteVar` on Stacks-/
 noncomputable def substituteStack
     (s : State Var) (v : Var) (q : ℚ) : State Var :=
   ⟨substituteVar s.stack v q,s.heap⟩
@@ -109,6 +125,7 @@ theorem substituteStack_def {s s' : State Var} {v : Var} {q : ℚ} :
       | inr h_ne => rw [if_neg h_ne]; exact (h_remain v' h_ne).symm
     · exact h_heap.symm
 
+/-- Substitute the value of a heap location on the stack -/
 noncomputable def substituteHeap
     (s : State Var) (l : PNat) (q : ℚ) : State Var :=
   ⟨s.stack, fun l' => if l = l' then val q else s.heap l'⟩
@@ -150,8 +167,7 @@ theorem substituteHeap_def {s s' : State Var} {q : ℚ} :
       | inl h_eq => rw [if_pos h_eq]; exact (h_changed l' h_eq).symm
       | inr h_ne => rw [if_neg h_ne]; exact (h_remain l' h_ne).symm
 
-
-
+/-- Sets a value location as undefined -/
 noncomputable def removeLocationHeap
     (s : State Var) (l : PNat) : State Var :=
   ⟨s.stack, fun l' => if l = l' then undef else s.heap l'⟩
@@ -197,6 +213,7 @@ lemma removeLocationHeap_def {s s' : State Var} {l : PNat} :
         rw [if_neg h_ne]
         exact (h_remain l' h_ne).symm
 
+/-- Checks whether a certain consecutive part of the heap is unallocated. -/
 noncomputable def isNotAlloc
     (s : State Var) (l : PNat) (n : ℕ): Prop :=
   match n with
@@ -233,6 +250,7 @@ theorem isNotAlloc_def (s : State Var) (l : PNat) (n : ℕ) :
           exact h l' h_le (Nat.lt_succ.mpr <| le_of_lt h_lt)
         exact ih.mpr this
 
+/-- Adds 0 values to a consecutive part of the heap. -/
 noncomputable def allocateHeap
     (s : State Var) (l : PNat) (n : ℕ) : State Var :=
   match n with
@@ -358,7 +376,8 @@ theorem allocateHeap_def {s s' : State Var} {l : PNat} {n : ℕ} :
       rw [h_changed l' h_le h_lt]
       exact allocateHeap_change s l n l' h_le h_lt
 
-
+/-- Checks whether a certain part of the heap is allocated
+  (i.e. the reverse but not negation of `isNotAlloc`). -/
 noncomputable def isAlloc (s : State Var) (l : PNat) (n : ℕ) : Prop :=
   match n with
   | 0 => true
@@ -393,7 +412,7 @@ theorem isAlloc_def (s : State Var) (l : PNat) (n : ℕ) :
           exact h l' h_le (Nat.lt_succ.mpr <| le_of_lt h_lt)
         exact ih.mpr this
 
-
+/-- Removed a consecutive part of the heap. -/
 noncomputable def freeHeap
     (s : State Var) (l : PNat) (n : ℕ) : State Var :=
   match n with
@@ -513,14 +532,15 @@ theorem freeHeap_def {s s' : State Var} {l : PNat} {n : ℕ} :
       rw [h_changed l' h_le h_lt]
       exact freeHeap_change s l n l' h_le h_lt
 
-
-def disjoint (h₁ h₂ : Heap) : Prop := ∀ n, h₁ n = undef ∨ h₂ n = undef
+/-- States that two heaps are not defined at any same location -/
+def disjoint (heap₁ heap₂ : Heap) : Prop := ∀ n, heap₁ n = undef ∨ heap₂ n = undef
 
 theorem disjoint.symm {h₁ h₂ : Heap} (h : disjoint h₁ h₂) : disjoint h₂ h₁ := fun n => Or.symm (h n)
 
 theorem disjoint_comm (h₁ h₂ : Heap) : disjoint h₁ h₂ ↔ disjoint h₂ h₁ :=
   ⟨fun h => h.symm, fun h => h.symm⟩
 
+/-- The left prioritisating union of heaps. -/
 instance union : Union Heap
   where union := λ h h' n =>
     match h n with
@@ -556,7 +576,7 @@ theorem union_assoc (heap₁ heap₂ heap₃ : Heap)  :
   <;> cases heap₃ n
   <;> simp
 
-
+/-- A heap that is everywhere undefined. -/
 instance emptyHeap : EmptyCollection Heap := ⟨λ _ => undef⟩
 
 @[simp]
@@ -615,7 +635,7 @@ theorem union_eq_emptyHeap_iff {heap heap' : Heap} :
     rw [emptyHeap_union']
 
 
-
+/-- Lifting of finite to heap locations. -/
 def Heap.Finite (heap : Heap) : Prop := Set.Finite { l | heap l ≠ undef}
 
 namespace Finite
@@ -627,6 +647,7 @@ private lemma powerset_finite (heap : Heap) (h_finite : Heap.Finite heap) :
 
 open Classical
 
+/-- Helper function for the rest of the proofs -/
 private noncomputable def surjectiv_func (heap : Heap) (ns : Set PNat ) : Heap :=
   fun n => if n ∈ ns then heap n else undef
 
@@ -637,6 +658,7 @@ private lemma powerset_surjection (heap : Heap) (h_finite : Heap.Finite heap) :
     exact h
   · exact powerset_finite heap h_finite
 
+/-- Proof that given a finite heap, the set of subheaps is also finite. -/
 theorem finite_of_subheaps {heap : Heap} (h_finite : Heap.Finite heap) :
     Set.Finite {heap₁ | ∃ heap₂, heap₁ ∪ heap₂ = heap} := by
   have := powerset_surjection heap h_finite

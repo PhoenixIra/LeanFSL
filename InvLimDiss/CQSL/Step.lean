@@ -5,15 +5,23 @@ import InvLimDiss.Program.Enabled
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.Order
 
+/-! This file features the step function and lemmas about it:
+  * `step` which computes the next possible steps in a program
+  * Monotonicty and Elimination lemmas about `step`-/
+
 open Syntax Semantics QSL unitInterval Action State HeapValue
 
 namespace CQSL
 
 variable {Var : Type}
 
+/-- We introduce the abbreviation `progState` for the tuple consisting of programs and states.-/
 abbrev progState := (Program Var) × (State Var)
+
+/-- We introduce the abbreviation `semantics` for the probability transition function. -/
 noncomputable abbrev semantics := @programSmallStepSemantics Var
 
+/-- One step in the probability transition function -- essentially the bellman-operator. -/
 noncomputable def step (c : Program Var) (inner : Program Var → StateRV Var) : StateRV Var :=
     fun s => sInf { x | ∃ a ∈ enabledAction c s,
       ∑' cs : progState, (semantics c s a cs.1 cs.2) * inner cs.1 cs.2 = x}

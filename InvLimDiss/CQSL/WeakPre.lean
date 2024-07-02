@@ -4,6 +4,13 @@ import InvLimDiss.SL.QuantitativeProofrules
 import InvLimDiss.Program.AtomicFinal
 import Mathlib.Order.FixedPoints
 
+/-! This file contains the concurrent bellman-fixpoint and lemmas about, especially
+  * `wrlp_step` the concurrent bellman-operator
+  * `wrlp_monotone` the concurrent bellman-operator is monotone
+  * `wrlp'` the fixpoint of the concurrent bellman-equation
+  * `wrlp_def` one unfolding of the bellman-solution
+
+  We also offer syntax as `wrlp` in the qsl environment. -/
 
 namespace CQSL
 
@@ -11,6 +18,7 @@ open QSL Syntax OrderHom unitInterval Atom Semantics
 
 variable {Var : Type}
 
+/-- The concurrent bellman-operator.-/
 noncomputable def wrlp_step (post : StateRV Var) (resource : StateRV Var) :
     (Program Var → StateRV Var) → (Program Var → StateRV Var)
   | _, [Prog| ↓ ] => post
@@ -26,17 +34,18 @@ theorem wrlp_monotone (post : StateRV Var) (resource : StateRV Var) : Monotone (
   case h_1 => exact le_rfl
   case h_2 => exact le_rfl
   case h_3 =>
-    apply monotone_qslSepImp le_rfl
+    apply monotone_qslSepDiv le_rfl
     apply monotone_step
     rw [Pi.le_def]
     intro c
     rw [Pi.le_def]
     intro s
-    apply monotone_qslSepCon
+    apply monotone_qslSepMul
     · rw [Pi.le_def] at h_X
       exact h_X c
     · exact le_rfl
 
+/-- The greatest solution to the concurrent bellman equation -/
 noncomputable def wrlp' (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :=
   gfp ⟨wrlp_step post resource, wrlp_monotone post resource⟩ program
 
@@ -56,7 +65,6 @@ def unexpanderWrlp : Unexpander
   | `($_ $c:term $p $r) =>
       do `(`[qsl| wrlp [$c:term] ($(← makeBrackets p):qsl | $(← makeBrackets r):qsl )])
   | _ => throw ()
-
 
 theorem wrlp_def (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :
     `[qsl| wrlp [program] ([[post]] | [[resource]])] = match program with
@@ -103,9 +111,6 @@ theorem wrlp_eq_of_error
     (post : StateRV Var) (resource : StateRV Var) :
     `[qsl| wrlp [ [Prog| ↯] ] ([[post]] | [[resource]])] = `[qsl| qFalse] := by
   rw [wrlp_def]
-
-
-
 
 
 end CQSL

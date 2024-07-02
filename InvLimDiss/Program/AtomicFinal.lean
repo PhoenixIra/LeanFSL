@@ -1,11 +1,17 @@
 import InvLimDiss.Program.Semantics
 
+/-!
+  An program is atomic if it is terminated after one step. This allows nicer elimination of
+  the step function.
+-/
+
 namespace Atom
 
 open Syntax Semantics unitInterval
 
 variable {Var : Type}
 
+/-- The atomic programs hard coded. -/
 def atomicProgram : Program Var → Bool
   | [Prog| skip] => true
   | [Prog| _ ≔ _] => true
@@ -16,11 +22,13 @@ def atomicProgram : Program Var → Bool
   | [Prog| free(_, _)] => true
   | _ => false
 
+/-- The final programs hard coded. -/
 def finalProgram : Program Var → Bool
   | [Prog| ↓] => true
   | [Prog| ↯] => true
   | _ => false
 
+/-- The atomic programs are not final. -/
 theorem atomic_not_final {c : Program Var} (h : atomicProgram c) : ¬ finalProgram c := by
   rw [finalProgram]
   intro h_f
@@ -47,6 +55,7 @@ theorem finalPrograms_iff_or {c : Program Var} :
       | inl h => exact h_n_term h
       | inr h => exact h_n_err h
 
+/-- Atomic programs have zero probability for non-terminating next programs. -/
 theorem semantics_eq_zero_of_atomProgram {c c' : Program Var}
     (h_atom : atomicProgram c) (h_c' : ¬ finalProgram c')
     (s : State Var) (a : Action) (s' : State Var) :

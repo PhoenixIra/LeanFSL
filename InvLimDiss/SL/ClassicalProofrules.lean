@@ -1,5 +1,14 @@
 import InvLimDiss.SL.Classical
 
+/-!
+  This file features various lemmas involing qualitative or classical separation logic.
+  Especially we have:
+  * Monotonicty theorems
+  * Adjointness theorems
+  * vanishing modus ponens
+  * elimination rules for quantifiers
+-/
+
 namespace SL
 
 variable {Var : Type}

@@ -2,6 +2,9 @@ import InvLimDiss.SL.QuantitativeProofrules
 import InvLimDiss.Program.Semantics
 import InvLimDiss.SL.Framing.Defs
 
+/-! Simplication lemmas (not necessary with the simp attribute) for variables occuring
+in programs and qsl objects and substitution of variables. -/
+
 open Syntax Semantics QSL State
 
 namespace QSL

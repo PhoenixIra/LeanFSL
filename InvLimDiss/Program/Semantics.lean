@@ -1,10 +1,10 @@
 import InvLimDiss.Program.Syntax
 import InvLimDiss.Program.State
 import InvLimDiss.Analysis.Probabilities
-import InvLimDiss.Util
 
-/-
+/-!
 This file contains the semantics of the programming language as a probability transition function.
+We especially feature definitions for each program constructs, excluding inductively defined ones (sequentation and concurrency).
 -/
 
 namespace Semantics
@@ -13,6 +13,7 @@ open unitInterval Syntax Program State Classical HeapValue
 
 variable {Variable : Type}
 
+/-- An action is deterministic (or probabilistic), allocation or left/right concurrect.-/
 inductive Action where
   | deterministic : Action
   | allocation : ℕ+ → Action
@@ -136,6 +137,7 @@ noncomputable def loopSmallStepSemantics (e : BoolExp Variable) (c : Program Var
   | c' => iteOneZero (a = Action.deterministic
     ∧ c' = [Prog| [[c]] ; while e begin [[c]] fi] ∧ s = s' ∧ e s.stack)
 
+/-- The transition probability function of programs. -/
 noncomputable def programSmallStepSemantics :
     (Program Variable) → (State Variable) →
     Action → (Program Variable) → (State Variable) → I

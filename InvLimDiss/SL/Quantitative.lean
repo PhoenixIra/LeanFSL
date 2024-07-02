@@ -3,8 +3,8 @@ import InvLimDiss.Program.Expressions
 import InvLimDiss.SL.Entailment
 import InvLimDiss.Analysis.Probabilities
 
-/-
-This file contains definitions and lemmas about unit valued quantitative separation logic
+/-@
+This file contains definitions and syntax about unit valued quantitative separation logic
 -/
 
 namespace QSL

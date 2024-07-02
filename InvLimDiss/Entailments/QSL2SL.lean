@@ -2,9 +2,12 @@ import InvLimDiss.SL.ClassicalProofrules
 import InvLimDiss.SL.QuantitativeProofrules
 import Mathlib.Data.Set.Pointwise.Finite
 
-/-
+/-!
 This file contains the transformation from (static) quantitative separation logic
-into classical separation logic
+into classical separation logic. We try to use the least number of additional assumptions
+and offer lemmas helping to prove this assumptions which require finiteness of the image.
+We also provide overapproximation of the image to allow easy proving of the finiteness
+of the image.
 -/
 
 namespace Qsl2Sl
@@ -13,33 +16,38 @@ open unitInterval State QSL SL Syntax
 
 variable {Var : Type}
 
--- Theorems deriving helpful preconditions
-
+/-- Sets of qsl RVs with exisential quantifiers are nonempty if the
+  quantified type is nonempty. -/
 theorem nonempty_StateRV_set {α : Type} (f : α → StateRV Var) (s : State Var)
     (h_nonempty : Nonempty α) : Set.Nonempty { i | ∃ x, f x s = i} := by
   let x := Classical.choice h_nonempty
   use (f x s), x
 
+/-- The supremum is reached if the image is finite and the type is nonempty. -/
 theorem sSup_mem_of_nonempty {α : Type} {f : α → StateRV Var} {s : State Var}
     (h_nonempty : Nonempty α) (h_finite : Set.Finite {i | ∃ x, f x s = i}) :
     sSup {i | ∃ y, f y s = i} ∈ {i | ∃ y, f y s = i} :=
   Set.Nonempty.csSup_mem (nonempty_StateRV_set f s h_nonempty) h_finite
 
+/-- The supremum is inside of its closure. -/
 lemma sSup_in_closure_of_subset (s s' : Set I) (h_nonempty : Set.Nonempty s) (h : s ⊆ s') :
     sSup s ∈ closure s' := by
   apply Set.mem_of_subset_of_mem (closure_mono h)
   exact sSup_mem_closure h_nonempty
 
+/-- The infimum is reached if the image is finite and the type is nonempty. -/
 theorem sInf_mem_of_nonempty {α : Type} {f : α → StateRV Var} {s : State Var}
     (h_nonempty : Nonempty α) (h_finite : Set.Finite {i | ∃ x, f x s = i}) :
     sInf {i | ∃ y, f y s = i} ∈ {i | ∃ y, f y s = i} :=
   Set.Nonempty.csInf_mem (nonempty_StateRV_set f s h_nonempty) h_finite
 
+/-- The infimum is inside of its closure. -/
 lemma sInf_in_closure_of_subset (s s' : Set I) (h_nonempty : Set.Nonempty s) (h : s ⊆ s') :
     sInf s ∈ closure s' := by
   apply Set.mem_of_subset_of_mem (closure_mono h)
   exact sInf_mem_closure h_nonempty
 
+/-- The negation infimum is not its limit if the image is finite. -/
 theorem lt_sInf_of_valuesOf {values : Set I} (h_fin : Set.Finite (values)) {i : I} (h_lt : 0 < i) :
     σ i < sInf {j ∈ values | σ i < j } := by
   have h_fin : Set.Finite {j ∈ values | σ i < j } := Set.Finite.subset h_fin (Set.sep_subset values (fun j => σ i < j))
@@ -62,6 +70,7 @@ theorem lt_sInf_of_valuesOf {values : Set I} (h_fin : Set.Finite (values)) {i : 
       clear h_nonempty h_fin h
       simp only [Set.mem_setOf_eq, lt_self_iff_false, and_false] at h_mem
 
+/-- The separating mulitiplication is realized if the heap is finite. -/
 theorem exists_heaps_max_of_finite_heap {f₁ f₂ : StateRV Var} {s : State Var}
     (h_finite : Heap.Finite s.heap):
     `[qsl| [[f₁]] ⋆ [[f₂]]] s ∈ { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap
@@ -90,6 +99,7 @@ theorem exists_heaps_max_of_finite_heap {f₁ f₂ : StateRV Var} {s : State Var
       rw [disjoint_comm heap₂ heap₁, union_comm heap₂ heap₁ h_disjoint.symm]
       trivial
 
+/-- The separating mulitiplication is realized if image is finite -/
 theorem exists_qslSepMul_max_of_finite_values {f₁ f₂ : StateRV Var} (s : State Var)
     (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)):
     `[qsl| [[f₁]] ⋆ [[f₂]]] s ∈ { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap
@@ -102,6 +112,7 @@ theorem exists_qslSepMul_max_of_finite_values {f₁ f₂ : StateRV Var} (s : Sta
     simp only [Set.mem_mul]
     use (f₁ ⟨s.stack, heap₁⟩), (Set.mem_range_self _), (f₂ ⟨s.stack, heap₂⟩), (Set.mem_range_self _)
 
+/-- The separating division is realized if image is finite -/
 theorem exists_qslSepDiv_min_of_finite_values {f₁ f₂ : StateRV Var} (s : State Var)
     (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)) :
     `[qsl| [[f₁]] -⋆ [[f₂]]] s ∈ { x | ∃ heap, disjoint s.heap heap
@@ -116,11 +127,8 @@ theorem exists_qslSepDiv_min_of_finite_values {f₁ f₂ : StateRV Var} (s : Sta
     use ⟨s.stack, s.heap ∪ heap⟩, ⟨s.stack, heap⟩
     rfl
 
-
-
-
-
--- Theorems related to range and their approximation
+/-! Theorems related to range and their approximation -/
+section Range
 
 theorem nonempty_range {f : StateRV Var} : Set.Nonempty (Set.range f) := by
   have s : State Var := ⟨fun _ => 0, fun _ => HeapValue.undef⟩
@@ -445,8 +453,13 @@ theorem range_of_qslSepDiv_of_finite_range
   use ⟨s.stack, s.heap ∪ heap⟩, ⟨s.stack, heap⟩
   rfl
 
-/-- Theorem to translate an qsl entailment into a sl entailment -/
-theorem qsl_entail_if_at_least (f g : StateRV Var) {values : Set I} (h_subset : Set.range f ⊆ values) :
+end Range
+
+/-! Theorems to translate an qsl into sl -/
+section Transform
+
+/-- Transform a qsl entailment into a qualtitative entailment-/
+theorem qsl_entail_if_atLeast (f g : StateRV Var) {values : Set I} (h_subset : Set.range f ⊆ values) :
     f ⊢ g ↔ ∀ i ∈ values, `[sl| [[λ s => i ≤ f s]] ⊢ [[fun s => i ≤ g s]]] := by
   apply Iff.intro
   · intro h i _ s h_f
@@ -457,8 +470,8 @@ theorem qsl_entail_if_at_least (f g : StateRV Var) {values : Set I} (h_subset : 
     refine h (f s) ?_ s (le_refl (f s))
     exact Set.mem_of_subset_of_mem h_subset (Set.mem_range_self _)
 
-
--- theorems translating inequalities into propper sl entailments
+/-! Theorems transformting the atLeast expressions from the previous theorem into
+  separation logic objects. -/
 
 theorem zero_le_atLeast (f : StateRV Var) (s : State Var) : 0 ≤ f s ↔ `[sl Var| sTrue] s := by
   apply Iff.intro
@@ -752,5 +765,7 @@ theorem atLeast_qslSepDiv_iff_of_left_one_zero {f₁ f₂ : StateRV Var} {s : St
       use heap, h_disjoint
       rw [h_one, unit_div_one]
   · exact atLeast_qslSepDiv_if_of_left_one_zero h_one_zero
+
+end Transform
 
 end Qsl2Sl

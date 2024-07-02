@@ -2,8 +2,9 @@ import InvLimDiss.Program.Expressions
 import Mathlib.Topology.UnitInterval
 import Lean.PrettyPrinter
 
-/-
-This file contains definitions and notation for program syntax
+/-!
+This file contains definitions and notation for program syntax.
+We introduce the syntax [Prog| ... ] for nicer code.
 -/
 
 namespace Syntax
