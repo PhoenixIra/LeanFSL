@@ -360,27 +360,28 @@ theorem step_cas_of_error (s : State Var) (inner : Program Var → StateRV Var)
     rw [h_a, tsum_cas_of_deterministic_of_error s inner h]
 
 theorem tsum_alloc_of_allocation (s : State Var) (inner : Program Var → StateRV Var)
-    {l : ℕ+} {n : ℕ} ( h_n : ↑n = e s.stack) (h_allocable : isNotAlloc s.heap l n) :
+    {l : ℕ+} {n : ℕ} ( h_n : e s.stack = ↑n) (h_allocable : isNotAlloc s.heap l n) :
     (∑' cs : progState,
     (semantics [Prog| v ≔ alloc(e)] s (allocation l) cs.1 cs.2) * inner cs.1 cs.2)
-    = inner [Prog| ↓] (substituteStack (substituteHeap s l n) v l) := by
+    = inner [Prog| ↓] (substituteStack (allocateHeap s l n) v l) := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
   · apply mul_support_superset_left
     exact tsum_alloc_support_superset s h_n
-  · rw [tsum_singleton (⟨[Prog| ↓], (substituteStack (substituteHeap s l n) v l)⟩ : progState)
+  · rw [tsum_singleton (⟨[Prog| ↓], (substituteStack (allocateHeap s l n) v l)⟩ : progState)
       (fun cs : progState => semantics [Prog| v ≔ alloc(e)] s (allocation l) cs.1 cs.2 * inner cs.1 cs.2)]
     unfold programSmallStepSemantics allocateSmallStepSemantics iteOneZero ite_unit
     simp only [ne_eq, true_and, ite_mul, one_mul, zero_mul, ite_eq_left_iff, not_exists, not_and,
       not_or]
     intro h
     exfalso
-    exact h l rfl n h_n h_allocable rfl
+    exact h l rfl n h_n.symm h_allocable rfl
 
 theorem step_alloc (s : State Var) (inner : Program Var → StateRV Var)
-    {n : ℕ} ( h_n : ↑n = e s.stack)  :
+    {n : ℕ} ( h_n : e s.stack = ↑n)  :
     step [Prog| v ≔ alloc(e)] inner s
-    = sInf { x | ∃ l, isNotAlloc s.heap l n ∧ x = inner [Prog| ↓] (substituteStack (substituteHeap s l n) v l)} := by
+    = sInf { x | ∃ l, isNotAlloc s.heap l n
+      ∧ x = inner [Prog| ↓] (substituteStack (allocateHeap s l n) v l)} := by
   unfold step
   apply le_antisymm
   · apply sInf_le_sInf
@@ -388,18 +389,18 @@ theorem step_alloc (s : State Var) (inner : Program Var → StateRV Var)
     use (allocation l)
     apply And.intro
     · rw [enabledAction, if_pos]
-      · use l, rfl, n
-      · use n
+      · use l, rfl, n, h_n.symm
+      · use n, h_n.symm
     · exact tsum_alloc_of_allocation s inner h_n h_notAlloc
   · apply sInf_le_sInf
     rintro _ ⟨a, h_a, rfl⟩
     rw [enabledAction, if_pos] at h_a
     · obtain ⟨l, h_l, n', h_n', h_notAlloc'⟩ := h_a
-      rw [← h_n,Nat.cast_inj] at h_n'
+      rw [h_n,Nat.cast_inj] at h_n'
       rw [h_n'] at h_notAlloc'
       rw [h_l]
       use l, h_notAlloc', tsum_alloc_of_allocation s inner h_n h_notAlloc'
-    · use n
+    · use n, h_n.symm
 
 theorem tsum_free_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} (h_l : ↑l = e_loc s.stack) {n : ℕ}
@@ -548,6 +549,29 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
       simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
       rw [step_cas_of_error _ _ h_alloc, h_abort]
       simp only [qslFalse, zero_mul, zero_le]
+  | allocate v e_n =>
+    by_cases h_m : ∃ m : ℕ, e_n s.stack = ↑m
+    case pos =>
+      obtain ⟨m, h_m⟩ := h_m
+      rw [step_alloc ⟨s.stack, heap₁⟩ _ h_m]
+      rw [step_alloc s _ h_m]
+      apply le_sInf
+      rintro _ ⟨l,h_ne_alloc, rfl⟩
+      rw [← h_union, isNotAlloc_union] at h_ne_alloc
+      apply le_sSup_of_le
+      · use (allocateLoc heap₁ l m), heap₂
+        use (disjoint_allocateLoc h_disjoint h_ne_alloc.right)
+        simp only [substituteStack, allocateHeap, ← h_union]
+        use allocateLoc_union
+      · simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
+        simp only [substituteStack]
+        rw [substituteVar_eq_of_not_varStateRV h l]
+        refine unit_mul_le_mul ?_ le_rfl
+        apply sInf_le
+        use l, h_ne_alloc.left
+        simp only [allocateHeap]
+    case neg =>
+      sorry
   | _ => sorry
 
 

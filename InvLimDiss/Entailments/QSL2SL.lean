@@ -1,5 +1,6 @@
 import InvLimDiss.SL.ClassicalProofrules
 import InvLimDiss.SL.QuantitativeProofrules
+import InvLimDiss.Program.State.Finite
 import Mathlib.Data.Set.Pointwise.Finite
 
 /-!
@@ -12,7 +13,7 @@ of the image.
 
 namespace Qsl2Sl
 
-open unitInterval State QSL SL Syntax
+open unitInterval State QSL SL Syntax Finite
 
 variable {Var : Type}
 

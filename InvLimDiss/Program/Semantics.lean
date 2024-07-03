@@ -84,7 +84,7 @@ noncomputable def allocateSmallStepSemantics (v : Variable) (e : ValueExp Variab
   fun s a c s' => match c with
   | [Prog| ↓] =>
     iteOneZero (∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack
-      ∧ isNotAlloc s.heap m n ∧ substituteStack (substituteHeap s m n) v m = s')
+      ∧ isNotAlloc s.heap m n ∧ substituteStack (allocateHeap s m n) v m = s')
   | [Prog| ↯] =>
     iteOneZero (a = Action.deterministic ∧ ¬ ∃ n : ℕ, n = e s.stack)
   | _ => 0

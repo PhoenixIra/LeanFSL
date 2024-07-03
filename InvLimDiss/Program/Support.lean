@@ -258,9 +258,9 @@ theorem tsum_cas_error_support_superset (s : State Var)
     simp only [not_true_eq_false] at h'
 
 theorem tsum_alloc_support_superset (s : State Var)
-    {l : ℕ+} {n : ℕ} ( h_n : ↑n = e s.stack) :
+    {l : ℕ+} {n : ℕ} ( h_n : e s.stack = ↑n) :
     (fun cs : progState => semantics [Prog| v ≔ alloc(e)] s (allocation l) cs.1 cs.2).support
-    ⊆ {⟨[Prog| ↓], (substituteStack (substituteHeap s l n) v l)⟩} := by
+    ⊆ {⟨[Prog| ↓], (substituteStack (allocateHeap s l n) v l)⟩} := by
   intro i h
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
   unfold programSmallStepSemantics allocateSmallStepSemantics at h
@@ -271,14 +271,14 @@ theorem tsum_alloc_support_superset (s : State Var)
     obtain ⟨l', h_l', n', h_n', h_notAlloc, h⟩ := h
     rw [allocation.injEq] at h_l'
     rw [← h_n', Nat.cast_inj] at h_n
-    rw [h_l', h_n, Set.mem_singleton_iff, Prod.mk.inj_iff]
+    rw [h_l', h_n.symm, Set.mem_singleton_iff, Prod.mk.inj_iff]
     exact ⟨h_c, h.symm⟩
   case h_2 _ =>
     simp only [not_exists, true_and, iteOneZero_eq_zero_def, not_and, not_or, not_forall,
       Decidable.not_not, Classical.not_imp] at h
     obtain ⟨_, h⟩ := h
     exfalso
-    exact h n h_n
+    exact h n h_n.symm
   case h_3 _ =>
     simp only [not_true_eq_false] at h
 
