@@ -89,11 +89,11 @@ instance inhabited_heap : Inhabited Heap := ⟨fun _ => undef⟩
 instance inhabited_state : Inhabited (State Var) := ⟨fun _ => 0, fun _ => undef⟩
 
 /-- Substitute the value of variable in the Stack-/
-@[simp]
 noncomputable def substituteVar (s : Stack Var) (v : Var) (q : ℚ) : Stack Var :=
   fun v' => if v = v' then q else s v'
 
 /-- Lifting of `substituteVar` on Stacks-/
+@[simp]
 noncomputable def substituteStack
     (s : State Var) (v : Var) (q : ℚ) : State Var :=
   ⟨substituteVar s.stack v q,s.heap⟩
@@ -141,6 +141,7 @@ noncomputable def substituteLoc
     (heap : Heap) (l : PNat) (q : ℚ) : Heap :=
   fun l' => if l = l' then val q else heap l'
 
+@[simp]
 noncomputable def substituteHeap
     (s : State Var) (l : PNat) (q : ℚ) : State Var :=
   ⟨s.stack, substituteLoc s.heap l q⟩
@@ -186,6 +187,7 @@ noncomputable def removeLoc
     (heap : Heap) (l : PNat) : Heap :=
   fun l' => if l = l' then undef else heap l'
 
+@[simp]
 noncomputable def removeLocationHeap
     (s : State Var) (l : PNat) : State Var :=
   ⟨s.stack, removeLoc s.heap l⟩
@@ -274,6 +276,7 @@ noncomputable def allocateLoc
   | Nat.zero => heap
   | Nat.succ n => substituteLoc (allocateLoc heap l n) ⟨l+n,PNat.add_right_nat⟩ 0
 
+@[simp]
 noncomputable def allocateHeap
     (s : State Var) (l : PNat) (n : ℕ) : State Var :=
   ⟨s.stack, allocateLoc s.heap l n⟩
@@ -436,6 +439,7 @@ noncomputable def freeLoc
   | 0 => heap
   | Nat.succ n => removeLoc (freeLoc heap l n) ⟨l+n,PNat.add_right_nat⟩
 
+@[simp]
 noncomputable def freeHeap
     (s : State Var) (l : PNat) (n : ℕ) : State Var :=
   ⟨s.stack, freeLoc s.heap l n⟩
@@ -714,15 +718,19 @@ theorem ne_undef_of_union_of_ne_undef {heap₁ heap₂ : Heap} {l : PNat}
   case h_1 h_val => rw [← h_val]; exact h
   case h_2 h_undef => exfalso; exact h h_undef
 
-theorem val_of_union_of_val {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ}
-    (h : heap₁ l = val q) : (heap₁ ∪ heap₂) l = val q := by
+theorem union_val_iff_of_val {heap₁ heap₂ : Heap} {l : PNat}
+    (h_alloc : heap₁ l ≠ undef) : (heap₁ ∪ heap₂) l = heap₁ l := by
   unfold Union.union union
   simp only [ne_eq]
   split
-  case h_1 h_val => rw [← h_val]; exact h
-  case h_2 h_undef => exfalso; rw [h_undef] at h; simp only at h
+  case h_1 h_val => rw [← h_val]
+  case h_2 h_undef => exfalso; exact h_alloc h_undef
 
-
+theorem union_val_of_val {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ}
+    (h : heap₁ l = val q) : (heap₁ ∪ heap₂) l = val q := by
+  have : heap₁ l ≠ undef := by rw [h]; simp only [ne_eq, not_false_eq_true]
+  rw [union_val_iff_of_val this]
+  exact h
 
 /-- Lifting of finite to heap locations. -/
 def Heap.Finite (heap : Heap) : Prop := Set.Finite { l | heap l ≠ undef}

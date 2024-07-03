@@ -234,6 +234,29 @@ theorem tsum_cas_of_neq_support_superset (s : State Var)
   case h_3 _ =>
     simp only [not_true_eq_false] at h
 
+theorem tsum_cas_error_support_superset (s : State Var)
+    (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
+    (fun cs : progState => semantics [Prog| v ≔ cas(e_loc, e_cmp, e_val)] s deterministic cs.1 cs.2).support
+    ⊆ {⟨[Prog| ↯], s⟩} := by
+  intro i h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics compareAndSetSmallStepSemantics at h'
+  split at h'
+  case h_1 _ =>
+    simp only [ne_eq, true_and, iteOneZero_eq_zero_def, not_exists, not_and, not_forall, not_not] at h'
+    obtain ⟨l', h_l', q, h_alloc', _⟩ := h'
+    exfalso
+    rw [(h l' h_l'.symm)] at h_alloc'
+    simp only at h_alloc'
+  case h_2 h_c =>
+    simp only [not_exists, true_and, iteOneZero_eq_zero_def, not_and, not_or, not_forall,
+      Decidable.not_not, Classical.not_imp] at h'
+    obtain ⟨h_s, _⟩ := h'
+    simp only [Set.mem_singleton_iff, Prod.eq_iff_fst_eq_snd_eq]
+    use h_c, h_s.symm
+  case h_3 _ =>
+    simp only [not_true_eq_false] at h'
+
 theorem tsum_alloc_support_superset (s : State Var)
     {l : ℕ+} {n : ℕ} ( h_n : ↑n = e s.stack) :
     (fun cs : progState => semantics [Prog| v ≔ alloc(e)] s (allocation l) cs.1 cs.2).support
