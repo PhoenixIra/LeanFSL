@@ -44,7 +44,7 @@ theorem varStateRV_of_qslPointsTo :
     case pos =>
       rw [Eq.comm, unitInterval.iteOneZero_eq_iteOneZero_iff, not_iff] at h
       obtain h := h.mpr h_n
-      simp only [substituteStack_heap, not_exists, not_and] at h
+      simp only [substituteStack, not_exists, not_and] at h
       obtain ⟨n, h_n, h_heap⟩ := h_n
       rw [← h'] at h_n
       specialize h n h_n
@@ -54,7 +54,7 @@ theorem varStateRV_of_qslPointsTo :
       rw [unitInterval.iteOneZero_eq_iteOneZero_iff, not_iff] at h
       obtain ⟨n, h_n', h⟩ := h.mp h_n
       rw [substituteStack, h'] at h_n'
-      rw [substituteStack_heap] at h
+      rw [substituteStack] at h
       simp only [not_exists, not_and] at h_n
       have := h_n n h_n'
       rw [h, HeapValue.val.injEq] at this

@@ -57,7 +57,7 @@ theorem monotone_step (c : Program Var) : Monotone (step c) := by
         apply Ne.symm
         exact h_ne
 
-theorem inf_tsum_terminated (inner : Program Var → StateRV Var) :
+theorem step_terminated (inner : Program Var → StateRV Var) :
     step [Prog| ↓] inner s = 1 := by
   unfold step
   apply le_antisymm le_one'
@@ -67,7 +67,7 @@ theorem inf_tsum_terminated (inner : Program Var → StateRV Var) :
   rw [enabledAction, Set.mem_empty_iff_false] at h_a
   exact h_a
 
-theorem inf_tsum_error (inner : Program Var → StateRV Var) :
+theorem step_error (inner : Program Var → StateRV Var) :
     step [Prog| ↯] inner s = 1 := by
   unfold step
   apply le_antisymm le_one'
@@ -90,7 +90,7 @@ theorem tsum_skip_of_deterministic (s : State Var) (inner : Program Var → Stat
     unfold programSmallStepSemantics skipSmallStepSemantics iteOneZero ite_unit
     simp only [and_self, ↓reduceIte, one_mul]
 
-theorem inf_tsum_skip (inner : Program Var → StateRV Var) :
+theorem step_skip (inner : Program Var → StateRV Var) :
     step [Prog| skip] inner s = inner [Prog| ↓] s := by
   unfold step
   apply le_antisymm
@@ -116,7 +116,7 @@ theorem tsum_assign_of_deterministic (s : State Var) (inner : Program Var → St
     unfold programSmallStepSemantics assignSmallStepSemantics iteOneZero ite_unit
     simp only [and_self, ↓reduceIte, one_mul]
 
-theorem inf_tsum_assign (s : State Var) (inner : Program Var → StateRV Var) :
+theorem step_assign (s : State Var) (inner : Program Var → StateRV Var) :
     step [Prog| v ≔ e] inner s = inner [Prog| ↓] (substituteStack s v (e s.stack)) := by
   unfold step
   apply le_antisymm
@@ -146,8 +146,8 @@ theorem tsum_manipulate_of_deterministic (s : State Var) (inner : Program Var �
     exfalso
     exact h l h_l h_alloc rfl
 
-theorem inf_tsum_manipulate (s : State Var) (inner : Program Var → StateRV Var)
-    (l : ℕ+) (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l ≠ undef) :
+theorem step_manipulate (s : State Var) (inner : Program Var → StateRV Var)
+    {l : ℕ+} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l ≠ undef) :
     step [Prog| e_loc *≔ e_val] inner s = inner [Prog| ↓] (substituteHeap s l (e_val s.stack)) := by
   unfold step
   apply le_antisymm
@@ -159,6 +159,40 @@ theorem inf_tsum_manipulate (s : State Var) (inner : Program Var → StateRV Var
     rintro _ ⟨a, h_a, rfl⟩
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_manipulate_of_deterministic s inner h_l h_alloc]
+
+theorem tsum_manipulate_of_deterministic_of_error (s : State Var) (inner : Program Var → StateRV Var)
+    (h : ∀ l : ℕ+, e_loc s.stack ≠ ↑l ∨ e_loc s.stack = ↑ l ∧ s.heap l = undef) :
+    (∑' cs : progState,
+    (semantics [Prog| e_loc *≔ e_val] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
+    = inner [Prog| ↯] s := by
+  rw[← tsum_subtype_eq_of_support_subset]
+  pick_goal 2
+  · apply mul_support_superset_left
+    exact tsum_manipulate_error_support_superset s h
+  · rw [tsum_singleton (⟨[Prog| ↯], s⟩ : progState)
+      (fun cs : progState => semantics [Prog| e_loc *≔ e_val] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
+    unfold programSmallStepSemantics manipulateSmallStepSemantics iteOneZero ite_unit
+    simp only [not_exists, true_and, ite_mul, one_mul, zero_mul, ite_eq_left_iff, not_or, not_and,
+      not_forall, Decidable.not_not, and_imp, forall_exists_index]
+    intro h' l h_l
+    exfalso
+    cases h l with
+    | inl h => exact h h_l
+    | inr h => exact h' l h.left h.right
+
+theorem step_manipulate_of_error (s : State Var) (inner : Program Var → StateRV Var)
+    (h : ∀ l : ℕ+, e_loc s.stack ≠ ↑l ∨ e_loc s.stack = ↑ l ∧ s.heap l = undef) :
+    step [Prog| e_loc *≔ e_val] inner s = inner [Prog| ↯] s := by
+  unfold step
+  apply le_antisymm
+  · apply sInf_le
+    use deterministic
+    simp only [enabledAction, Set.mem_singleton_iff, true_and]
+    exact tsum_manipulate_of_deterministic_of_error s inner h
+  · apply le_sInf
+    rintro _ ⟨a, h_a, rfl⟩
+    simp only [enabledAction, Set.mem_singleton_iff] at h_a
+    rw [h_a, tsum_manipulate_of_deterministic_of_error s inner h]
 
 theorem tsum_lookup_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} {value : ℚ} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l = value) :
@@ -177,7 +211,7 @@ theorem tsum_lookup_of_deterministic (s : State Var) (inner : Program Var → St
     exfalso
     exact h l h_l.symm value h_alloc rfl
 
-theorem inf_tsum_lookup (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_lookup (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} {value : ℚ} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l = value) :
     step [Prog| v ≔* e_loc] inner s = inner [Prog| ↓] (substituteStack s v value) := by
   unfold step
@@ -210,7 +244,7 @@ theorem tsum_cas_of_eq_of_deterministic (s : State Var) (inner : Program Var →
     obtain ⟨h, _⟩ := h l h_l.symm (e_cmp s.stack) h_alloc
     exact h rfl rfl
 
-theorem inf_tsum_cas_of_eq (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_cas_of_eq (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l = e_cmp s.stack) :
     step [Prog| v ≔ cas(e_loc, e_cmp, e_val)] inner s
     = inner [Prog| ↓] (substituteStack (substituteHeap s l (e_val s.stack)) v 1) := by
@@ -248,7 +282,7 @@ theorem tsum_cas_of_neq_of_deterministic (s : State Var) (inner : Program Var �
     · exact h_ne
     · exact True.intro
 
-theorem inf_tsum_cas_of_neq (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_cas_of_neq (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l ≠ undef) (h_ne : s.heap l ≠ e_cmp s.stack) :
     step [Prog| v ≔ cas(e_loc, e_cmp, e_val)] inner s
     = inner [Prog| ↓] (substituteStack s v 0) := by
@@ -264,7 +298,7 @@ theorem inf_tsum_cas_of_neq (s : State Var) (inner : Program Var → StateRV Var
     rw [h_a, tsum_cas_of_neq_of_deterministic s inner h_l h_alloc h_ne]
 
 theorem tsum_alloc_of_allocation (s : State Var) (inner : Program Var → StateRV Var)
-    {l : ℕ+} {n : ℕ} ( h_n : ↑n = e s.stack) (h_allocable : isNotAlloc s l n) :
+    {l : ℕ+} {n : ℕ} ( h_n : ↑n = e s.stack) (h_allocable : isNotAlloc s.heap l n) :
     (∑' cs : progState,
     (semantics [Prog| v ≔ alloc(e)] s (allocation l) cs.1 cs.2) * inner cs.1 cs.2)
     = inner [Prog| ↓] (substituteStack (substituteHeap s l n) v l) := by
@@ -281,10 +315,10 @@ theorem tsum_alloc_of_allocation (s : State Var) (inner : Program Var → StateR
     exfalso
     exact h l rfl n h_n h_allocable rfl
 
-theorem inf_tsum_alloc (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_alloc (s : State Var) (inner : Program Var → StateRV Var)
     {n : ℕ} ( h_n : ↑n = e s.stack)  :
     step [Prog| v ≔ alloc(e)] inner s
-    = sInf { x | ∃ l, isNotAlloc s l n ∧ x = inner [Prog| ↓] (substituteStack (substituteHeap s l n) v l)} := by
+    = sInf { x | ∃ l, isNotAlloc s.heap l n ∧ x = inner [Prog| ↓] (substituteStack (substituteHeap s l n) v l)} := by
   unfold step
   apply le_antisymm
   · apply sInf_le_sInf
@@ -306,7 +340,8 @@ theorem inf_tsum_alloc (s : State Var) (inner : Program Var → StateRV Var)
     · use n
 
 theorem tsum_free_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
-    {l : ℕ+} (h_l : ↑l = e_loc s.stack) {n : ℕ} ( h_n : ↑n = e_val s.stack) (h_alloc : isAlloc s l n) :
+    {l : ℕ+} (h_l : ↑l = e_loc s.stack) {n : ℕ}
+    ( h_n : ↑n = e_val s.stack) (h_alloc : isAlloc s.heap l n) :
     (∑' cs : progState,
     (semantics [Prog| free(e_loc, e_val)] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
     = inner [Prog| ↓] (freeHeap s l n) := by
@@ -322,8 +357,9 @@ theorem tsum_free_of_deterministic (s : State Var) (inner : Program Var → Stat
     exfalso
     exact h l h_l n h_n h_alloc rfl
 
-theorem inf_tsum_free (s : State Var) (inner : Program Var → StateRV Var)
-    {l : ℕ+} (h_l : ↑l = e_loc s.stack) {n : ℕ} ( h_n : ↑n = e_val s.stack) (h_alloc : isAlloc s l n) :
+theorem step_free (s : State Var) (inner : Program Var → StateRV Var)
+    {l : ℕ+} (h_l : ↑l = e_loc s.stack) {n : ℕ}
+    ( h_n : ↑n = e_val s.stack) (h_alloc : isAlloc s.heap l n) :
     step [Prog| free(e_loc, e_val)] inner s
     = inner [Prog| ↓] (freeHeap s l n) := by
   unfold step
@@ -348,21 +384,42 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   induction c with
-  | terminated => rw [inf_tsum_terminated, inf_tsum_terminated]; exact le_one'
-  | error => rw [inf_tsum_error, inf_tsum_error]; exact le_one'
+  | terminated => rw [step_terminated, step_terminated]; exact le_one'
+  | error => rw [step_error, step_error]; exact le_one'
   | skip' =>
-    rw [inf_tsum_skip, inf_tsum_skip]
+    rw [step_skip, step_skip]
     apply le_sSup
     use heap₁, heap₂
   | assign v e =>
-    rw [inf_tsum_assign, inf_tsum_assign]
+    rw [step_assign, step_assign]
     apply le_sSup_of_le
     use heap₁, heap₂, h_disjoint, h_union
     rw [Subtype.mk_le_mk]
     simp only [substituteStack, Set.Icc.coe_mul]
-    rw [mul_le_mul_left]
-    simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
-    sorry
+    cases eq_or_ne (inner [Prog| ↓] ⟨substituteVar s.stack v (e s.stack), heap₁⟩) 0 with
+    | inl h_eq => rw [h_eq]; simp only [Set.Icc.coe_zero, zero_mul, le_refl]
+    | inr h_ne =>
+      rw [mul_le_mul_left]
+      · simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
+        rw [substituteVar_eq_of_not_varStateRV h (e s.stack)]
+      · rw [ne_eq, Subtype.mk_eq_mk] at h_ne
+        exact lt_of_le_of_ne nonneg' (Ne.symm h_ne)
+  | manipulate e_loc e_val =>
+    by_cases h : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
+    case pos =>
+      obtain ⟨l, h_l, h_alloc⟩ := h
+      rw [step_manipulate ⟨s.stack, heap₁⟩ _ h_l h_alloc]
+      have : s.heap l ≠ undef := by rw [← h_union]; exact ne_undef_of_union_of_ne_undef h_alloc
+      rw [step_manipulate s _ h_l this]
+      apply le_sSup_of_le
+      -- use heap₁, heap₂, h_disjoint, h_union
+      · sorry
+      · sorry
+      · sorry
+    case neg =>
+      sorry
+  | _ => sorry
+
 
 
 

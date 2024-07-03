@@ -92,14 +92,14 @@ theorem wrlp_skip : `[qsl| [[P]] ⊢ wrlp [ [Prog| skip] ] ([[P]] | [[RI]])] := 
   rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
   rw [le_qslSepDiv_iff_qslSepMul_le, Pi.le_def]
   intro s
-  rw [inf_tsum_skip, wrlp_eq_of_term]
+  rw [step_skip, wrlp_eq_of_term]
 
 theorem wrlp_assign (h : x ∉ varStateRV RI) :
     `[qsl| [[P]](x ↦ e) ⊢ wrlp [ [Prog| x ≔ e] ] ([[P]] | [[RI]])] := by
   rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
   rw [le_qslSepDiv_iff_qslSepMul_le, Pi.le_def]
   intro s
-  rw [inf_tsum_assign, wrlp_eq_of_term]
+  rw [step_assign, wrlp_eq_of_term]
   have : `[qsl| [[P]] ⋆ [[RI]]]  (s.substituteStack x (e s.stack))
     = `[qsl| ([[P]] ⋆ [[RI]])(x ↦ e)] s := rfl
   rw [this, substituteStack_of_qslSepCon e h]
@@ -109,6 +109,7 @@ theorem wrlp_manipulate :
           ⊢ wrlp [ [Prog| e *≔ e'] ] ([[P]] | [[RI]])] := by
   rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
+  sorry
 
 
 end CQSL

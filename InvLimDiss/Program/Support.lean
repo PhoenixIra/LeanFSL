@@ -84,6 +84,30 @@ theorem tsum_manipulate_support_superset (s : State Var)
   case h_3 _ =>
     simp only [not_true_eq_false] at h
 
+theorem tsum_manipulate_error_support_superset (s : State Var)
+    (h : ∀ l : ℕ+, e_loc s.stack ≠ ↑l ∨ e_loc s.stack = ↑ l ∧ s.heap l = undef) :
+    (fun cs : progState => semantics [Prog| e_loc *≔ e_val] s deterministic cs.1 cs.2).support
+    ⊆ {⟨[Prog| ↯], s⟩} := by
+  intro i h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics manipulateSmallStepSemantics at h'
+  split at h'
+  case h_1 _ =>
+    simp only [ne_eq, true_and, iteOneZero_eq_zero_def, not_exists, not_and, not_forall,
+      Classical.not_imp, not_not] at h'
+    obtain ⟨l', h_l', h_alloc', _⟩ := h'
+    cases h l' with
+    | inl h => exfalso; exact h h_l'
+    | inr h => exfalso; exact h_alloc' h.right
+  case h_2 h_c =>
+    simp only [not_exists, true_and, iteOneZero_eq_zero_def, not_and, not_or, not_forall,
+      Decidable.not_not, Classical.not_imp] at h'
+    obtain ⟨h_s, _⟩ := h'
+    simp only [Set.mem_singleton_iff, Prod.eq_iff_fst_eq_snd_eq]
+    use h_c, h_s.symm
+  case h_3 _ =>
+    simp only [not_true_eq_false] at h'
+
 theorem tsum_lookup_support_superset (s : State Var)
     {l : PNat} {value : ℚ} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l = value) :
     (fun cs : progState => semantics [Prog| v ≔* e_loc] s deterministic cs.1 cs.2).support
@@ -213,7 +237,8 @@ theorem tsum_alloc_support_superset (s : State Var)
     simp only [not_true_eq_false] at h
 
 theorem tsum_free_support_superset (s : State Var)
-    {l : ℕ+} (h_l : ↑l = e_loc s.stack) {n : ℕ} ( h_n : ↑n = e_val s.stack) (h_alloc : isAlloc s l n) :
+    {l : ℕ+} (h_l : ↑l = e_loc s.stack) {n : ℕ}
+    ( h_n : ↑n = e_val s.stack) (h_alloc : isAlloc s.heap l n) :
     (fun cs : progState => semantics [Prog| free(e_loc, e_val)] s deterministic cs.1 cs.2).support
     ⊆ {⟨[Prog| ↓], (freeHeap s l n)⟩} := by
   intro i h

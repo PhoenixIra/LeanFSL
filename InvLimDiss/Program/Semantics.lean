@@ -84,7 +84,7 @@ noncomputable def allocateSmallStepSemantics (v : Variable) (e : ValueExp Variab
   fun s a c s' => match c with
   | [Prog| ↓] =>
     iteOneZero (∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack
-      ∧ isNotAlloc s m n ∧ substituteStack (substituteHeap s m n) v m = s')
+      ∧ isNotAlloc s.heap m n ∧ substituteStack (substituteHeap s m n) v m = s')
   | [Prog| ↯] =>
     iteOneZero (a = Action.deterministic ∧ ¬ ∃ n : ℕ, n = e s.stack)
   | _ => 0
@@ -97,9 +97,9 @@ noncomputable def freeSmallStepSemantics (e_loc e_n : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero (a = Action.deterministic
-    ∧ ∃ l : ℕ+, l = (e_loc s.stack) ∧ ∃ n : ℕ, n = (e_n s.stack) ∧ isAlloc s l n ∧ freeHeap s l n = s')
+    ∧ ∃ l : ℕ+, l = (e_loc s.stack) ∧ ∃ n : ℕ, n = (e_n s.stack) ∧ isAlloc s.heap l n ∧ freeHeap s l n = s')
   | [Prog| ↯] => iteOneZero (a = Action.deterministic ∧ s = s'
-    ∧ ((∃ l : ℕ+, (e_loc s.stack) = l ∧ ∃ n : ℕ, n = e_n s.stack ∧ ¬isAlloc s l n)
+    ∧ ((∃ l : ℕ+, (e_loc s.stack) = l ∧ ∃ n : ℕ, n = e_n s.stack ∧ ¬isAlloc s.heap l n)
       ∨ (∃ l : ℕ+, (e_loc s.stack) = l ∧ ¬ ∃ n : ℕ, n = e_n s.stack)
       ∨ (¬ ∃ l : ℕ+, (e_loc s.stack) = l)))
   | _ => 0
