@@ -161,7 +161,7 @@ theorem step_manipulate (s : State Var) (inner : Program Var → StateRV Var)
     rw [h_a, tsum_manipulate_of_deterministic s inner h_l h_alloc]
 
 theorem tsum_manipulate_of_deterministic_of_error (s : State Var) (inner : Program Var → StateRV Var)
-    (h : ∀ l : ℕ+, e_loc s.stack ≠ ↑l ∨ e_loc s.stack = ↑ l ∧ s.heap l = undef) :
+    (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     (∑' cs : progState,
     (semantics [Prog| e_loc *≔ e_val] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
     = inner [Prog| ↯] s := by
@@ -176,12 +176,10 @@ theorem tsum_manipulate_of_deterministic_of_error (s : State Var) (inner : Progr
       not_forall, Decidable.not_not, and_imp, forall_exists_index]
     intro h' l h_l
     exfalso
-    cases h l with
-    | inl h => exact h h_l
-    | inr h => exact h' l h.left h.right
+    exact h' l h_l (h l h_l)
 
 theorem step_manipulate_of_error (s : State Var) (inner : Program Var → StateRV Var)
-    (h : ∀ l : ℕ+, e_loc s.stack ≠ ↑l ∨ e_loc s.stack = ↑ l ∧ s.heap l = undef) :
+    (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     step [Prog| e_loc *≔ e_val] inner s = inner [Prog| ↯] s := by
   unfold step
   apply le_antisymm
@@ -224,6 +222,38 @@ theorem step_lookup (s : State Var) (inner : Program Var → StateRV Var)
     rintro _ ⟨a, h_a, rfl⟩
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_lookup_of_deterministic s inner h_l h_alloc]
+
+theorem tsum_lookup_of_deterministic_of_error (s : State Var) (inner : Program Var → StateRV Var)
+    (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
+    (∑' cs : progState,
+    (semantics [Prog| v ≔* e_loc] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
+    = inner [Prog| ↯] s := by
+  rw[← tsum_subtype_eq_of_support_subset]
+  pick_goal 2
+  · apply mul_support_superset_left
+    exact tsum_lookup_error_support_superset s h
+  · rw [tsum_singleton (⟨[Prog| ↯], s⟩ : progState)
+      (fun cs : progState => semantics [Prog| v ≔* e_loc] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
+    unfold programSmallStepSemantics lookupSmallStepSemantics iteOneZero ite_unit
+    simp only [not_exists, true_and, ite_mul, one_mul, zero_mul, ite_eq_left_iff, not_or, not_and,
+      not_forall, Decidable.not_not, and_imp, forall_exists_index]
+    intro h' l h_l
+    exfalso
+    exact h' l h_l (h l h_l)
+
+theorem step_lookup_of_error (s : State Var) (inner : Program Var → StateRV Var)
+    (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
+    step [Prog| v ≔* e_loc] inner s = inner [Prog| ↯] s := by
+  unfold step
+  apply le_antisymm
+  · apply sInf_le
+    use deterministic
+    simp only [enabledAction, Set.mem_singleton_iff, true_and]
+    exact tsum_lookup_of_deterministic_of_error s inner h
+  · apply le_sInf
+    rintro _ ⟨a, h_a, rfl⟩
+    simp only [enabledAction, Set.mem_singleton_iff] at h_a
+    rw [h_a, tsum_lookup_of_deterministic_of_error s inner h]
 
 theorem tsum_cas_of_eq_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l = e_cmp s.stack) :
@@ -376,7 +406,8 @@ theorem step_free (s : State Var) (inner : Program Var → StateRV Var)
 
 
 
-theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅) :
+theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅)
+    (h_abort : inner [Prog| ↯] = `[qsl| qFalse]):
     `[qsl| [[step c inner]] ⋆ [[P]]] ⊢ step c (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
@@ -405,19 +436,44 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
       · rw [ne_eq, Subtype.mk_eq_mk] at h_ne
         exact lt_of_le_of_ne nonneg' (Ne.symm h_ne)
   | manipulate e_loc e_val =>
-    by_cases h : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
+    by_cases h_alloc : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
     case pos =>
-      obtain ⟨l, h_l, h_alloc⟩ := h
+      obtain ⟨l, h_l, h_alloc⟩ := h_alloc
       rw [step_manipulate ⟨s.stack, heap₁⟩ _ h_l h_alloc]
-      have : s.heap l ≠ undef := by rw [← h_union]; exact ne_undef_of_union_of_ne_undef h_alloc
-      rw [step_manipulate s _ h_l this]
+      have h_heap : s.heap l ≠ undef := by
+        rw [← h_union]; exact ne_undef_of_union_of_ne_undef h_alloc
+      rw [step_manipulate s _ h_l h_heap]
+      simp only [substituteHeap, ge_iff_le]
       apply le_sSup_of_le
-      -- use heap₁, heap₂, h_disjoint, h_union
-      · sorry
-      · sorry
-      · sorry
+      · use (substituteLoc heap₁ l (e_val s.stack)), heap₂
+        rw [substituteLoc_disjoint h_alloc]
+        use h_disjoint
+        rw [← h_union]
+        use substituteLoc_union
+      · exact le_rfl
     case neg =>
-      sorry
+      simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
+      rw [step_manipulate_of_error _ _ h_alloc, h_abort]
+      simp only [qslFalse, zero_mul, zero_le]
+  | lookup v e_loc =>
+    by_cases h_alloc : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
+    case pos =>
+      obtain ⟨l, h_l, h_alloc⟩ := h_alloc
+      rw [undef_iff_exists_val] at h_alloc
+      obtain ⟨q, h_alloc⟩ := h_alloc
+      rw [step_lookup ⟨s.stack, heap₁⟩ _ h_l h_alloc]
+      have h_heap : s.heap l = q := by
+        rw [← h_union]; exact val_of_union_of_val h_alloc
+      rw [step_lookup s _ h_l h_heap]
+      apply le_sSup_of_le
+      · use heap₁, heap₂, h_disjoint, h_union
+      · simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
+        simp only [substituteStack]
+        rw [substituteVar_eq_of_not_varStateRV h q]
+    case neg =>
+      simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
+      rw [step_lookup_of_error _ _ h_alloc, h_abort]
+      simp only [qslFalse, zero_mul, zero_le]
   | _ => sorry
 
 

@@ -62,6 +62,17 @@ split
 case h_1 h => exact h.symm
 case h_2 h'=> exfalso; exact h h'
 
+theorem undef_iff_exists_val {heap : Heap} {l : PNat} :
+    heap l ≠ undef ↔ ∃ q, heap l = val q := by
+  apply Iff.intro
+  · intro h
+    cases h_l : (heap l) with
+    | val q => use q
+    | undef => exfalso; exact h h_l
+  · rintro ⟨q, h_l⟩
+    rw [h_l]
+    simp only [ne_eq, not_false_eq_true]
+
 /-- The state, a stack heap pair. -/
 structure State (Variable : Type) where
 stack : Stack Variable
@@ -551,6 +562,36 @@ theorem disjoint.symm {h₁ h₂ : Heap} (h : disjoint h₁ h₂) : disjoint h�
 theorem disjoint_comm (h₁ h₂ : Heap) : disjoint h₁ h₂ ↔ disjoint h₂ h₁ :=
   ⟨fun h => h.symm, fun h => h.symm⟩
 
+theorem undef_of_disjoint_of_ne_undef {heap₁ heap₂ : Heap} {l : PNat}
+    (h : disjoint heap₁ heap₂) (h_undef : heap₁ l ≠ undef) : heap₂ l = undef := by
+  specialize h l
+  cases h with
+  | inl h => exfalso; exact h_undef h
+  | inr h => exact h
+
+theorem substituteLoc_disjoint {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ}
+    (h : heap₁ l ≠ undef) : disjoint (substituteLoc heap₁ l q) heap₂ ↔ disjoint heap₁ heap₂ := by
+  unfold substituteLoc
+  apply Iff.intro
+  · intro h_disjoint l'
+    cases h_disjoint l' with
+    | inl h_disjoint =>
+      simp only at h_disjoint
+      split at h_disjoint
+      case isTrue _ => exfalso; exact h_disjoint
+      case isFalse _ => exact Or.inl h_disjoint
+    | inr h_disjoint => exact Or.inr h_disjoint
+  · intro h_disjoint l'
+    simp only
+    split
+    case isTrue h_l =>
+      apply Or.inr
+      rw [h_l] at h
+      exact undef_of_disjoint_of_ne_undef h_disjoint h
+    case isFalse h' => exact h_disjoint l'
+
+
+
 /-- The left prioritisating union of heaps. -/
 instance union : Union Heap
   where union := λ h h' n =>
@@ -586,6 +627,26 @@ theorem union_assoc (heap₁ heap₂ heap₃ : Heap)  :
   <;> cases heap₂ n
   <;> cases heap₃ n
   <;> simp
+
+theorem substituteLoc_union {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ} :
+    (substituteLoc heap₁ l q) ∪ heap₂ = substituteLoc (heap₁ ∪ heap₂) l q := by
+  apply funext
+  intro l
+  simp only [Union.union, union, substituteLoc]
+  split
+  case h_1 h_eq =>
+    rw [← h_eq]
+    split
+    case isTrue _ => rfl
+    case isFalse h_l =>
+      rw [if_neg h_l] at h_eq
+      rw [h_eq]
+  case h_2 h_eq =>
+    split at h_eq
+    case isTrue _ => exfalso; exact h_eq
+    case isFalse h_l =>
+      simp only [h_eq, if_neg h_l]
+
 
 /-- A heap that is everywhere undefined. -/
 instance emptyHeap : EmptyCollection Heap := ⟨λ _ => undef⟩
@@ -652,6 +713,15 @@ theorem ne_undef_of_union_of_ne_undef {heap₁ heap₂ : Heap} {l : PNat}
   split
   case h_1 h_val => rw [← h_val]; exact h
   case h_2 h_undef => exfalso; exact h h_undef
+
+theorem val_of_union_of_val {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ}
+    (h : heap₁ l = val q) : (heap₁ ∪ heap₂) l = val q := by
+  unfold Union.union union
+  simp only [ne_eq]
+  split
+  case h_1 h_val => rw [← h_val]; exact h
+  case h_2 h_undef => exfalso; rw [h_undef] at h; simp only at h
+
 
 
 /-- Lifting of finite to heap locations. -/
