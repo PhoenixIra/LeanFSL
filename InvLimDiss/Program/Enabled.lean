@@ -86,7 +86,7 @@ theorem zero_probability_of_not_enabledAction
           rintro m h_m n' h_n' h_alloc _
           exact h m h_m n' h_n' h_alloc
         · simp only [iteOneZero_eq_zero_def, not_and, not_forall, Decidable.not_not]
-          rintro rfl
+          rintro rfl rfl
           use n
         · rfl
       case isFalse h_n =>

@@ -3,7 +3,7 @@ import InvLimDiss.SL.Quantitative
 import InvLimDiss.SL.Framing.Basic
 import InvLimDiss.Program.Support
 import InvLimDiss.Program.Enabled
-import Mathlib.Topology.Algebra.InfiniteSum.Basic
+import InvLimDiss.Analysis.Tsum
 import Mathlib.Topology.Algebra.InfiniteSum.Order
 import Mathlib.Algebra.Order.Pointwise
 
@@ -402,6 +402,44 @@ theorem step_alloc (s : State Var) (inner : Program Var → StateRV Var)
       use l, h_notAlloc', tsum_alloc_of_allocation s inner h_n h_notAlloc'
     · use n, h_n.symm
 
+theorem tsum_alloc_of_deterministic_of_error (s : State Var) (inner : Program Var → StateRV Var)
+    ( h_n : ∀ n : ℕ, e s.stack ≠ ↑n) :
+    (∑' cs : progState,
+    (semantics [Prog| v ≔ alloc(e)] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
+    = inner [Prog| ↯] s := by
+  rw[← tsum_subtype_eq_of_support_subset]
+  pick_goal 2
+  · apply mul_support_superset_left
+    exact tsum_alloc_error_support_superset s
+  · rw [tsum_singleton (⟨[Prog| ↯], s⟩ : progState)
+      (fun cs : progState => semantics [Prog| v ≔ alloc(e)] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
+    unfold programSmallStepSemantics allocateSmallStepSemantics iteOneZero ite_unit
+    simp only [not_exists, true_and, ite_mul, one_mul, zero_mul, ite_eq_left_iff, not_forall,
+      Decidable.not_not, forall_exists_index]
+    intro n' h_n'
+    exfalso
+    exact h_n n' h_n'.symm
+
+theorem step_alloc_of_error (s : State Var) (inner : Program Var → StateRV Var)
+    (h : ∀ n : ℕ, e s.stack ≠ ↑n) :
+    step [Prog| v ≔ alloc(e)] inner s = inner [Prog| ↯] s := by
+  unfold step
+  apply le_antisymm
+  · apply sInf_le
+    use deterministic
+    simp only [enabledAction]
+    apply And.intro
+    · rw [if_neg]
+      · rfl
+      · simp only [not_exists]; intro n h_n; exact h n h_n.symm
+    · exact tsum_alloc_of_deterministic_of_error s inner h
+  · apply le_sInf
+    rintro _ ⟨a, h_a, rfl⟩
+    simp only [enabledAction] at h_a
+    rw [if_neg] at h_a
+    · rw [h_a, tsum_alloc_of_deterministic_of_error s inner h]
+    · simp only [not_exists]; intro n h_n; exact h n h_n.symm
+
 theorem tsum_free_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} (h_l : ↑l = e_loc s.stack) {n : ℕ}
     ( h_n : ↑n = e_val s.stack) (h_alloc : isAlloc s.heap l n) :
@@ -436,8 +474,193 @@ theorem step_free (s : State Var) (inner : Program Var → StateRV Var)
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_free_of_deterministic s inner h_l h_n h_alloc]
 
+theorem tsum_free_of_deterministic_of_error (s : State Var) (inner : Program Var → StateRV Var)
+    (h : ∀ (x : ℕ+), ↑↑x = e_loc s.stack → ∀ (x_1 : ℕ), ↑x_1 = e_val s.stack → ¬isAlloc s.heap x x_1) :
+    (∑' cs : progState,
+    (semantics [Prog| free(e_loc, e_val)] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
+    = inner [Prog| ↯] s := by
+  rw[← tsum_subtype_eq_of_support_subset]
+  pick_goal 2
+  · apply mul_support_superset_left
+    exact tsum_free_error_support_superset s h
+  · rw [tsum_singleton (⟨[Prog| ↯], s⟩ : progState)
+      (fun cs : progState => semantics [Prog| free(e_loc, e_val)] s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
+    unfold programSmallStepSemantics freeSmallStepSemantics iteOneZero ite_unit
+    simp only [not_exists, exists_and_right, true_and, ite_mul, one_mul, zero_mul, ite_eq_left_iff,
+      not_or, not_and, not_not, not_forall, Decidable.not_not, forall_exists_index, and_imp]
+    intro h' h'' l h_l
+    obtain ⟨n, h_n⟩ := h'' l h_l
+    exfalso
+    exact h l h_l.symm n h_n <| h' l h_l n h_n
 
+theorem step_free_of_error (s : State Var) (inner : Program Var → StateRV Var)
+    (h : ∀ (x : ℕ+), ↑↑x = e_loc s.stack → ∀ (x_1 : ℕ), ↑x_1 = e_val s.stack → ¬isAlloc s.heap x x_1) :
+    step [Prog| free(e_loc, e_val)] inner s = inner [Prog| ↯] s := by
+  unfold step
+  apply le_antisymm
+  · apply sInf_le
+    use deterministic
+    simp only [enabledAction, Set.mem_singleton_iff, true_and]
+    exact tsum_free_of_deterministic_of_error s inner h
+  · apply le_sInf
+    rintro _ ⟨a, h_a, rfl⟩
+    simp only [enabledAction, Set.mem_singleton_iff] at h_a
+    rw [h_a, tsum_free_of_deterministic_of_error s inner h]
 
+theorem tsum_probChoice_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
+    (∑' cs : progState,
+    (semantics [Prog| pif e then [[c₁]] else [[c₂]] fi] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
+    = (e s.stack) * inner c₁ s + σ (e s.stack) * inner c₂ s := by
+  rw[← tsum_subtype_eq_of_support_subset]
+  pick_goal 2
+  · apply mul_support_superset_left
+    exact tsum_probChoice_support_superset s
+  · cases eq_or_ne c₂ c₁ with
+    | inl h_eq =>
+      rw [h_eq, Set.pair_eq_singleton]
+      rw [tsum_singleton (⟨c₁, s⟩ : progState)
+        (fun cs : progState => semantics _ s deterministic cs.1 cs.2 * inner cs.1 cs.2)]
+      unfold programSmallStepSemantics probabilisticChoiceSmallStepSemantics
+      simp only [and_self, ↓reduceIte, one_mul, truncatedAdd_symm_eq]
+    | inr h_ne =>
+      have : (⟨c₁, s⟩ : progState) ≠ ⟨c₂, s⟩ := by simp [Prod.mk.inj_iff, Ne.symm h_ne]
+      rw [tsum_pair (fun cs => semantics _ s deterministic cs.1 cs.2 * inner cs.1 cs.2) this]
+      unfold programSmallStepSemantics probabilisticChoiceSmallStepSemantics
+      simp only [and_self, ↓reduceIte, true_and, ite_mul, one_mul, and_true]
+      rw [if_neg (by simp only [h_ne, and_false, not_false_eq_true])]
+      rw [if_neg (by simp only [Ne.symm h_ne, and_true, not_false_eq_true])]
+      rw [if_neg (Ne.symm h_ne)]
+
+theorem step_probChoice (s : State Var) (inner : Program Var → StateRV Var) :
+    step [Prog| pif e then [[c₁]] else [[c₂]] fi] inner s
+    = (e s.stack) * inner c₁ s + σ (e s.stack) * inner c₂ s := by
+  unfold step
+  apply le_antisymm
+  · apply sInf_le
+    use deterministic
+    simp only [enabledAction, Set.mem_singleton_iff, true_and]
+    exact tsum_probChoice_of_deterministic s inner
+  · apply le_sInf
+    rintro _ ⟨a, h_a, rfl⟩
+    simp only [enabledAction, Set.mem_singleton_iff] at h_a
+    rw [h_a, tsum_probChoice_of_deterministic s inner]
+
+theorem tsum_condChoice_left_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
+    (h : (e s.stack) = true) :
+    (∑' cs : progState,
+    (semantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
+    = inner c₁ s := by
+  rw[← tsum_subtype_eq_of_support_subset]
+  pick_goal 2
+  · apply mul_support_superset_left
+    exact tsum_condChoice_left_support_superset s h
+  · rw [tsum_singleton (⟨c₁, s⟩ : progState)
+      (fun cs => semantics _ s deterministic cs.1 cs.2 * inner cs.1 cs.2) ]
+    unfold programSmallStepSemantics conditionalChoiceSmallStepSemantics
+    simp only [h, and_self, not_true_eq_false, false_and, or_false, iteOneZero_true, one_mul]
+
+theorem step_condChoice_left (s : State Var) (inner : Program Var → StateRV Var)
+    (h : (e s.stack) = true):
+    step [Prog| if e then [[c₁]] else [[c₂]] fi] inner s
+    = inner c₁ s := by
+  unfold step
+  apply le_antisymm
+  · apply sInf_le
+    use deterministic
+    simp only [enabledAction, Set.mem_singleton_iff, true_and]
+    exact tsum_condChoice_left_of_deterministic s inner h
+  · apply le_sInf
+    rintro _ ⟨a, h_a, rfl⟩
+    simp only [enabledAction, Set.mem_singleton_iff] at h_a
+    rw [h_a, tsum_condChoice_left_of_deterministic s inner h]
+
+theorem tsum_condChoice_right_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
+    (h : (e s.stack) = false) :
+    (∑' cs : progState,
+    (semantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
+    = inner c₂ s := by
+  rw[← tsum_subtype_eq_of_support_subset]
+  pick_goal 2
+  · apply mul_support_superset_left
+    exact tsum_condChoice_right_support_superset s h
+  · rw [tsum_singleton (⟨c₂, s⟩ : progState)
+      (fun cs => semantics _ s deterministic cs.1 cs.2 * inner cs.1 cs.2) ]
+    unfold programSmallStepSemantics conditionalChoiceSmallStepSemantics
+    simp only [h, Bool.false_eq_true, false_and, not_false_eq_true, and_self, or_true,
+      iteOneZero_true, one_mul]
+
+theorem step_condChoice_right (s : State Var) (inner : Program Var → StateRV Var)
+    (h : (e s.stack) = false):
+    step [Prog| if e then [[c₁]] else [[c₂]] fi] inner s
+    = inner c₂ s := by
+  unfold step
+  apply le_antisymm
+  · apply sInf_le
+    use deterministic
+    simp only [enabledAction, Set.mem_singleton_iff, true_and]
+    exact tsum_condChoice_right_of_deterministic s inner h
+  · apply le_sInf
+    rintro _ ⟨a, h_a, rfl⟩
+    simp only [enabledAction, Set.mem_singleton_iff] at h_a
+    rw [h_a, tsum_condChoice_right_of_deterministic s inner h]
+
+theorem tsum_loop_cont_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
+    (h : (e s.stack) = true) :
+    (∑' cs : progState,
+    (semantics [Prog| while e begin [[c]] fi] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
+    = inner [Prog| [[c]] ; while e begin [[c]] fi] s := by
+  rw[← tsum_subtype_eq_of_support_subset]
+  pick_goal 2
+  · apply mul_support_superset_left
+    exact tsum_loop_cont_support_superset s h
+  · rw [tsum_singleton (⟨[Prog| [[c]] ; while e begin [[c]] fi], s⟩ : progState)
+      (fun cs => semantics _ s deterministic cs.1 cs.2 * inner cs.1 cs.2) ]
+    unfold programSmallStepSemantics loopSmallStepSemantics
+    simp only [h, and_self, iteOneZero_true, one_mul]
+
+theorem step_loop_cont (s : State Var) (inner : Program Var → StateRV Var)
+    (h : (e s.stack) = true):
+    step [Prog| while e begin [[c]] fi] inner s
+    = inner [Prog| [[c]] ; while e begin [[c]] fi] s := by
+  unfold step
+  apply le_antisymm
+  · apply sInf_le
+    use deterministic
+    simp only [enabledAction, Set.mem_singleton_iff, true_and]
+    exact tsum_loop_cont_of_deterministic s inner h
+  · apply le_sInf
+    rintro _ ⟨a, h_a, rfl⟩
+    simp only [enabledAction, Set.mem_singleton_iff] at h_a
+    rw [h_a, tsum_loop_cont_of_deterministic s inner h]
+
+theorem tsum_loop_term_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
+    (h : (e s.stack) = false) :
+    (∑' cs : progState,
+    (semantics [Prog| while e begin [[c]] fi] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
+    = inner [Prog| ↓] s := by
+  rw[← tsum_subtype_eq_of_support_subset]
+  pick_goal 2
+  · apply mul_support_superset_left
+    exact tsum_loop_term_support_superset s h
+  · rw [tsum_singleton (⟨[Prog| ↓], s⟩ : progState)
+      (fun cs => semantics _ s deterministic cs.1 cs.2 * inner cs.1 cs.2) ]
+    unfold programSmallStepSemantics loopSmallStepSemantics
+    simp only [h, Bool.false_eq_true, not_false_eq_true, and_self, iteOneZero_true, one_mul]
+
+theorem step_loop_term (s : State Var) (inner : Program Var → StateRV Var)
+    (h : (e s.stack) = false):
+    step [Prog| while e begin [[c]] fi] inner s
+    = inner [Prog| ↓] s := by
+  unfold step
+  apply le_antisymm
+  · apply sInf_le
+    use deterministic
+    simp only [enabledAction, Set.mem_singleton_iff, true_and]
+    exact tsum_loop_term_of_deterministic s inner h
+  · apply le_sInf
+    rintro _ ⟨a, h_a, rfl⟩
+    simp only [enabledAction, Set.mem_singleton_iff] at h_a
+    rw [h_a, tsum_loop_term_of_deterministic s inner h]
 
 theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅)
     (h_abort : inner [Prog| ↯] = `[qsl| qFalse]):
@@ -571,8 +794,69 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
         use l, h_ne_alloc.left
         simp only [allocateHeap]
     case neg =>
-      sorry
-  | _ => sorry
+      simp only [not_exists] at h_m
+      rw [step_alloc_of_error ⟨s.stack, heap₁⟩ _ h_m, h_abort]
+      simp only [qslFalse, zero_mul, zero_le]
+  | free' e_loc e_n =>
+    by_cases h_alloc : ∃ l : ℕ+, l = (e_loc s.stack) ∧ ∃ n : ℕ, n = (e_n s.stack) ∧ isAlloc heap₁ l n
+    case pos =>
+      obtain ⟨l, h_l, n, h_n, h_alloc⟩ := h_alloc
+      rw [step_free ⟨s.stack, heap₁⟩ _ h_l h_n h_alloc]
+      have : isAlloc s.heap l n := by rw [← h_union]; exact isAlloc_union h_alloc
+      rw [step_free _ _ h_l h_n this]
+      simp only [freeHeap, ge_iff_le]
+      apply le_sSup
+      use (freeLoc heap₁ l n), heap₂, (disjoint_freeLoc h_disjoint)
+      simp only [← h_union]
+      use union_freeLoc h_alloc h_disjoint
+    case neg =>
+      simp only [not_exists, not_and] at h_alloc
+      rw [step_free_of_error ⟨s.stack, heap₁⟩ _ h_alloc, h_abort]
+      simp only [qslFalse, zero_mul, zero_le]
+  | probabilisticChoice e c₁ c₂ ih₁ ih₂ =>
+    clear ih₁ ih₂
+    rw [step_probChoice, step_probChoice]
+    rw [right_distrib_of_unit]
+    pick_goal 2
+    · simp only [Set.Icc.coe_mul, coe_symm_eq]
+      exact (add_symm_mem_unitInterval _ _ _).right
+    · apply add_le_add
+      · rw [mul_assoc]
+        refine mul_le_mul le_rfl ?_ nonneg' nonneg'
+        apply le_sSup
+        use heap₁, heap₂
+      · rw [mul_assoc]
+        refine mul_le_mul le_rfl ?_ nonneg' nonneg'
+        apply le_sSup
+        use heap₁, heap₂
+  | conditionalChoice e c₁ c₂ ih₁ ih₂ =>
+    clear ih₁ ih₂
+    cases Bool.eq_false_or_eq_true (e s.stack) with
+    | inl h_true =>
+      rw [step_condChoice_left _ _ h_true]
+      rw [step_condChoice_left ⟨s.stack, heap₁⟩ _ h_true]
+      apply le_sSup
+      use heap₁, heap₂
+    | inr h_false =>
+      rw [step_condChoice_right _ _ h_false]
+      rw [step_condChoice_right ⟨s.stack, heap₁⟩ _ h_false]
+      apply le_sSup
+      use heap₁, heap₂
+  | loop e c ih =>
+    clear ih
+    cases Bool.eq_false_or_eq_true (e s.stack) with
+    | inl h_true =>
+      rw [step_loop_cont _ _ h_true]
+      rw [step_loop_cont ⟨s.stack, heap₁⟩ _ h_true]
+      apply le_sSup
+      use heap₁, heap₂
+    | inr h_false =>
+      rw [step_loop_term _ _ h_false]
+      rw [step_loop_term ⟨s.stack, heap₁⟩ _ h_false]
+      apply le_sSup
+      use heap₁, heap₂
+  | sequential c₁ c₂ ih₁ ih₂ => sorry
+  | concurrent c₁ c₂ ih₁ ih₂ => sorry
 
 
 

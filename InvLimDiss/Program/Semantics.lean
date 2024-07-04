@@ -86,7 +86,7 @@ noncomputable def allocateSmallStepSemantics (v : Variable) (e : ValueExp Variab
     iteOneZero (∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack
       ∧ isNotAlloc s.heap m n ∧ substituteStack (allocateHeap s m n) v m = s')
   | [Prog| ↯] =>
-    iteOneZero (a = Action.deterministic ∧ ¬ ∃ n : ℕ, n = e s.stack)
+    iteOneZero (a = Action.deterministic ∧ s = s' ∧ ¬ ∃ n : ℕ, n = e s.stack)
   | _ => 0
 
 
@@ -104,8 +104,7 @@ noncomputable def freeSmallStepSemantics (e_loc e_n : ValueExp Variable) :
       ∨ (¬ ∃ l : ℕ+, (e_loc s.stack) = l)))
   | _ => 0
 
-/-- probabilisticChoice succeeds if the expression is well-defined and picks one program with the given probability.
-    probabilisticChoice fails if the expression is not well-defined. -/
+/-- probabilisticChoice succeeds if the expression is well-defined and picks one program with the given probability. -/
 @[simp]
 noncomputable def probabilisticChoiceSmallStepSemantics (e : ProbExp Variable) (c₁ c₂ : Program Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
@@ -117,8 +116,7 @@ noncomputable def probabilisticChoiceSmallStepSemantics (e : ProbExp Variable) (
       else 0
     else 0
 
-/-- conditionalChoice succeeds if the expression is well-defined and picks the first if it is true and else the second.
-    conditionalChoice fails if the epxression is not well-defined. -/
+/-- conditionalChoice succeeds if the expression is well-defined and picks the first if it is true and else the second. -/
 @[simp]
 noncomputable def conditionalChoiceSmallStepSemantics (e : BoolExp Variable) (c₁ c₂ : Program Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=

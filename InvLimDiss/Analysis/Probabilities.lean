@@ -489,7 +489,6 @@ theorem truncatedAdd_le_truncatedAdd_left (i j : I) (h_le : i ≤ j) :
     case isFalse h_kj =>
       exact (add_le_add_iff_left ↑k).mpr h_le
 
-
 noncomputable instance : Add unitInterval where
   add := truncatedAdd
 
@@ -566,6 +565,55 @@ theorem hasSum (f : α → I) : HasSum f (⨆ s : Finset α, ∑ a ∈ s, f a) :
   tendsto_atTop_iSup fun _ _ => Finset.sum_le_sum_of_subset
 
 theorem isSummable (f : α → I) : Summable f := ⟨_,hasSum f⟩
+
+theorem add_symm_mem_unitInterval_of_self (i j : I) : (i : ℝ) * j + (1 - (i : ℝ)) * j ∈ I := by
+  rw [← right_distrib, add_sub_cancel, one_mul]
+  exact j.prop
+
+theorem add_symm_mem_unitInterval (i j k : I) : (i : ℝ) * j + (1 - i:ℝ) * k ∈ I := by
+  wlog h_jk : j ≤ k
+  · rw [not_le] at h_jk
+    have h_jk := le_of_lt h_jk
+    specialize this (σ i) k j h_jk
+    rw [add_comm, symm, sub_sub_cancel] at this
+    exact this
+  · apply And.intro
+    · have : (i : ℝ) * j + (1 - i:ℝ) * j ≤ (i : ℝ) * j + (1 - i:ℝ) * k := by {
+        apply add_le_add
+        · exact le_rfl
+        · refine mul_le_mul le_rfl ?_ nonneg' (mem_iff_one_sub_mem.mp i.prop).left
+          exact h_jk
+      }
+      refine le_trans ?_ this
+      exact (add_symm_mem_unitInterval_of_self i j).left
+    · have : (i : ℝ) * j + (1 - i:ℝ) * k ≤ (i : ℝ) * k + (1 - i:ℝ) * k := by {
+        apply add_le_add
+        · apply mul_le_mul le_rfl h_jk nonneg' nonneg'
+        · exact le_rfl
+      }
+      apply le_trans this
+      exact (add_symm_mem_unitInterval_of_self i k).right
+
+
+theorem truncatedAdd_symm_eq (i j : I) : i * j + σ i * j = j := by
+  rw [Subtype.mk_eq_mk]
+  simp only [coe_truncatedAdd, coe_mul, coe_symm_eq]
+  rw [min_eq_right_iff.mpr]
+  · rw [← right_distrib, add_sub_cancel, one_mul]
+  · exact (add_symm_mem_unitInterval i j j).right
+
+theorem right_distrib_of_unit (i j k : I) (h_unit : (i:ℝ) + (j:ℝ) ≤ 1) :
+    (i + j) * k = i * k + j * k := by
+  rw [Subtype.mk_eq_mk]
+  simp only [coe_mul, coe_truncatedAdd]
+  rw [min_eq_right_iff.mpr h_unit, ← right_distrib, min_eq_right_iff.mpr]
+  exact mul_le_one h_unit nonneg' le_one'
+
+theorem left_distrib_of_unit (i j k : I) (h_unit : (i:ℝ) + (j:ℝ) ≤ 1) :
+    k * (i + j) = k * i + k * j := by
+  simp only [unit_mul_comm]
+  rw [unit_mul_comm k (i + j)]
+  exact right_distrib_of_unit i j k h_unit
 
 end AddSub
 

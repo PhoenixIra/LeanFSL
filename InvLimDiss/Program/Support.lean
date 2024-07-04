@@ -276,11 +276,31 @@ theorem tsum_alloc_support_superset (s : State Var)
   case h_2 _ =>
     simp only [not_exists, true_and, iteOneZero_eq_zero_def, not_and, not_or, not_forall,
       Decidable.not_not, Classical.not_imp] at h
-    obtain ⟨_, h⟩ := h
+    obtain ⟨_, _, h⟩ := h
     exfalso
     exact h n h_n.symm
   case h_3 _ =>
     simp only [not_true_eq_false] at h
+
+
+theorem tsum_alloc_error_support_superset (s : State Var) :
+    (fun cs : progState => semantics [Prog| v ≔ alloc(e)] s deterministic cs.1 cs.2).support
+    ⊆ {⟨[Prog| ↯], s⟩} := by
+  intro i h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics allocateSmallStepSemantics at h'
+  split at h'
+  case h_1 _ =>
+    simp only [substituteStack, allocateHeap, false_and, exists_const, iteOneZero_false,
+      not_true_eq_false] at h'
+  case h_2 h_c =>
+    simp only [not_exists, true_and, iteOneZero_eq_zero_def, not_and, not_forall, Decidable.not_not,
+      Classical.not_imp] at h'
+    obtain ⟨h_s, _⟩ := h'
+    simp only [Set.mem_singleton_iff, Prod.eq_iff_fst_eq_snd_eq]
+    use h_c, h_s.symm
+  case h_3 _ =>
+    simp only [not_true_eq_false] at h'
 
 theorem tsum_free_support_superset (s : State Var)
     {l : ℕ+} (h_l : ↑l = e_loc s.stack) {n : ℕ}
@@ -315,5 +335,109 @@ theorem tsum_free_support_superset (s : State Var)
     · exact h_l.symm
   case h_3 _ =>
     simp only [not_true_eq_false] at h
+
+theorem tsum_free_error_support_superset (s : State Var)
+    (h : ∀ (x : ℕ+), ↑↑x = e_loc s.stack → ∀ (x_1 : ℕ), ↑x_1 = e_val s.stack → ¬isAlloc s.heap x x_1) :
+    (fun cs : progState => semantics [Prog| free(e_loc, e_val)] s deterministic cs.1 cs.2).support
+    ⊆ {⟨[Prog| ↯], s⟩} := by
+  intro i h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics freeSmallStepSemantics at h'
+  split at h'
+  case h_1 _ =>
+    exfalso
+    simp only [freeHeap, true_and, iteOneZero_eq_zero_def, not_exists, not_and, not_forall,
+      Classical.not_imp, not_not] at h'
+    obtain ⟨l, h_l, n, h_n, h_alloc, _⟩ := h'
+    exact h l h_l n h_n h_alloc
+  case h_2 h_c =>
+    simp only [not_exists, exists_and_right, true_and, iteOneZero_eq_zero_def, not_and, not_or,
+      not_not, not_forall, Decidable.not_not, forall_exists_index, Classical.not_imp] at h'
+    obtain ⟨h_s, _⟩ := h'
+    simp only [Set.mem_singleton_iff, Prod.eq_iff_fst_eq_snd_eq]
+    use h_c, h_s.symm
+  case h_3 _ =>
+    simp only [not_true_eq_false] at h'
+
+theorem tsum_probChoice_support_superset (s : State Var) :
+    (fun cs : progState => semantics [Prog| pif e then [[c₁]] else [[c₂]] fi] s deterministic cs.1 cs.2).support
+    ⊆ {⟨c₁, s⟩, ⟨c₂, s⟩} := by
+  intro i h
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
+  unfold programSmallStepSemantics probabilisticChoiceSmallStepSemantics at h
+  simp only [true_and, ite_eq_right_iff, Classical.not_imp] at h
+  obtain ⟨h_s, h⟩ := h
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+  rw [Prod.mk.inj_iff, Prod.mk.inj_iff]
+  split at h
+  case isTrue h_c =>
+    exact Or.inl ⟨h_c.left.symm, h_s.symm⟩
+  case isFalse h_ne_c =>
+    split at h
+    case isTrue h_c₁ =>
+      exact Or.inl ⟨h_c₁.symm, h_s.symm⟩
+    case isFalse h_ne_c₁ =>
+      split at h
+      case isTrue h_c₂ =>
+        exact Or.inr ⟨h_c₂.symm, h_s.symm⟩
+      case isFalse h_ne_c₂ => simp only [not_true_eq_false] at h
+
+theorem tsum_condChoice_left_support_superset (s : State Var) (h : (e s.stack) = true):
+    (fun cs : progState => semantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.1 cs.2).support
+    ⊆ {⟨c₁, s⟩} := by
+  intro i h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics conditionalChoiceSmallStepSemantics at h'
+  simp only [Bool.not_eq_true, true_and, iteOneZero_eq_zero_def, not_not] at h'
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+  rw [Prod.mk.inj_iff]
+  obtain ⟨h_s, ⟨_, h'⟩ | ⟨h', _⟩⟩ := h'
+  · exact ⟨h'.symm, h_s.symm⟩
+  · simp only [h, Bool.true_eq_false] at h'
+
+theorem tsum_condChoice_right_support_superset (s : State Var) (h : (e s.stack) = false):
+    (fun cs : progState => semantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.1 cs.2).support
+    ⊆ {⟨c₂, s⟩} := by
+  intro i h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics conditionalChoiceSmallStepSemantics at h'
+  simp only [Bool.not_eq_true, true_and, iteOneZero_eq_zero_def, not_not] at h'
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+  rw [Prod.mk.inj_iff]
+  obtain ⟨h_s, ⟨h', _⟩ | ⟨_, h'⟩⟩ := h'
+  · simp only [h, Bool.true_eq_false] at h'
+  · exact ⟨h'.symm, h_s.symm⟩
+
+theorem tsum_loop_cont_support_superset (s : State Var) (h : (e s.stack) = true):
+    (fun cs : progState => semantics [Prog| while e begin [[c]] fi] s deterministic cs.1 cs.2).support
+    ⊆ {⟨[Prog| [[c]] ; while e begin [[c]] fi], s⟩} := by
+  intro i h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics loopSmallStepSemantics at h'
+  simp only [h, not_true_eq_false, and_false, iteOneZero_false, and_true, true_and] at h'
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+  rw [Prod.mk.inj_iff]
+  split at h'
+  case h_1 _ => simp only [not_true_eq_false] at h'
+  case h_2 =>
+    simp only [iteOneZero_eq_zero_def, not_and, Classical.not_imp, not_not] at h'
+    exact ⟨h'.left, h'.right.symm⟩
+
+theorem tsum_loop_term_support_superset (s : State Var) (h : (e s.stack) = false):
+    (fun cs : progState => semantics [Prog| while e begin [[c]] fi] s deterministic cs.1 cs.2).support
+    ⊆ {⟨[Prog| ↓], s⟩} := by
+  intro i h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics loopSmallStepSemantics at h'
+  simp only [h, Bool.false_eq_true, not_false_eq_true, and_true, true_and, and_false,
+    iteOneZero_false] at h'
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
+  rw [Prod.mk.inj_iff]
+  split at h'
+  case h_1 h_c =>
+    simp only [iteOneZero_eq_zero_def, not_not] at h'
+    exact ⟨h_c, h'.symm⟩
+  case h_2 =>
+    simp only [not_true_eq_false] at h'
 
 end Semantics
