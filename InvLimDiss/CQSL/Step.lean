@@ -11,7 +11,7 @@ import Mathlib.Algebra.Order.Pointwise
   * `step` which computes the next possible steps in a program
   * Monotonicty and Elimination lemmas about `step`-/
 
-open Syntax Semantics QSL unitInterval Action State HeapValue
+open Syntax Semantics QSL unitInterval Action State HeapValue Classical
 
 namespace CQSL
 
@@ -662,6 +662,33 @@ theorem step_loop_term (s : State Var) (inner : Program Var → StateRV Var)
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_loop_term_of_deterministic s inner h]
 
+theorem tsum_sequential_term_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
+    (∑' cs : progState,
+    (semantics [Prog| ↓ ; [[c]]] s deterministic cs.1 cs.2) * inner cs.1 cs.2)
+    = inner c s := by
+  rw[← tsum_subtype_eq_of_support_subset]
+  pick_goal 2
+  · apply mul_support_superset_left
+    exact tsum_sequential_term_support_superset s
+  · rw [tsum_singleton (⟨c, s⟩ : progState)
+      (fun cs => semantics _ s deterministic cs.1 cs.2 * inner cs.1 cs.2) ]
+    unfold programSmallStepSemantics
+    simp only [↓reduceIte, and_self, iteOneZero_true, one_mul]
+
+theorem step_sequential_term (s : State Var) (inner : Program Var → StateRV Var) :
+    step [Prog| ↓ ; [[c]]] inner s
+    = inner c s := by
+  unfold step
+  apply le_antisymm
+  · apply sInf_le
+    use deterministic
+    simp only [enabledAction, ↓reduceIte, Set.mem_singleton_iff, true_and]
+    exact tsum_sequential_term_of_deterministic s inner
+  · apply le_sInf
+    rintro _ ⟨a, h_a, rfl⟩
+    simp only [enabledAction, Set.mem_singleton_iff] at h_a
+    rw [h_a, tsum_sequential_term_of_deterministic s inner]
+
 theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅)
     (h_abort : inner [Prog| ↯] = `[qsl| qFalse]):
     `[qsl| [[step c inner]] ⋆ [[P]]] ⊢ step c (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
@@ -855,7 +882,37 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
       rw [step_loop_term ⟨s.stack, heap₁⟩ _ h_false]
       apply le_sSup
       use heap₁, heap₂
-  | sequential c₁ c₂ ih₁ ih₂ => sorry
+  | sequential c₁ c₂ ih₁ ih₂ =>
+    clear ih₂
+    cases eq_or_ne c₁ [Prog| ↓] with
+    | inl h_term =>
+      rw [h_term, step_sequential_term, step_sequential_term]
+      apply le_sSup
+      use heap₁, heap₂
+    | inr h_ne_term =>
+      rw [step_sequential_cont _ _ h_ne_term h_abort]
+      have : `[qsl| [[inner [Prog| ↯] ]] ⋆ [[P]]] = `[qsl| qFalse] := by {
+        apply funext
+        intro s'
+        apply le_antisymm
+        · apply sSup_le
+          rintro _ ⟨_, _, _, _, rfl⟩
+          rw [h_abort]
+          simp only [qslFalse, zero_mul, le_refl]
+        · simp only [qslFalse, zero_le]
+      }
+      rw [step_sequential_cont _ _ h_ne_term this]
+      simp only [writtenVarProgram, Set.union_inter_distrib_right, Set.union_empty_iff] at h
+      specialize @ih₁ (fun c' => if c' = [Prog| ↯] then inner [Prog| ↯] else inner [Prog| [[c']] ; [[c₂]]]) h.left
+      apply le_trans (ih₁ (by rw [if_pos rfl, h_abort]))
+      apply monotone_step
+      rw [Pi.le_def]
+      intro c
+      split
+      · exact le_rfl
+      · exact le_rfl
+
+
   | concurrent c₁ c₂ ih₁ ih₂ => sorry
 
 
