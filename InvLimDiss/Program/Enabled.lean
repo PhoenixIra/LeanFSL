@@ -24,12 +24,14 @@ def enabledAction : (Program Variable) → (State Variable) → Set Action
     then { a | ∃ m, a = Action.allocation m ∧ ∃ n : ℕ, n = e s.stack ∧ isNotAlloc s.heap m n }
     else { Action.deterministic }
   | [Prog| free(_,_)], _        => { Action.deterministic }
-  | [Prog| [[c₁]] ; [[_]]], s   => if c₁ = [Prog| ↓] then { Action.deterministic } else enabledAction c₁ s
+  | [Prog| [[c₁]] ; [[_]]], s   => if c₁ = [Prog| ↓]
+      then { Action.deterministic } else enabledAction c₁ s
   | [Prog| pif _ then [[_]] else [[_]] fi], _   => { Action.deterministic }
   | [Prog| if _ then [[_]] else [[_]] fi], _    => { Action.deterministic }
   | [Prog| while _ begin [[_]] fi], _           => { Action.deterministic }
   | [Prog| [[c₁]] || [[c₂]]], s
-    => if c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] then { Action.deterministic } else
+    => if c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓]
+      then { Action.deterministic } else
       { Action.concurrentLeft a | a ∈ enabledAction c₁ s } ∪ { Action.concurrentRight a | a ∈ enabledAction c₂ s }
 
 /-- Disabled actions have trivial subdistributions. -/
@@ -123,20 +125,22 @@ theorem zero_probability_of_not_enabledAction
       obtain rfl := h_term₁
       rw [iteOneZero_eq_zero_def]
       rintro ⟨rfl, _⟩
-      simp only [enabledAction, ↓reduceIte, Set.mem_singleton_iff, not_true_eq_false] at h
+      simp only [enabledAction, or_false, ↓reduceIte, Set.mem_singleton_iff, not_true_eq_false] at h
     case isFalse h_n_term₁ =>
       simp only [enabledAction, if_neg h_n_term₁] at h
       split
-      case isTrue h_error' =>
-        exact ih₁ h _
-      case isFalse h_n_error' =>
+      case isTrue h_abort =>
+        obtain rfl := h_abort
+        exact ih₁ h [Prog| ↯]
+      case isFalse h_n_abort =>
         split
         case h_1 =>
           split
-          case isTrue _ =>
-            exact ih₁ h _
+          case isTrue _ => rfl
           case isFalse _ =>
-            rfl
+            split
+            case isTrue _ => exact ih₁ h _
+            case isFalse _ => rfl
         case h_2 =>
           rfl
 
@@ -144,54 +148,53 @@ theorem zero_probability_of_not_enabledAction
     rw [enabledAction] at h
     split at h
     case isTrue h_term =>
-      simp only [programSmallStepSemantics, h_term.left, h_term.right, and_self, ↓reduceIte]
-      rw [iteOneZero_neg]
-      simp only [not_and]
-      intro _ h_a
-      rw [Set.mem_singleton_iff] at h
-      exact (h h_a).elim
+      simp only [programSmallStepSemantics, h_term.left, h_term.right, and_self, ↓reduceIte,
+        iteOneZero_eq_zero_def, not_and]
+      rintro _ rfl
+      simp only [Set.mem_singleton_iff, not_true_eq_false] at h
     case isFalse h_term =>
       simp only [Set.mem_union, Set.mem_setOf_eq, not_or, not_exists, not_and] at h
-      let ⟨h_left, h_right⟩ := h; clear h
+      obtain ⟨h_left, h_right⟩ := h
       simp only [programSmallStepSemantics]
       split
-      case isTrue h_term' => exact (h_term h_term').elim
+      case isTrue h_term' =>
+        exfalso
+        simp only [not_or, not_and] at h_term
+        exact h_term h_term'.left h_term'.right
       case isFalse =>
-      split
-      case h_1 a₂ a₁ =>
-        have ha₁ : a₁ ∉ enabledAction c₁ s := by {
-          intro h
-          specialize h_left a₁ h
-          simp only [not_true_eq_false] at h_left
-        }
         split
-        case isTrue h_error' =>
-          exact ih₁ ha₁ _
-        case isFalse h_n_error' =>
+        case h_1 a₂ a₁ =>
+          have ha₁ : a₁ ∉ enabledAction c₁ s := by {
+            intro h
+            specialize h_left a₁ h
+            simp only [not_true_eq_false] at h_left
+          }
           split
-          case h_1 =>
-            simp only [ite_eq_right_iff]
-            rintro rfl
+          case isTrue h_abort =>
             exact ih₁ ha₁ _
-          case h_2 =>
-            rfl
-      case h_2 a₁ a₂ =>
-        have ha₂ : a₂ ∉ enabledAction c₂ s := by {
-          intro h
-          specialize h_right a₂ h
-          simp only [not_true_eq_false] at h_right
-        }
-        split
-        case isTrue h_error' =>
-          exact ih₂ ha₂ _
-        case isFalse h_n_term' =>
+          case isFalse h_ne_abort =>
+            split
+            case h_1 =>
+              simp only [ite_eq_right_iff]
+              intro _
+              exact ih₁ ha₁ _
+            case h_2 => rfl
+        case h_2 a₁ a₂ =>
+          have ha₂ : a₂ ∉ enabledAction c₂ s := by {
+            intro h
+            specialize h_right a₂ h
+            simp only [not_true_eq_false] at h_right
+          }
           split
-          case h_1 =>
-            simp only [ite_eq_right_iff]
-            rintro rfl
+          case isTrue h_abort =>
             exact ih₂ ha₂ _
-          case h_2 =>
-            rfl
-      case h_3 => rfl
+          case isFalse h_ne_abort =>
+            split
+            case h_1 =>
+              simp only [ite_eq_right_iff]
+              rintro _
+              exact ih₂ ha₂ _
+            case h_2 => rfl
+        case h_3 => rfl
 
 end Semantics

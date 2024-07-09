@@ -3,5 +3,4 @@ import InvLimDiss.CQSL.Step.Basic
 import InvLimDiss.CQSL.Step.Concurrent
 import InvLimDiss.CQSL.Step.Defs
 import InvLimDiss.CQSL.Step.Flow
-import InvLimDiss.CQSL.Step.Framing
 import InvLimDiss.CQSL.Step.Sequential

@@ -14,25 +14,25 @@ theorem monotone_step (c : Program Var) : Monotone (step c) := by
   intro s
   apply le_sInf
   rintro _ ⟨a, h_a, rfl⟩
-  have : ∑' cs : progState, (semantics c s a cs.1 cs.2) * X cs.1 cs.2 ∈
-    { x | ∃ a ∈ enabledAction c s,
-      ∑' cs : progState, (semantics c s a cs.1 cs.2) * X cs.1 cs.2 = x} := by {
+  have : ∑' cs : reachState Var, (semantics c s a cs.prog cs.state) * X cs.prog cs.state
+    ∈ { x | ∃ a ∈ enabledAction c s,
+      ∑' cs : reachState Var, (semantics c s a cs.prog cs.state) * X cs.prog cs.state = x} := by {
         use a
       }
   apply sInf_le_of_le this
   · apply tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]
     intro cs
-    cases eq_or_ne (semantics c s a cs.1 cs.2) 0 with
+    cases eq_or_ne (semantics c s a cs.prog cs.state) 0 with
     | inl h_eq =>
       rw [h_eq, zero_mul, zero_mul]
     | inr h_ne =>
       rw [Subtype.mk_le_mk, Set.Icc.coe_mul, Set.Icc.coe_mul]
       rw[mul_le_mul_left]
       · rw [Pi.le_def] at h_X
-        specialize h_X cs.1
+        specialize h_X cs.prog
         rw [Pi.le_def] at h_X
-        exact h_X cs.2
+        exact h_X cs.state
       · apply lt_of_le_of_ne nonneg'
         apply Ne.symm
         exact h_ne

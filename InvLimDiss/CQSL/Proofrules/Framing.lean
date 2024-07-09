@@ -2,6 +2,7 @@ import InvLimDiss.CQSL.Step.Atomic
 import InvLimDiss.CQSL.Step.Flow
 import InvLimDiss.CQSL.Step.Sequential
 import InvLimDiss.CQSL.Step.Concurrent
+import InvLimDiss.CQSL.WeakPre
 import InvLimDiss.SL.Framing.Basic
 
 namespace CQSL
@@ -11,15 +12,18 @@ variable {Var : Type}
 open Syntax Semantics QSL unitInterval Action State HeapValue Classical
 
 
-theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅)
-    (h_abort : inner [Prog| ↯] = `[qsl| qFalse]):
-    `[qsl| [[step c inner]] ⋆ [[P]]] ⊢ step c (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+-- todo: write for each program instead of one big
+
+theorem step_qslSepMul_eq_qslSepMul_step (inner : Program Var → StateRV Var)
+    (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅) :
+    `[qsl| [[step c (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step c (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
   rw [qslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
-  induction c generalizing inner with
+  induction c with
   | terminated => rw [step_terminated, step_terminated]; exact le_one'
   | error => rw [step_error, step_error]; exact le_one'
   | skip' =>
@@ -31,8 +35,8 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
     apply le_sSup_of_le
     use heap₁, heap₂, h_disjoint, h_union
     rw [Subtype.mk_le_mk]
-    simp only [substituteStack, Set.Icc.coe_mul]
-    cases eq_or_ne (inner [Prog| ↓] ⟨substituteVar s.stack v (e s.stack), heap₁⟩) 0 with
+    simp only [substituteStack, Set.Icc.coe_mul, wrlp_eq_of_term]
+    cases eq_or_ne (post ⟨substituteVar s.stack v (e s.stack), heap₁⟩) 0 with
     | inl h_eq => rw [h_eq]; simp only [Set.Icc.coe_zero, zero_mul, le_refl]
     | inr h_ne =>
       rw [mul_le_mul_left]
@@ -58,7 +62,7 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
       · exact le_rfl
     case neg =>
       simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
-      rw [step_manipulate_of_error _ _ h_alloc, h_abort]
+      rw [step_manipulate_of_error _ _ h_alloc, wrlp_eq_of_error]
       simp only [qslFalse, zero_mul, zero_le]
   | lookup v e_loc =>
     by_cases h_alloc : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
@@ -77,7 +81,7 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
         rw [substituteVar_eq_of_not_varStateRV h q]
     case neg =>
       simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
-      rw [step_lookup_of_error _ _ h_alloc, h_abort]
+      rw [step_lookup_of_error _ _ h_alloc, wrlp_eq_of_error]
       simp only [qslFalse, zero_mul, zero_le]
   | compareAndSet v e_loc e_cmp e_val =>
     by_cases h_alloc : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
@@ -119,7 +123,7 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
           rw [substituteVar_eq_of_not_varStateRV h 0]
     case neg =>
       simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
-      rw [step_cas_of_error _ _ h_alloc, h_abort]
+      rw [step_cas_of_error _ _ h_alloc, wrlp_eq_of_error]
       simp only [qslFalse, zero_mul, zero_le]
   | allocate v e_n =>
     by_cases h_m : ∃ m : ℕ, e_n s.stack = ↑m
@@ -144,7 +148,7 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
         simp only [allocateHeap]
     case neg =>
       simp only [not_exists] at h_m
-      rw [step_alloc_of_error ⟨s.stack, heap₁⟩ _ h_m, h_abort]
+      rw [step_alloc_of_error ⟨s.stack, heap₁⟩ _ h_m, wrlp_eq_of_error]
       simp only [qslFalse, zero_mul, zero_le]
   | free' e_loc e_n =>
     by_cases h_alloc : ∃ l : ℕ+, l = (e_loc s.stack) ∧ ∃ n : ℕ, n = (e_n s.stack) ∧ isAlloc heap₁ l n
@@ -160,7 +164,7 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
       use union_freeLoc h_alloc h_disjoint
     case neg =>
       simp only [not_exists, not_and] at h_alloc
-      rw [step_free_of_error ⟨s.stack, heap₁⟩ _ h_alloc, h_abort]
+      rw [step_free_of_error ⟨s.stack, heap₁⟩ _ h_alloc, wrlp_eq_of_error]
       simp only [qslFalse, zero_mul, zero_le]
   | probabilisticChoice e c₁ c₂ ih₁ ih₂ =>
     clear ih₁ ih₂
@@ -212,29 +216,36 @@ theorem step_qslSepMul_eq_qslSepMul_step (h : (writtenVarProgram c) ∩ (varStat
       apply le_sSup
       use heap₁, heap₂
     | inr h_ne_term =>
-      rw [step_sequential_cont _ _ h_ne_term h_abort]
-      have : `[qsl| [[inner [Prog| ↯] ]] ⋆ [[P]]] = `[qsl| qFalse] := by {
-        apply funext
-        intro s'
-        apply le_antisymm
-        · apply sSup_le
-          rintro _ ⟨_, _, _, _, rfl⟩
-          rw [h_abort]
-          simp only [qslFalse, zero_mul, le_refl]
-        · simp only [qslFalse, zero_le]
-      }
-      rw [step_sequential_cont _ _ h_ne_term this]
-      simp only [writtenVarProgram, Set.union_inter_distrib_right, Set.union_empty_iff] at h
-      specialize @ih₁ (fun c' => if c' = [Prog| ↯] then inner [Prog| ↯] else inner [Prog| [[c']] ; [[c₂]]]) h.left
-      apply le_trans (ih₁ (by rw [if_pos rfl, h_abort]))
-      apply monotone_step
-      rw [Pi.le_def]
-      intro c
-      split
-      · exact le_rfl
-      · exact le_rfl
+      cases eq_or_ne c₁ [Prog| ↯] with
+      | inl h_abort =>
+        rw [h_abort, step_sequential_error, step_sequential_error]
+        apply le_sSup
+        use heap₁, heap₂
+      | inr h_ne_abort =>
+        rw [step_sequential_cont _ _ h_ne_term h_ne_abort]
+        rw [step_sequential_cont _ _ h_ne_term h_ne_abort]
+        simp only [writtenVarProgram, Set.union_inter_distrib_right, Set.union_empty_iff] at h
+        specialize ih₁ h.left
+
+        -- specialize @ih₁ (fun c' => inner [Prog| [[c']] ; [[c₂]]]) h.left
+        -- specialize ih₁ (by rw [if_pos rfl, h_abort])
+        -- rw [step_sequential_auxialiary _ inner h_ne_term h_abort] at ih₁
+        -- rw [step_sequential_auxialiary_qslSepMul s inner h_ne_term h_abort] at ih₁
+        -- apply le_trans ih₁
+        -- apply monotone_step
+        -- rw [Pi.le_def]
+        -- intro c
+        -- exact le_rfl
 
 
   | concurrent c₁ c₂ ih₁ ih₂ => sorry
+
+
+theorem wrlp_frame :
+    `[qsl| wrlp [c] ([[P]] | [[RI]]) ⋆ [[F]] ⊢ wrlp [c] ([[P]] ⋆ [[F]] | [[RI]])] := by
+  unfold wrlp'
+  sorry
+
+
 
 end CQSL

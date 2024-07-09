@@ -157,7 +157,6 @@ def unexpandConcur : Unexpander
   | `($_ $l $r) => `([Prog| [[$l]] || [[$r]]])
   | _ => throw ()
 
-
 example := [Prog| skip ; skip ; if λ _ => true then "x" ≔ λ _ => 5 else skip fi ; skip ]
 example (e : ProbExp Variable) (c₁ c₂ : Program Variable) := [Prog| pif e then [[c₁]] else [[c₂]] fi]
 example (c₁ c₂ : Program Variable) := [Prog| [[c₁]] || [[c₂]] ]
