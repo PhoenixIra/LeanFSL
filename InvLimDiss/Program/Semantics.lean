@@ -104,9 +104,9 @@ noncomputable def freeSmallStepSemantics (e_loc e_n : ValueExp Variable) :
       ∨ (¬ ∃ l : ℕ+, (e_loc s.stack) = l)))
   | _ => 0
 
-/-- probabilisticChoice succeeds if the expression is well-defined and picks one program with the given probability. -/
+/-- probabilisticBranching succeeds if the expression is well-defined and picks one program with the given probability. -/
 @[simp]
-noncomputable def probabilisticChoiceSmallStepSemantics (e : ProbExp Variable) (c₁ c₂ : Program Variable) :
+noncomputable def probabilisticBranchingSmallStepSemantics (e : ProbExp Variable) (c₁ c₂ : Program Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' =>
     if a = Action.deterministic ∧ s = s' then
@@ -118,7 +118,7 @@ noncomputable def probabilisticChoiceSmallStepSemantics (e : ProbExp Variable) (
 
 /-- conditionalChoice succeeds if the expression is well-defined and picks the first if it is true and else the second. -/
 @[simp]
-noncomputable def conditionalChoiceSmallStepSemantics (e : BoolExp Variable) (c₁ c₂ : Program Variable) :
+noncomputable def conditionalBranchingSmallStepSemantics (e : BoolExp Variable) (c₁ c₂ : Program Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' =>
     iteOneZero (a = Action.deterministic ∧ s = s'
@@ -148,11 +148,12 @@ noncomputable def programSmallStepSemantics :
   | [Prog| v ≔ cas(e_loc, e_cmp, e_val)] => compareAndSetSmallStepSemantics v e_loc e_cmp e_val
   | [Prog| v ≔ alloc(n)] => allocateSmallStepSemantics v n
   | [Prog| free(e_loc,e_n)] => freeSmallStepSemantics e_loc e_n
-  | [Prog| pif e then [[c₁]] else [[c₂]] fi] => probabilisticChoiceSmallStepSemantics e c₁ c₂
-  | [Prog| if e then [[c₁]] else [[c₂]] fi] => conditionalChoiceSmallStepSemantics e c₁ c₂
+  | [Prog| pif e then [[c₁]] else [[c₂]] fi] => probabilisticBranchingSmallStepSemantics e c₁ c₂
+  | [Prog| if e then [[c₁]] else [[c₂]] fi] => conditionalBranchingSmallStepSemantics e c₁ c₂
   | [Prog| while e begin [[c]] fi] => loopSmallStepSemantics e c
   | [Prog| [[c₁]] ; [[c₂]]] => fun s a c s' =>
     if c₁ = [Prog| ↓ ] then iteOneZero (a = Action.deterministic ∧ s=s' ∧ c = c₂)
+    else if c₁ = [Prog| ↯] then iteOneZero (a = Action.deterministic ∧ s=s' ∧ c = [Prog| ↯])
     else if c = [Prog| ↯] then (programSmallStepSemantics c₁ s a [Prog|↯] s')
     else if let [Prog| [[c₁']] ; [[c₂']]] := c then
       if c₁' = [Prog| ↯] then 0
@@ -160,6 +161,7 @@ noncomputable def programSmallStepSemantics :
     else 0
   | [Prog| [[c₁]] || [[c₂]]] => fun s a c s' =>
     if c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] then iteOneZero (c = [Prog| ↓] ∧ a = Action.deterministic ∧ s = s')
+    else if c₁ = [Prog| ↯] ∨ c₂ = [Prog| ↯] then iteOneZero (a = Action.deterministic ∧ s=s' ∧ c = [Prog| ↯])
     else match a with
     | Action.concurrentLeft a =>
       if c = [Prog| ↯] then programSmallStepSemantics c₁ s a [Prog| ↯] s'

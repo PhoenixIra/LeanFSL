@@ -90,7 +90,7 @@ theorem step_manipulate (s : State Var) (inner : Program Var → StateRV Var)
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_manipulate_of_deterministic s inner h_l h_alloc]
 
-theorem tsum_manipulate_of_deterministic_of_error (s : State Var) (inner : Program Var → StateRV Var)
+theorem tsum_manipulate_of_deterministic_of_abort (s : State Var) (inner : Program Var → StateRV Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     (∑' cs : reachState Var,
     (semantics [Prog| e_loc *≔ e_val] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
@@ -98,11 +98,11 @@ theorem tsum_manipulate_of_deterministic_of_error (s : State Var) (inner : Progr
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
   · apply mul_support_superset_left
-    exact tsum_manipulate_error_support_superset s h
+    exact tsum_manipulate_abort_support_superset s h
   · simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
       tsum_empty]
 
-theorem step_manipulate_of_error (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_manipulate_of_abort (s : State Var) (inner : Program Var → StateRV Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     step [Prog| e_loc *≔ e_val] inner s = 0 := by
   unfold step
@@ -110,11 +110,11 @@ theorem step_manipulate_of_error (s : State Var) (inner : Program Var → StateR
   · apply sInf_le
     use deterministic
     simp only [enabledAction, Set.mem_singleton_iff, true_and]
-    exact tsum_manipulate_of_deterministic_of_error s inner h
+    exact tsum_manipulate_of_deterministic_of_abort s inner h
   · apply le_sInf
     rintro _ ⟨a, h_a, rfl⟩
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
-    rw [h_a, tsum_manipulate_of_deterministic_of_error s inner h]
+    rw [h_a, tsum_manipulate_of_deterministic_of_abort s inner h]
 
 theorem tsum_lookup_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} {value : ℚ} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l = value) :
@@ -147,7 +147,7 @@ theorem step_lookup (s : State Var) (inner : Program Var → StateRV Var)
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_lookup_of_deterministic s inner h_l h_alloc]
 
-theorem tsum_lookup_of_deterministic_of_error (s : State Var) (inner : Program Var → StateRV Var)
+theorem tsum_lookup_of_deterministic_of_abort (s : State Var) (inner : Program Var → StateRV Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     (∑' cs : reachState Var,
     (semantics [Prog| v ≔* e_loc] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
@@ -155,11 +155,11 @@ theorem tsum_lookup_of_deterministic_of_error (s : State Var) (inner : Program V
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
   · apply mul_support_superset_left
-    exact tsum_lookup_error_support_superset s h
+    exact tsum_lookup_abort_support_superset s h
   · simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
       tsum_empty]
 
-theorem step_lookup_of_error (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_lookup_of_abort (s : State Var) (inner : Program Var → StateRV Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     step [Prog| v ≔* e_loc] inner s = 0 := by
   unfold step
@@ -167,11 +167,11 @@ theorem step_lookup_of_error (s : State Var) (inner : Program Var → StateRV Va
   · apply sInf_le
     use deterministic
     simp only [enabledAction, Set.mem_singleton_iff, true_and]
-    exact tsum_lookup_of_deterministic_of_error s inner h
+    exact tsum_lookup_of_deterministic_of_abort s inner h
   · apply le_sInf
     rintro _ ⟨a, h_a, rfl⟩
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
-    rw [h_a, tsum_lookup_of_deterministic_of_error s inner h]
+    rw [h_a, tsum_lookup_of_deterministic_of_abort s inner h]
 
 theorem tsum_cas_of_eq_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l = e_cmp s.stack) :
@@ -250,7 +250,7 @@ theorem step_cas_of_neq (s : State Var) (inner : Program Var → StateRV Var)
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_cas_of_neq_of_deterministic s inner h_l h_alloc h_ne]
 
-theorem tsum_cas_of_deterministic_of_error (s : State Var) (inner : Program Var → StateRV Var)
+theorem tsum_cas_of_deterministic_of_abort (s : State Var) (inner : Program Var → StateRV Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     (∑' cs : reachState Var,
       (semantics [Prog| v ≔ cas(e_loc, e_cmp, e_val)] s deterministic cs.prog cs.state)
@@ -259,11 +259,11 @@ theorem tsum_cas_of_deterministic_of_error (s : State Var) (inner : Program Var 
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
   · apply mul_support_superset_left
-    exact tsum_cas_error_support_superset s h
+    exact tsum_cas_abort_support_superset s h
   · simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
       tsum_empty]
 
-theorem step_cas_of_error (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_cas_of_abort (s : State Var) (inner : Program Var → StateRV Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     step [Prog| v ≔ cas(e_loc, e_cmp, e_val)] inner s = 0 := by
   unfold step
@@ -271,11 +271,11 @@ theorem step_cas_of_error (s : State Var) (inner : Program Var → StateRV Var)
   · apply sInf_le
     use deterministic
     simp only [enabledAction, Set.mem_singleton_iff, true_and]
-    exact tsum_cas_of_deterministic_of_error s inner h
+    exact tsum_cas_of_deterministic_of_abort s inner h
   · apply le_sInf
     rintro _ ⟨a, h_a, rfl⟩
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
-    rw [h_a, tsum_cas_of_deterministic_of_error s inner h]
+    rw [h_a, tsum_cas_of_deterministic_of_abort s inner h]
 
 theorem tsum_alloc_of_allocation (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} {n : ℕ} ( h_n : e s.stack = ↑n) (h_allocable : isNotAlloc s.heap l n) :
@@ -320,18 +320,18 @@ theorem step_alloc (s : State Var) (inner : Program Var → StateRV Var)
       use l, h_notAlloc', tsum_alloc_of_allocation s inner h_n h_notAlloc'
     · use n, h_n.symm
 
-theorem tsum_alloc_of_deterministic_of_error (s : State Var) (inner : Program Var → StateRV Var) :
+theorem tsum_alloc_of_deterministic_of_abort (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : reachState Var,
       (semantics [Prog| v ≔ alloc(e)] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
     = 0 := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
   · apply mul_support_superset_left
-    exact tsum_alloc_error_support_superset s
+    exact tsum_alloc_abort_support_superset s
   · simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
       tsum_empty]
 
-theorem step_alloc_of_error (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_alloc_of_abort (s : State Var) (inner : Program Var → StateRV Var)
     (h : ∀ n : ℕ, e s.stack ≠ ↑n) :
     step [Prog| v ≔ alloc(e)] inner s = 0 := by
   unfold step
@@ -343,12 +343,12 @@ theorem step_alloc_of_error (s : State Var) (inner : Program Var → StateRV Var
     · rw [if_neg]
       · rfl
       · simp only [not_exists]; intro n h_n; exact h n h_n.symm
-    · exact tsum_alloc_of_deterministic_of_error s inner
+    · exact tsum_alloc_of_deterministic_of_abort s inner
   · apply le_sInf
     rintro _ ⟨a, h_a, rfl⟩
     simp only [enabledAction] at h_a
     rw [if_neg] at h_a
-    · rw [h_a, tsum_alloc_of_deterministic_of_error s inner]
+    · rw [h_a, tsum_alloc_of_deterministic_of_abort s inner]
     · simp only [not_exists]; intro n h_n; exact h n h_n.symm
 
 theorem tsum_free_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)

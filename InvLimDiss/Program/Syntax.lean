@@ -15,7 +15,7 @@ variable (Vars : Type)
 
 inductive Program where
   | terminated : Program
-  | error : Program
+  | abort : Program
   | skip' : Program
   | assign : Vars → (ValueExp Vars) → Program
   | manipulate : (ValueExp Vars) → (ValueExp Vars) → Program
@@ -24,8 +24,8 @@ inductive Program where
     Vars → (ValueExp Vars) → (ValueExp Vars) → (ValueExp Vars) → Program
   | allocate: Vars → (ValueExp Vars) → Program
   | free' : (ValueExp Vars) → (ValueExp Vars) → Program
-  | probabilisticChoice : (ProbExp Vars) → Program → Program → Program
-  | conditionalChoice : (BoolExp Vars) → Program → Program → Program
+  | probabilisticBranching : (ProbExp Vars) → Program → Program → Program
+  | conditionalBranching : (BoolExp Vars) → Program → Program → Program
   | loop : (BoolExp Vars) → Program → Program
   | sequential : Program → Program → Program
   | concurrent : Program → Program → Program
@@ -59,7 +59,7 @@ syntax "[Prog| " program "]" : term
 
 macro_rules
   | `(term| [Prog| ↓])      => `(Program.terminated)
-  | `(term| [Prog| ↯])      => `(Program.error)
+  | `(term| [Prog| ↯])      => `(Program.abort)
   | `(term| [Prog| skip])   => `(Program.skip')
   | `(term| [Prog| $l:term ≔ $r:term]) => `(Program.assign $l $r)
   | `(term| [Prog| $l:term *≔ $r:term]) => `(Program.manipulate $l $r)
@@ -67,8 +67,10 @@ macro_rules
   | `(term| [Prog| $l:term ≔ cas ( $a:term , $b:term , $c:term )]) => `(Program.compareAndSet $l $a $b $c)
   | `(term| [Prog| $l:term ≔ alloc $r:term]) => `(Program.allocate $l $r)
   | `(term| [Prog| free ( $a:term , $b:term )]) => `(Program.free' $a $b)
-  | `(term| [Prog| pif $p:term then $l else $r fi]) => `(Program.probabilisticChoice $p [Prog| $l] [Prog| $r])
-  | `(term| [Prog| if $b:term then $l:program else $r:program fi]) => `(Program.conditionalChoice $b [Prog| $l] [Prog| $r])
+  | `(term| [Prog| pif $p:term then $l else $r fi]) =>
+      `(Program.probabilisticBranching $p [Prog| $l] [Prog| $r])
+  | `(term| [Prog| if $b:term then $l:program else $r:program fi]) =>
+      `(Program.conditionalBranching $b [Prog| $l] [Prog| $r])
   | `(term| [Prog| while $b:term begin $c fi]) => `(Program.loop $b [Prog| $c])
   | `(term| [Prog| $l ; $r]) => `(Program.sequential [Prog| $l] [Prog| $r])
   | `(term| [Prog| $l || $r]) => `(Program.concurrent [Prog| $l] [Prog| $r])
@@ -81,7 +83,7 @@ open Lean PrettyPrinter Delaborator
 def unexpandTerminated : Unexpander
   | `($_) => `([Prog| ↓])
 
-@[app_unexpander Program.error]
+@[app_unexpander Program.abort]
 def unexpandError : Unexpander
   | `($_) => `([Prog| ↯])
 
@@ -119,7 +121,7 @@ def unexpandFree : Unexpander
   | `($_ $l $r) => `([Prog| free($l:term, $r:term)])
   | _ => throw ()
 
-@[app_unexpander Program.probabilisticChoice]
+@[app_unexpander Program.probabilisticBranching]
 def unexpandProbChoice : Unexpander
   | `($_ $p [Prog| $l] [Prog| $r]) => `([Prog| pif $p:term then $l else $r fi])
   | `($_ $p $l [Prog| $r]) => `([Prog| pif $p:term then [[$l]] else $r fi])
@@ -127,7 +129,7 @@ def unexpandProbChoice : Unexpander
   | `($_ $p $l $r) => `([Prog| pif $p:term then [[$l]] else [[$r]] fi])
   | _ => throw ()
 
-@[app_unexpander Program.conditionalChoice]
+@[app_unexpander Program.conditionalBranching]
 def unexpandConChoice : Unexpander
   | `($_ $p [Prog| $l] [Prog| $r]) => `([Prog| if $p:term then $l else $r fi])
   | `($_ $p $l [Prog| $r]) => `([Prog| if $p:term then [[$l]] else $r fi])
