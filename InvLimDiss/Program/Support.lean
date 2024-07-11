@@ -523,4 +523,134 @@ theorem tsum_sequential_cont_support_superset (s : State Var) (inner : Program V
     case h_2 => simp only [zero_mul, not_true_eq_false] at h'
 
 
+theorem tsum_concurrent_term_support_superset (s : State Var) :
+    (fun cs : reachState Var => semantics [Prog| ↓ || ↓] s deterministic cs.prog cs.state).support
+    ⊆ {⟨⟨[Prog| ↓], s⟩, by simp⟩} := by
+  intro cs h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics at h'
+  simp only [↓reduceIte, reachState.state, ne_eq, Set.mem_setOf_eq, reachState.prog, true_and,
+    iteOneZero_eq_zero_def, Decidable.not_not] at h'
+  simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, Set.mem_singleton_iff]
+  rw [Subtype.mk_eq_mk, Prod.mk.inj_iff]
+  use h'.left, h'.right.symm
+
+theorem tsum_concurrent_abort_left_support_superset (s : State Var) :
+    (fun cs : reachState Var => semantics [Prog| ↯ || [[c]]] s deterministic cs.prog cs.state).support
+    ⊆ ∅ := by
+  intro cs h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics at h'
+  simp only [false_and, ↓reduceIte, true_or, reachState.state, ne_eq, Set.mem_setOf_eq,
+    reachState.prog, true_and, iteOneZero_eq_zero_def, not_and, Classical.not_imp,
+    Decidable.not_not] at h'
+  exfalso
+  exact cs.prop h'.right
+
+theorem tsum_concurrent_abort_right_support_superset (s : State Var) :
+    (fun cs : reachState Var => semantics [Prog| [[c]] || ↯] s deterministic cs.prog cs.state).support
+    ⊆ ∅ := by
+  intro cs h'
+  simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
+  unfold programSmallStepSemantics at h'
+  simp only [and_false, ↓reduceIte, or_true, reachState.state, ne_eq, Set.mem_setOf_eq,
+    reachState.prog, true_and, iteOneZero_eq_zero_def, not_and, Classical.not_imp,
+    Decidable.not_not] at h'
+  exfalso
+  exact cs.prop h'.right
+
+theorem tsum_concurrent_cont_left_support_superset {a : Action}
+    (s : State Var) (inner : Program Var → StateRV Var)
+    (h_abort₁ : c₁ ≠ [Prog| ↯]) (h_abort₂ : c₂ ≠ [Prog| ↯]) :
+    (fun cs : reachState Var =>
+      semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentLeft cs.prog cs.state
+      * inner cs.prog cs.state).support
+    ⊆ {x | ∃ c₁' s', x = ⟨⟨[Prog| [[c₁']] || [[c₂]]], s'⟩, by simp⟩
+      ∧ semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentLeft [Prog| [[c₁']] || [[c₂]]] s' ≠ 0
+      ∧ inner [Prog| [[c₁']] || [[c₂]]] s' ≠ 0 } := by
+  intro cs h'
+  simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
+    Function.mem_support] at h'
+  unfold programSmallStepSemantics at h'
+  simp only [false_and, and_false, iteOneZero_false, ite_mul, zero_mul, ite_eq_left_iff, not_and,
+    not_or, and_imp, Classical.not_imp] at h'
+  obtain ⟨h_term', _, _, h⟩ := h'
+  simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq]
+  split at h
+  case isTrue h_abort' =>
+    exfalso
+    exact cs.prop h_abort'
+  case isFalse =>
+    split at h
+    case h_1 c₁' c' h_cs =>
+      split at h
+      case isTrue =>
+        simp only [zero_mul, not_true_eq_false] at h
+      case isFalse h_c₁' =>
+        split at h
+        case isTrue h_c₂ =>
+          rw [← h_c₂] at h_cs
+          simp only [mul_eq_zero, not_or] at h
+          use c₁', cs.state
+          simp only [reachState.state, ne_eq, Set.mem_setOf_eq]
+          apply And.intro
+          · rw [Subtype.mk_eq_mk, Prod.mk.inj_iff, h_cs]
+            trivial
+          · apply And.intro
+            · unfold programSmallStepSemantics
+              simp only [false_and, and_self, iteOneZero_false, and_false, ↓reduceIte,
+                ite_eq_left_iff, not_and, not_or, and_imp, Classical.not_imp]
+              use h_term', h_abort₁, h_abort₂, h_c₁', h.left
+            · rw [h_cs] at h
+              exact h.right
+        simp only [zero_mul, not_true_eq_false] at h
+    case h_2 => simp only [zero_mul, not_true_eq_false] at h
+
+theorem tsum_concurrent_cont_right_support_superset {a : Action}
+    (s : State Var) (inner : Program Var → StateRV Var)
+    (h_abort₁ : c₁ ≠ [Prog| ↯]) (h_abort₂ : c₂ ≠ [Prog| ↯]) :
+    (fun cs : reachState Var =>
+      semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentRight cs.prog cs.state
+      * inner cs.prog cs.state).support
+    ⊆ {x | ∃ c₂' s', x = ⟨⟨[Prog| [[c₁]] || [[c₂']]], s'⟩, by simp⟩
+      ∧ semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentRight [Prog| [[c₁]] || [[c₂']]] s' ≠ 0
+      ∧ inner [Prog| [[c₁]] || [[c₂']]] s' ≠ 0 } := by
+  intro cs h'
+  simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
+    Function.mem_support] at h'
+  unfold programSmallStepSemantics at h'
+  simp only [false_and, and_false, iteOneZero_false, ite_mul, zero_mul, ite_eq_left_iff, not_and,
+    not_or, and_imp, Classical.not_imp] at h'
+  obtain ⟨h_term', _, _, h⟩ := h'
+  simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq]
+  split at h
+  case isTrue h_abort' =>
+    exfalso
+    exact cs.prop h_abort'
+  case isFalse =>
+    split at h
+    case h_1 c' c₂' h_cs =>
+      split at h
+      case isTrue => simp only [zero_mul, not_true_eq_false] at h
+      case isFalse h_c₁' =>
+        split at h
+        case isTrue h_c₁ =>
+          rw [← h_c₁] at h_cs
+          simp only [mul_eq_zero, not_or] at h
+          use c₂', cs.state
+          simp only [reachState.state, ne_eq, Set.mem_setOf_eq]
+          apply And.intro
+          · rw [Subtype.mk_eq_mk, Prod.mk.inj_iff, h_cs]
+            trivial
+          · apply And.intro
+            · unfold programSmallStepSemantics
+              simp only [false_and, and_self, iteOneZero_false, and_false, ↓reduceIte,
+                ite_eq_left_iff, not_and, not_or, and_imp, Classical.not_imp]
+              use h_term', h_abort₁, h_abort₂, h_c₁', h.left
+            · rw [h_cs] at h
+              exact h.right
+        case isFalse h_c₁' =>
+          simp only [zero_mul, not_true_eq_false] at h
+    case h_2 => simp only [zero_mul, not_true_eq_false] at h
+
 end Semantics

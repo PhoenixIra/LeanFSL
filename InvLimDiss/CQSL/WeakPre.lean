@@ -107,7 +107,7 @@ theorem wrlp_eq_of_term
     `[qsl| wrlp [ [Prog| ↓] ] ([[post]] | [[resource]])] = post := by
   rw [wrlp_def]
 
-theorem wrlp_eq_of_error
+theorem wrlp_eq_of_abort
     (post : StateRV Var) (resource : StateRV Var) :
     `[qsl| wrlp [ [Prog| ↯] ] ([[post]] | [[resource]])] = `[qsl| qFalse] := by
   rw [wrlp_def]

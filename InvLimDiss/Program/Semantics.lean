@@ -166,12 +166,14 @@ noncomputable def programSmallStepSemantics :
     | Action.concurrentLeft a =>
       if c = [Prog| ↯] then programSmallStepSemantics c₁ s a [Prog| ↯] s'
       else if let [Prog| [[c₁']] || [[c₂']]] := c then
-        if c₂ = c₂' then programSmallStepSemantics c₁ s a c₁' s' else 0
+        if c₁' = [Prog| ↯] then 0
+        else if c₂ = c₂' then programSmallStepSemantics c₁ s a c₁' s' else 0
       else 0
     | Action.concurrentRight a =>
       if c = [Prog| ↯] then programSmallStepSemantics c₂ s a [Prog| ↯] s'
       else if let [Prog| [[c₁']] || [[c₂']]] := c then
-        if c₁ = c₁' then programSmallStepSemantics c₂ s a c₂' s' else 0
+        if c₂' = [Prog| ↯] then 0
+        else if c₁ = c₁' then programSmallStepSemantics c₂ s a c₂' s' else 0
       else 0
     | _ => 0
 

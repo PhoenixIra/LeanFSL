@@ -30,7 +30,7 @@ def enabledAction : (Program Variable) → (State Variable) → Set Action
   | [Prog| [[c₁]] ; [[_]]], s   => if c₁ = [Prog| ↓] ∨ c₁ = [Prog| ↯]
       then { Action.deterministic } else enabledAction c₁ s
   | [Prog| [[c₁]] || [[c₂]]], s
-    => if c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓] ∨ c₁ = [Prog| ↯] ∨ c₂ = [Prog| ↯]
+    => if (c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓]) ∨ c₁ = [Prog| ↯] ∨ c₂ = [Prog| ↯]
       then { Action.deterministic } else
       { Action.concurrentLeft a | a ∈ enabledAction c₁ s }
       ∪ { Action.concurrentRight a | a ∈ enabledAction c₂ s }
@@ -218,9 +218,12 @@ theorem zero_probability_of_not_enabledAction
             case isFalse h_ne_abort =>
               split
               case h_1 =>
-                simp only [ite_eq_right_iff]
-                intro _
-                exact ih₁ ha₁ _
+                split
+                case isTrue => rfl
+                case isFalse =>
+                  simp only [ite_eq_right_iff]
+                  intro _
+                  exact ih₁ ha₁ _
               case h_2 => rfl
           case h_2 a₁ a₂ =>
             have ha₂ : a₂ ∉ enabledAction c₂ s := by {
@@ -234,9 +237,12 @@ theorem zero_probability_of_not_enabledAction
             case isFalse h_ne_abort =>
               split
               case h_1 =>
-                simp only [ite_eq_right_iff]
-                rintro _
-                exact ih₂ ha₂ _
+                split
+                case isTrue => rfl
+                case isFalse =>
+                  simp only [ite_eq_right_iff]
+                  rintro _
+                  exact ih₂ ha₂ _
               case h_2 => rfl
           case h_3 => rfl
 

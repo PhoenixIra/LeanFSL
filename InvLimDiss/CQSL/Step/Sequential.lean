@@ -73,8 +73,6 @@ private def inj (c₁ c₂ : Program Var) (s : State Var) (a : Action) (inner : 
                       * inner ([Prog| [[cs.prog]] ; [[c₂]]]) cs.state))
   → @reachState Var :=
   fun cs => match cs with
-  -- | ⟨⟨⟨[Prog| ↯],s⟩,h⟩,_⟩ => ⟨⟨[Prog| ↯],s⟩, by simp [h]⟩
-  -- | ⟨⟨⟨[Prog| ↯],_⟩,h⟩,_⟩ => by exfalso; simp at h
   | ⟨⟨⟨c, s⟩,_⟩, _⟩ => ⟨⟨[Prog| [[c]] ; [[c₂]]], s⟩, by simp⟩
 
 private theorem inj_injective (c₁ c₂ : Program Var) (s : State Var) (a : Action) (inner : Program Var → StateRV Var) :
@@ -87,7 +85,7 @@ private theorem inj_injective (c₁ c₂ : Program Var) (s : State Var) (a : Act
 
 
 theorem tsum_sequential_cont (s : State Var) (inner : Program Var → StateRV Var)
-    (h_term : c₁ ≠ [Prog| ↓]) (h_abort : c₁ ≠ [Prog| ↯]):
+    (h_term : c₁ ≠ [Prog| ↓]) (h_abort : c₁ ≠ [Prog| ↯]) :
     (∑' cs : reachState Var,
         (semantics [Prog| [[c₁]] ; [[c₂]]] s a cs.prog cs.state) * inner cs.prog cs.state)
     = (∑' cs : reachState Var,
@@ -116,7 +114,7 @@ theorem tsum_sequential_cont (s : State Var) (inner : Program Var → StateRV Va
 
 
 theorem step_sequential_cont (s : State Var) (inner : Program Var → StateRV Var)
-    (h_term : c₁ ≠ [Prog| ↓]) (h_abort : c₁ ≠ [Prog| ↯]):
+    (h_term : c₁ ≠ [Prog| ↓]) (h_abort : c₁ ≠ [Prog| ↯]) :
     step [Prog| [[c₁]] ; [[c₂]]] inner s
     = step [Prog| [[c₁]]] (fun c => inner [Prog| [[c]] ; [[c₂]]]) s := by
   unfold step

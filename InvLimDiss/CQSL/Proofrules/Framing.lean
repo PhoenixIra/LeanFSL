@@ -349,28 +349,57 @@ theorem step_framing_of_concurrent (inner : Program Var → StateRV Var)
   rw [qslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
-  cases eq_or_ne c₁ [Prog| ↓] with
-  | inl h_term₁ =>
-    cases eq_or_ne c₂ [Prog| ↓] with
-    | inl h_term₂ => sorry
-    | inr h_ne_term₂ => sorry
-  | inr h_ne_term₁ => sorry
-  --   rw [h_term, step_sequential_term, step_sequential_term]
-  --   split_ifs
-  --   · simp only [zero_mul, le_refl]
-  --   · apply le_sSup
-  --     use heap₁, heap₂
-  -- | inr h_term =>
-  --   cases eq_or_ne c₁ [Prog| ↯] with
-  --   | inl h_abort =>
-  --     rw [h_abort, step_sequential_abort]
-  --     simp only [zero_mul, zero_le]
-  --   | inr h_abort =>
-  --     rw [step_sequential_cont _ _ h_term h_abort]
-  --     rw [step_sequential_cont _ _ h_term h_abort]
-  --     refine le_trans ?_ (ih s)
-  --     apply le_sSup
-  --     use heap₁, heap₂
+  cases eq_or_ne c₁ [Prog| ↯] with
+  | inl h_c₁ =>
+    rw [h_c₁, step_concurrent_abort_left]
+    simp only [zero_mul, zero_le]
+  | inr h_c₁_ne_abort =>
+    cases eq_or_ne c₂ [Prog| ↯] with
+    | inl h_c₂ =>
+      rw [h_c₂, step_concurrent_abort_right]
+      simp only [zero_mul, zero_le]
+    | inr h_c₂_ne_abort =>
+      cases eq_or_ne c₁ [Prog| ↓] with
+      | inl h_c₁ =>
+        rw [h_c₁]
+        cases eq_or_ne c₂ [Prog| ↓] with
+        | inl h_c₂ =>
+          rw [h_c₂, step_concurrent_term, step_concurrent_term]
+          apply le_sSup
+          use heap₁, heap₂
+        | inr h_c₂_ne_term =>
+          rw [step_concurrent_cont_only_right ⟨s.stack, heap₁⟩ _ h_c₂_ne_term h_c₂_ne_abort]
+          rw [step_concurrent_cont_only_right s _ h_c₂_ne_term h_c₂_ne_abort]
+          rw [← h_c₁]
+          refine le_trans ?_ (ih₂ s)
+          apply le_sSup
+          use heap₁, heap₂
+      | inr h_c₁_ne_term =>
+        cases eq_or_ne c₂ [Prog| ↓] with
+        | inl h_c₂ =>
+          rw [h_c₂]
+          rw [step_concurrent_cont_only_left ⟨s.stack, heap₁⟩ _ h_c₁_ne_term h_c₁_ne_abort]
+          rw [step_concurrent_cont_only_left s _ h_c₁_ne_term h_c₁_ne_abort]
+          rw [← h_c₂]
+          refine le_trans ?_ (ih₁ s)
+          apply le_sSup
+          use heap₁, heap₂
+        | inr h_c₂_ne_term =>
+          rw [step_concurrent_cont ⟨s.stack, heap₁⟩ _
+            h_c₁_ne_term h_c₂_ne_term h_c₁_ne_abort h_c₂_ne_abort]
+          rw [step_concurrent_cont s _
+            h_c₁_ne_term h_c₂_ne_term h_c₁_ne_abort h_c₂_ne_abort]
+          apply le_min
+          · refine le_trans ?_ (ih₁ s)
+            apply le_sSup_of_le
+            use heap₁, heap₂, h_disjoint, h_union
+            refine unit_mul_le_mul ?_ le_rfl
+            exact le_trans (min_le_left _ _) le_rfl
+          · refine le_trans ?_ (ih₂ s)
+            apply le_sSup_of_le
+            use heap₁, heap₂, h_disjoint, h_union
+            refine unit_mul_le_mul ?_ le_rfl
+            exact le_trans (min_le_right _ _) le_rfl
 
 theorem step_framing (inner : Program Var → StateRV Var)
     (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅) :
@@ -401,13 +430,18 @@ theorem step_framing (inner : Program Var → StateRV Var)
     clear ih₂
     simp only [writtenVarProgram, Set.union_inter_distrib_right, Set.union_empty_iff] at h
     exact step_framing_of_sequential inner (ih₁ _ h.left)
-  | concurrent c₁ c₂ ih₁ ih₂ => sorry
+  | concurrent c₁ c₂ ih₁ ih₂ =>
+    simp only [writtenVarProgram, Set.union_inter_distrib_right, Set.union_empty_iff] at h
+    apply step_framing_of_concurrent
+    · exact ih₁ _ h.left
+    · exact ih₂ _ h.right
 
+open OrderHom
 
--- theorem wrlp_frame :
---     `[qsl| wrlp [c] ([[P]] | [[RI]]) ⋆ [[F]] ⊢ wrlp [c] ([[P]] ⋆ [[F]] | [[RI]])] := by
---   unfold wrlp'
---   sorry
+theorem wrlp_frame
+    (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅) :
+    `[qsl| wrlp [c] ([[P]] | [[RI]]) ⋆ [[F]] ⊢ wrlp [c] ([[P]] ⋆ [[F]] | [[RI]])] := by
+  sorry
 
 
 
