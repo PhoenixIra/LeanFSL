@@ -53,9 +53,9 @@ theorem zero_probability_of_not_enabledAction
     split
     pick_goal 2; rfl
     rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h
-  | manipulate e e' =>
+  | mutate e e' =>
     rw [enabledAction, Set.mem_singleton_iff] at h
-    simp only [programSmallStepSemantics, manipulateSmallStepSemantics]
+    simp only [programSmallStepSemantics, mutateSmallStepSemantics]
     split
     pick_goal 3; rfl
     all_goals (rw [iteOneZero_neg]; simp only [not_and_or]; exact Or.inl h)

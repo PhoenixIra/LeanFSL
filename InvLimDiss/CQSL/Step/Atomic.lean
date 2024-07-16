@@ -59,7 +59,7 @@ theorem step_assign (s : State Var) (inner : Program Var → StateRV Var) :
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_assign_of_deterministic s inner]
 
-theorem tsum_manipulate_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
+theorem tsum_mutate_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l ≠ undef) :
     (∑' cs : reachState Var,
     (semantics [Prog| e_loc *≔ e_val] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
@@ -67,16 +67,16 @@ theorem tsum_manipulate_of_deterministic (s : State Var) (inner : Program Var �
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
   · apply mul_support_superset_left
-    exact tsum_manipulate_support_superset s h_l h_alloc
+    exact tsum_mutate_support_superset s h_l h_alloc
   · rw [tsum_singleton (⟨⟨[Prog| ↓], (substituteHeap s l (e_val s.stack))⟩, by simp⟩ : reachState Var)
       (fun cs => semantics [Prog| e_loc *≔ e_val] s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2)]
-    unfold programSmallStepSemantics manipulateSmallStepSemantics iteOneZero ite_unit
+    unfold programSmallStepSemantics mutateSmallStepSemantics iteOneZero ite_unit
     simp only [ne_eq, true_and, ite_mul, one_mul, zero_mul, ite_eq_left_iff, not_exists, not_and]
     intro h
     exfalso
     exact h l h_l h_alloc rfl
 
-theorem step_manipulate (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_mutate (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l ≠ undef) :
     step [Prog| e_loc *≔ e_val] inner s = inner [Prog| ↓] (substituteHeap s l (e_val s.stack)) := by
   unfold step
@@ -84,13 +84,13 @@ theorem step_manipulate (s : State Var) (inner : Program Var → StateRV Var)
   · apply sInf_le
     use deterministic
     simp only [enabledAction, Set.mem_singleton_iff, true_and]
-    exact tsum_manipulate_of_deterministic s inner h_l h_alloc
+    exact tsum_mutate_of_deterministic s inner h_l h_alloc
   · apply le_sInf
     rintro _ ⟨a, h_a, rfl⟩
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
-    rw [h_a, tsum_manipulate_of_deterministic s inner h_l h_alloc]
+    rw [h_a, tsum_mutate_of_deterministic s inner h_l h_alloc]
 
-theorem tsum_manipulate_of_deterministic_of_abort (s : State Var) (inner : Program Var → StateRV Var)
+theorem tsum_mutate_of_deterministic_of_abort (s : State Var) (inner : Program Var → StateRV Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     (∑' cs : reachState Var,
     (semantics [Prog| e_loc *≔ e_val] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
@@ -98,11 +98,11 @@ theorem tsum_manipulate_of_deterministic_of_abort (s : State Var) (inner : Progr
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
   · apply mul_support_superset_left
-    exact tsum_manipulate_abort_support_superset s h
+    exact tsum_mutate_abort_support_superset s h
   · simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
       tsum_empty]
 
-theorem step_manipulate_of_abort (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_mutate_of_abort (s : State Var) (inner : Program Var → StateRV Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     step [Prog| e_loc *≔ e_val] inner s = 0 := by
   unfold step
@@ -110,11 +110,11 @@ theorem step_manipulate_of_abort (s : State Var) (inner : Program Var → StateR
   · apply sInf_le
     use deterministic
     simp only [enabledAction, Set.mem_singleton_iff, true_and]
-    exact tsum_manipulate_of_deterministic_of_abort s inner h
+    exact tsum_mutate_of_deterministic_of_abort s inner h
   · apply le_sInf
     rintro _ ⟨a, h_a, rfl⟩
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
-    rw [h_a, tsum_manipulate_of_deterministic_of_abort s inner h]
+    rw [h_a, tsum_mutate_of_deterministic_of_abort s inner h]
 
 theorem tsum_lookup_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     {l : ℕ+} {value : ℚ} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l = value) :

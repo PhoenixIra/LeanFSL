@@ -11,41 +11,41 @@ open QSL Syntax OrderHom unitInterval Atom Semantics
 
 private theorem support_wrlp_of_atom {c : Program Var} (h_atom : atomicProgram c)
     (s : State Var) (P resource : StateRV Var) :
-    Function.support (fun cs : progState =>
-      programSmallStepSemantics c s a cs.1 cs.2
-      * (`[qsl| (wrlp [cs.1] ([[P]] ⋆ [[resource]] | emp )) ⋆ emp ] cs.2))
-    ⊆ { cs : progState | cs.1 = [Prog| ↓]} := by
+    Function.support (fun cs : reachState Var =>
+      programSmallStepSemantics c s a cs.prog cs.state
+      * (`[qsl| (wrlp [cs.prog] ([[P]] ⋆ [[resource]] | emp )) ⋆ emp ] cs.state))
+    ⊆ { cs : reachState Var | cs.prog = [Prog| ↓]} := by
   intro cs h_cs
   simp only [Function.support_mul, Set.mem_inter_iff, Function.mem_support, ne_eq] at h_cs
   obtain ⟨h_sem, h_qsl⟩ := h_cs
-  by_cases h_fin_cs : finalProgram cs.1
+  by_cases h_fin_cs : finalProgram cs.prog
   · rw [finalPrograms_iff_or] at h_fin_cs
     cases h_fin_cs with
     | inl h => exact h
     | inr h =>
-      rw [h, wrlp_eq_of_error, qslSepMul_qslEmp_eq, qslFalse] at h_qsl
+      rw [h, wrlp_eq_of_abort, qslSepMul_qslEmp_eq, qslFalse] at h_qsl
       simp only [not_true_eq_false] at h_qsl
   · exfalso
-    exact h_sem <| semantics_eq_zero_of_atomProgram h_atom h_fin_cs s a cs.2
+    exact h_sem <| semantics_eq_zero_of_atomProgram h_atom h_fin_cs s a cs.state
 
 private theorem support_wrlp'_of_atom {c : Program Var} (h_atom : atomicProgram c)
     (s : State Var) (P resource : StateRV Var) :
-    Function.support (fun cs : progState =>
-      programSmallStepSemantics c s a cs.1 cs.2
-      * (`[qsl| (wrlp [cs.1] ([[P]] | [[resource]] )) ⋆ [[resource]] ] cs.2))
-    ⊆ { cs : progState | cs.1 = [Prog| ↓]} := by
+    Function.support (fun cs : reachState Var =>
+      programSmallStepSemantics c s a cs.prog cs.state
+      * (`[qsl| (wrlp [cs.prog] ([[P]] | [[resource]] )) ⋆ [[resource]] ] cs.state))
+    ⊆ { cs : reachState Var | cs.prog = [Prog| ↓]} := by
   intro cs h_cs
   simp only [Function.support_mul, Set.mem_inter_iff, Function.mem_support, ne_eq] at h_cs
   obtain ⟨h_sem, h_qsl⟩ := h_cs
-  by_cases h_fin_cs : finalProgram cs.1
+  by_cases h_fin_cs : finalProgram cs.prog
   · rw [finalPrograms_iff_or] at h_fin_cs
     cases h_fin_cs with
     | inl h => exact h
     | inr h =>
-      rw [h, wrlp_eq_of_error, qslSepDiv_comm, qslSepMul_qslFalse_eq, qslFalse] at h_qsl
+      rw [h, wrlp_eq_of_abort, qslSepMul_comm, qslSepMul_qslFalse_eq, qslFalse] at h_qsl
       simp only [not_true_eq_false] at h_qsl
   · exfalso
-    exact h_sem <| semantics_eq_zero_of_atomProgram h_atom h_fin_cs s a cs.2
+    exact h_sem <| semantics_eq_zero_of_atomProgram h_atom h_fin_cs s a cs.state
 
 theorem wrlp_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrlp [c] ([[P]] ⋆ [[resource]] | emp)])
     (h_atom : atomicProgram c) :
@@ -66,7 +66,7 @@ theorem wrlp_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrlp [c] ([[P]] ⋆ [[r
   · apply tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]
     intro cs
-    cases eq_or_ne (programSmallStepSemantics c s a cs.1.1 cs.1.2) 0 with
+    cases eq_or_ne (programSmallStepSemantics c s a cs.val.prog cs.val.state) 0 with
     | inl h_zero =>
       rw [h_zero]
       simp only [Set.Icc.coe_zero, zero_mul, le_refl]
@@ -78,7 +78,7 @@ theorem wrlp_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrlp [c] ([[P]] ⋆ [[r
   · apply tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]
     intro cs
-    cases eq_or_ne (programSmallStepSemantics c s a cs.1.1 cs.1.2) 0 with
+    cases eq_or_ne (programSmallStepSemantics c s a cs.val.prog cs.val.state) 0 with
     | inl h_zero =>
       rw [h_zero]
       simp only [Set.Icc.coe_zero, zero_mul, le_refl]
@@ -104,7 +104,7 @@ theorem wrlp_assign (h : x ∉ varStateRV RI) :
     = `[qsl| ([[P]] ⋆ [[RI]])(x ↦ e)] s := rfl
   rw [this, substituteStack_of_qslSepCon e h]
 
-theorem wrlp_manipulate :
+theorem wrlp_mutate :
     `[qsl| (S (q : ℚ). e ↦ q) ⋆ (e ↦ e' -⋆ [[P]])
           ⊢ wrlp [ [Prog| e *≔ e'] ] ([[P]] | [[RI]])] := by
   rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]

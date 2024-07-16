@@ -463,6 +463,36 @@ theorem union_undef_iff_undef {heap₁ heap₂ : Heap} {l : PNat} :
     case h_1 h_l => rw [h_l] at h; simp only [false_and] at h
     case h_2 _ => exact h.right
 
+theorem disjoint_union_iff (heap₁ heap₂ heap₃ : Heap) :
+    disjoint heap₁ (heap₂ ∪ heap₃) ↔ disjoint heap₁ heap₂ ∧ disjoint heap₁ heap₃ := by
+  apply Iff.intro
+  · intro h
+    apply And.intro
+    · intro l
+      cases h l with
+      | inl h => exact Or.inl h
+      | inr h =>
+        rw [union_undef_iff_undef] at h
+        exact Or.inr h.left
+    · intro l
+      cases h l with
+      | inl h => exact Or.inl h
+      | inr h =>
+        rw [union_undef_iff_undef] at h
+        exact Or.inr h.right
+  · rintro ⟨h₂, h₃⟩
+    intro l
+    cases h₂ l with
+    | inl h₁ => exact Or.inl h₁
+    | inr h₂ =>
+      cases h₃ l with
+      | inl h₁ => exact Or.inl h₁
+      | inr h₃ =>
+        apply Or.inr
+        rw [union_undef_iff_undef]
+        exact ⟨h₂, h₃⟩
+
+
 theorem isNotAlloc_union (heap₁ heap₂ : Heap) (l : ℕ+) (n : ℕ):
     isNotAlloc (heap₁ ∪ heap₂) l n ↔ isNotAlloc heap₁ l n ∧ isNotAlloc heap₂ l n := by
   apply Iff.intro

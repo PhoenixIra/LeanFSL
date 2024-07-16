@@ -71,7 +71,7 @@ theorem semantics_eq_zero_of_atomProgram {c c' : Program Var}
   case h_2 =>
     simp only [programSmallStepSemantics, assignSmallStepSemantics]
   case h_3 =>
-    simp only [programSmallStepSemantics, manipulateSmallStepSemantics]
+    simp only [programSmallStepSemantics, mutateSmallStepSemantics]
   case h_4 =>
     simp only [programSmallStepSemantics, lookupSmallStepSemantics]
   case h_5 =>

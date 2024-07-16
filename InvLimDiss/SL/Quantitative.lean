@@ -212,36 +212,55 @@ def requireBracketsMin : TSyntax `qsl → Bool
   | `(qsl| [⋆] $_ ∈ {0 ... $_}. $_) => false
   | `(qsl| $f:qsl) => !isAtom f
 
+def requireBracketsMin_left : TSyntax `qsl → Bool
+  | `(qsl| ~ $_:qsl) => false
+  | `(qsl| [⋆] $_ ∈ {0 ... $_}. $_) => false
+  | `(qsl| $f:qsl) => !isAtom f
+
 def bracketsMin [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
   | `(term| `[qsl|$f:qsl]) => if requireBracketsMin f then `(qsl| ( $f ) ) else `(qsl| $f )
   | `(term| $t:term) => `(qsl|[[$t]])
 
+def bracketsMin_left [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
+  | `(term| `[qsl|$f:qsl]) => if requireBracketsMin_left f then `(qsl| ( $f ) ) else `(qsl| $f )
+  | `(term| $t:term) => `(qsl|[[$t]])
+
 @[app_unexpander qslMin]
 def unexpandQslMin : Unexpander
-  | `($_ $l $r) => do `(`[qsl| $(← bracketsMin l) ⊓ $(← bracketsMin r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsMin_left l) ⊓ $(← bracketsMin r)])
   | _ => throw ()
 
 def requireBracketsMax : TSyntax `qsl → Bool
   | `(qsl| ~ $_:qsl) => false
+  | `(qsl| $_:qsl ⊔ $_:qsl) => false
+  | `(qsl| $f:qsl) => !isAtom f
+
+def requireBracketsMax_left : TSyntax `qsl → Bool
+  | `(qsl| ~ $_:qsl) => false
+  | `(qsl| $_:qsl ⊔ $_:qsl) => false
   | `(qsl| $f:qsl) => !isAtom f
 
 def bracketsMax [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
   | `(term| `[qsl|$f:qsl]) => if requireBracketsMax f then `(qsl| ( $f ) ) else `(qsl| $f )
   | `(term| $t:term) => `(qsl|[[$t]])
 
+def bracketsMax_left [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
+  | `(term| `[qsl|$f:qsl]) => if requireBracketsMax f then `(qsl| ( $f ) ) else `(qsl| $f )
+  | `(term| $t:term) => `(qsl|[[$t]])
+
 @[app_unexpander qslMax]
 def unexpandQslMax : Unexpander
-  | `($_ $l $r) => do `(`[qsl| $(← bracketsMax l) ⊔ $(← bracketsMax r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsMax_left l) ⊔ $(← bracketsMax r)])
   | _ => throw ()
 
 @[app_unexpander qslAdd]
 def unexpandQslAdd : Unexpander
-  | `($_ $l $r) => do `(`[qsl| $(← bracketsMax l) + $(← bracketsMax r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsMax_left l) + $(← bracketsMax r)])
   | _ => throw ()
 
 @[app_unexpander qslMul]
 def unexpandQslMul : Unexpander
-  | `($_ $l $r) => do `(`[qsl| $(← bracketsMin l) · $(← bracketsMin r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsMin_left l) · $(← bracketsMin r)])
   | _ => throw ()
 
 @[app_unexpander qslSup]
@@ -260,7 +279,7 @@ def unexpandQslInf : Unexpander
 
 @[app_unexpander qslSepMul]
 def unexpandQslSepMul : Unexpander
-  | `($_ $l $r) => do `(`[qsl| $(← bracketsMin l) ⋆ $(← bracketsMin r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsMin_left l) ⋆ $(← bracketsMin r)])
   | _ => throw ()
 
 @[app_unexpander qslBigSepMul]
@@ -283,10 +302,23 @@ def bracketsSepDiv [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → 
   | `(term| `[qsl|$f:qsl]) => if requireBracketsSepDiv f then `(qsl| ( $f ) ) else `(qsl| $f )
   | `(term| $t:term) => `(qsl|[[$t]])
 
+def requireBracketsSepDiv_left : TSyntax `qsl → Bool
+  | `(qsl| ~ $_:qsl) => false
+  | `(qsl| $_:qsl ⊓ $_:qsl) => false
+  | `(qsl| $_:qsl ⋆ $_:qsl) => false
+  | `(qsl| $_:qsl · $_:qsl) => false
+  | `(qsl| $_:qsl ⊔ $_:qsl) => false
+  | `(qsl| $_:qsl + $_:qsl) => false
+  | `(qsl| $f:qsl) => !isAtom f
+
+def bracketsSepDiv_left [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
+  | `(term| `[qsl|$f:qsl]) => if requireBracketsSepDiv_left f then `(qsl| ( $f ) ) else `(qsl| $f )
+  | `(term| $t:term) => `(qsl|[[$t]])
+
 @[app_unexpander qslSepDiv]
 def unexpandQslSepDiv : Unexpander
   | `($_ `[qsl|$l -⋆ $r] $f) => do `(`[qsl| ($l -⋆ $r) -⋆ $(← bracketsSepDiv f)])
-  | `($_ $l $r) => do `(`[qsl| $(← bracketsSepDiv l) -⋆ $(← bracketsSepDiv r)])
+  | `($_ $l $r) => do `(`[qsl| $(← bracketsSepDiv_left l) -⋆ $(← bracketsSepDiv r)])
   | _ => throw ()
 
 -- @[app_unexpander LE.le]

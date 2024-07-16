@@ -128,7 +128,7 @@ theorem qslSepDiv_eq_one (f₁ f₂ : StateRV Var) (s : State Var) :
     rintro i ⟨heap, h_disjoint, rfl⟩
     rw [h heap h_disjoint]
 
-theorem qslSepDiv_symm (f g : StateRV Var) : `[qsl| [[f]] ⋆ [[g]] ⊢ [[g]] ⋆ [[f]]] := by
+theorem qslSepMul_symm (f g : StateRV Var) : `[qsl| [[f]] ⋆ [[g]] ⊢ [[g]] ⋆ [[f]]] := by
   rw [Pi.le_def]
   intro s
   apply sSup_le
@@ -140,8 +140,39 @@ theorem qslSepDiv_symm (f g : StateRV Var) : `[qsl| [[f]] ⋆ [[g]] ⊢ [[g]] �
   use h_disjoint, h_union
   exact unit_mul_comm _ _
 
-theorem qslSepDiv_comm (f g : StateRV Var) : `[qsl| [[f]] ⋆ [[g]]] = `[qsl| [[g]] ⋆ [[f]]] :=
-  le_antisymm (qslSepDiv_symm f g) (qslSepDiv_symm g f)
+theorem qslSepMul_comm (f g : StateRV Var) : `[qsl| [[f]] ⋆ [[g]]] = `[qsl| [[g]] ⋆ [[f]]] :=
+  le_antisymm (qslSepMul_symm f g) (qslSepMul_symm g f)
+
+theorem qslSepMul_assoc_le (f₁ f₂ f₃ : StateRV Var) :
+    `[qsl| [[f₁]] ⋆ [[f₂]] ⋆ [[f₃]] ⊢ ([[f₁]] ⋆ [[f₂]]) ⋆ [[f₃]]] := by
+  intro s
+  apply sSup_le
+  rintro _ ⟨heap₁, heap₂₃, h_disjoint₁, h_union₁, rfl⟩
+  rw [mul_comm, ← unit_le_div_iff_mul_le]
+  apply sSup_le
+  rintro _ ⟨heap₂, heap₃, h_disjoint₂₃, h_union₂₃, rfl⟩
+  rw [unit_le_div_iff_mul_le]
+  simp only at h_union₂₃
+  rw [← h_union₂₃, disjoint_union_iff] at h_disjoint₁
+  apply le_sSup_of_le
+  · use (heap₁ ∪ heap₂), heap₃
+    apply And.intro
+    · rw [disjoint_comm _ _, disjoint_union_iff, disjoint_comm _ heap₁, disjoint_comm _ heap₂]
+      exact ⟨h_disjoint₁.right, h_disjoint₂₃⟩
+    · rw [← h_union₂₃, ← union_assoc] at h_union₁
+      use h_union₁
+  · rw [mul_assoc, mul_comm (f₃ _), ← mul_assoc, mul_comm (f₂ _)]
+    refine mul_le_mul ?_ le_rfl nonneg' nonneg'
+    apply le_sSup
+    use heap₁, heap₂, h_disjoint₁.left
+
+theorem qslSepMul_assoc (f₁ f₂ f₃ : StateRV Var) :
+    `[qsl| [[f₁]] ⋆ [[f₂]] ⋆ [[f₃]]] = `[qsl| ([[f₁]] ⋆ [[f₂]]) ⋆ [[f₃]]] := by
+  apply le_antisymm
+  · exact qslSepMul_assoc_le f₁ f₂ f₃
+  · rw [qslSepMul_comm _ f₃, qslSepMul_comm f₁ _]
+    rw [qslSepMul_comm f₁ _, qslSepMul_comm f₂ f₃]
+    exact qslSepMul_assoc_le f₃ f₂ f₁
 
 theorem qslEmp_qslSepDiv_eq (f : StateRV Var) : `[qsl| emp -⋆ [[f]]] = f := by
   apply funext

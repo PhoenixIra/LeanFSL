@@ -35,10 +35,10 @@ noncomputable def assignSmallStepSemantics (v : Variable) (e : ValueExp Variable
   | [Prog| ↓] => iteOneZero (a = Action.deterministic ∧ substituteStack s v (e s.stack) = s')
   | _ => 0
 
-/-- manipulate succeeds if the expressions are well-defined and an allocated location. It changes
-    a heap position. manipulate fails if one expression is not well-defined or not an allocated location-/
+/-- mutate succeeds if the expressions are well-defined and an allocated location. It changes
+    a heap position. mutate fails if one expression is not well-defined or not an allocated location-/
 @[simp]
-noncomputable def manipulateSmallStepSemantics (e_loc e_val : ValueExp Variable) :
+noncomputable def mutateSmallStepSemantics (e_loc e_val : ValueExp Variable) :
     (State Variable) → Action → (Program Variable) → (State Variable) → I :=
   fun s a c s' => match c with
   | [Prog| ↓] => iteOneZero (a = Action.deterministic ∧
@@ -143,7 +143,7 @@ noncomputable def programSmallStepSemantics :
   | [Prog| ↓] => 0
   | [Prog| skip] => skipSmallStepSemantics
   | [Prog| v ≔ e] => assignSmallStepSemantics v e
-  | [Prog| e_loc *≔ e_val] => manipulateSmallStepSemantics e_loc e_val
+  | [Prog| e_loc *≔ e_val] => mutateSmallStepSemantics e_loc e_val
   | [Prog| v ≔* e] => lookupSmallStepSemantics v e
   | [Prog| v ≔ cas(e_loc, e_cmp, e_val)] => compareAndSetSmallStepSemantics v e_loc e_cmp e_val
   | [Prog| v ≔ alloc(n)] => allocateSmallStepSemantics v n

@@ -4,6 +4,7 @@ import InvLimDiss.CQSL.Step.Sequential
 import InvLimDiss.CQSL.Step.Concurrent
 import InvLimDiss.CQSL.WeakPre
 import InvLimDiss.SL.Framing.Basic
+import Mathlib.SetTheory.Ordinal.FixedPointApproximants
 
 namespace CQSL
 
@@ -11,8 +12,6 @@ variable {Var : Type}
 
 open Syntax Semantics QSL unitInterval Action State HeapValue Classical
 
-
--- todo: write for each program instead of one big
 
 theorem step_framing_of_term (inner : Program Var → StateRV Var) :
     `[qsl| [[step ([Prog| ↓]) (fun c' => inner c')]] ⋆ [[P]]]
@@ -62,7 +61,7 @@ theorem step_framing_of_assign (inner : Program Var → StateRV Var)
   simp only [substituteStack, Set.Icc.coe_mul]
   rw [substituteVar_eq_of_not_varStateRV h (e s.stack)]
 
-theorem step_framing_of_manipulate (inner : Program Var → StateRV Var) :
+theorem step_framing_of_mutate (inner : Program Var → StateRV Var) :
     `[qsl| [[step ([Prog| e_loc *≔ e_val]) (fun c' => inner c')]] ⋆ [[P]]]
       ⊢ step ([Prog| e_loc *≔ e_val]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
@@ -73,10 +72,10 @@ theorem step_framing_of_manipulate (inner : Program Var → StateRV Var) :
   by_cases h_alloc : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
   case pos =>
     obtain ⟨l, h_l, h_alloc⟩ := h_alloc
-    rw [step_manipulate ⟨s.stack, heap₁⟩ _ h_l h_alloc]
+    rw [step_mutate ⟨s.stack, heap₁⟩ _ h_l h_alloc]
     have h_heap : s.heap l ≠ undef := by
       rw [← h_union]; exact ne_undef_of_union_of_ne_undef h_alloc
-    rw [step_manipulate s _ h_l h_heap]
+    rw [step_mutate s _ h_l h_heap]
     simp only [substituteHeap, ge_iff_le]
     apply le_sSup_of_le
     · use (substituteLoc heap₁ l (e_val s.stack)), heap₂
@@ -87,7 +86,7 @@ theorem step_framing_of_manipulate (inner : Program Var → StateRV Var) :
     · exact le_rfl
   case neg =>
       simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
-      rw [step_manipulate_of_abort _ _ h_alloc]
+      rw [step_mutate_of_abort _ _ h_alloc]
       simp only [zero_mul, zero_le]
 
 theorem step_framing_of_lookup (inner : Program Var → StateRV Var)
@@ -412,7 +411,7 @@ theorem step_framing (inner : Program Var → StateRV Var)
   | assign v e =>
     simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
     exact step_framing_of_assign inner h
-  | manipulate e_loc e_val => exact step_framing_of_manipulate inner
+  | mutate e_loc e_val => exact step_framing_of_mutate inner
   | lookup v e_loc =>
     simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
     exact step_framing_of_lookup inner h
@@ -436,12 +435,83 @@ theorem step_framing (inner : Program Var → StateRV Var)
     · exact ih₁ _ h.left
     · exact ih₂ _ h.right
 
-open OrderHom
+open OrdinalApprox
 
-theorem wrlp_frame
-    (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅) :
+theorem wrlp_frame {c : Program Var} {P : StateRV Var}
+    (h : (writtenVarProgram c) ∩ (varStateRV F) = ∅) :
     `[qsl| wrlp [c] ([[P]] | [[RI]]) ⋆ [[F]] ⊢ wrlp [c] ([[P]] ⋆ [[F]] | [[RI]])] := by
-  sorry
+  unfold wrlp'
+  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
+  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
+  induction (Order.succ <| Cardinal.mk <| Program Var → StateRV Var).ord
+    using Ordinal.induction generalizing c with
+  | h i ih =>
+    unfold gfpApprox
+    simp only [OrderHom.coe_mk, exists_prop, Set.union_singleton, sInf_insert, Pi.inf_apply,
+      Pi.top_apply, ge_iff_le, le_top, inf_of_le_right]
+    apply le_sInf
+    intro Q h_Q
+    simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
+      exists_exists_and_eq_and] at h_Q
+    obtain ⟨j, h_j, rfl⟩ := h_Q
+    cases eq_or_ne c [Prog| ↓] with
+    | inl h_eq =>
+      unfold wrlp_step
+      simp only [h_eq]
+      refine monotone_qslSepMul ?_ (le_rfl)
+      apply sInf_le
+      simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
+        exists_exists_and_eq_and, and_true]
+      use j
+    | inr h_ne_term =>
+      cases eq_or_ne c [Prog| ↯] with
+      | inl h_eq =>
+        unfold wrlp_step
+        simp only [h_eq]
+        rw [← le_qslSepDiv_iff_qslSepMul_le]
+        apply sInf_le_of_le
+        simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
+          exists_exists_and_eq_and, exists_and_right]
+        · apply And.intro
+          · use j
+          · rfl
+        · exact bot_le
+      | inr h_ne_abort =>
+        conv => right; rw [wrlp_step]
+        simp only
+        rw [le_qslSepDiv_iff_qslSepMul_le]
+        apply le_trans
+        pick_goal 2
+        · apply monotone_step_of_semantics_support
+          intro s a _ c' s' h_semantics
+          apply monotone_qslSepMul
+          · have : writtenVarProgram c' ∩ varStateRV F = ∅ := by {
+              apply Set.Subset.antisymm
+              · apply Set.Subset.trans
+                · exact Set.inter_subset_inter (written_of_transition h_semantics) (Set.Subset.rfl)
+                · exact subset_of_eq h
+              · exact Set.empty_subset _
+            }
+            exact ih j h_j this
+          · exact le_rfl
+        · conv => right; intro s; left; intro c' s'; rw [← qslSepMul_assoc, qslSepMul_comm F RI, qslSepMul_assoc]
+          refine le_trans ?_ (step_framing _ h)
+          rw [← qslSepMul_assoc ,qslSepMul_comm F RI, qslSepMul_assoc]
+          refine monotone_qslSepMul ?_ le_rfl
+          unfold Entailment.entail instEntailmentStateRV
+          simp only [ge_iff_le]
+          rw [← le_qslSepDiv_iff_qslSepMul_le]
+          apply sInf_le
+          simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
+            exists_exists_and_eq_and]
+          use j, h_j
+          rw [wrlp_step]
+          split
+          case h_1 => simp only [ne_eq, not_true_eq_false] at h_ne_term
+          case h_2 => simp only [ne_eq, not_true_eq_false] at h_ne_abort
+          case h_3 => rfl
+
+
 
 
 

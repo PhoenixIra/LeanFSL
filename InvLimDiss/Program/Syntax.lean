@@ -18,7 +18,7 @@ inductive Program where
   | abort : Program
   | skip' : Program
   | assign : Vars → (ValueExp Vars) → Program
-  | manipulate : (ValueExp Vars) → (ValueExp Vars) → Program
+  | mutate : (ValueExp Vars) → (ValueExp Vars) → Program
   | lookup : Vars → (ValueExp Vars) → Program
   | compareAndSet :
     Vars → (ValueExp Vars) → (ValueExp Vars) → (ValueExp Vars) → Program
@@ -62,7 +62,7 @@ macro_rules
   | `(term| [Prog| ↯])      => `(Program.abort)
   | `(term| [Prog| skip])   => `(Program.skip')
   | `(term| [Prog| $l:term ≔ $r:term]) => `(Program.assign $l $r)
-  | `(term| [Prog| $l:term *≔ $r:term]) => `(Program.manipulate $l $r)
+  | `(term| [Prog| $l:term *≔ $r:term]) => `(Program.mutate $l $r)
   | `(term| [Prog| $l:term ≔* $r:term]) => `(Program.lookup $l $r)
   | `(term| [Prog| $l:term ≔ cas ( $a:term , $b:term , $c:term )]) => `(Program.compareAndSet $l $a $b $c)
   | `(term| [Prog| $l:term ≔ alloc $r:term]) => `(Program.allocate $l $r)
@@ -96,8 +96,8 @@ def unexpandAssign : Unexpander
   | `($_ $l $r) => `([Prog| $l:term ≔ $r:term])
   | _ => throw ()
 
-@[app_unexpander Program.manipulate]
-def unexpandManipulate : Unexpander
+@[app_unexpander Program.mutate]
+def unexpandMutate: Unexpander
   | `($_ $l $r) => `([Prog| $l:term *≔ $r:term])
   | _ => throw ()
 

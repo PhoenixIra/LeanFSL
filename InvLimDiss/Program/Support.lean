@@ -28,6 +28,15 @@ theorem mul_support_superset_right {f g : α → I} {s : Set α} (h : g.support 
   conv => left; intro a; left; intro a; rw [mul_comm]
   exact mul_support_superset_left h
 
+theorem tsum_semantics_support_superset :
+    (fun cs : reachState Var => semantics c s a cs.prog cs.state).support
+    ⊆ { ⟨⟨c',s'⟩,_⟩ : reachState Var | semantics c s a c' s' ≠ 0 } := by
+  rintro ⟨⟨c',s'⟩,h_abort⟩ h
+  simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, reachState.prog, reachState.state,
+    Function.mem_support] at h
+  simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq]
+  exact h
+
 theorem tsum_skip_support_superset (s : State Var) :
     (fun cs : reachState Var => semantics [Prog| skip] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], s⟩, by simp⟩} := by
@@ -54,13 +63,13 @@ theorem tsum_assign_support_superset (s : State Var) :
   case h_2 _ =>
     simp only [not_true_eq_false] at h
 
-theorem tsum_manipulate_support_superset (s : State Var)
+theorem tsum_mutate_support_superset (s : State Var)
     {l : PNat} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l ≠ undef) :
     (fun cs : reachState Var => semantics [Prog| e_loc *≔ e_val] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], (substituteHeap s l (e_val s.stack))⟩, by simp⟩} := by
   intro cs h
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
-  unfold programSmallStepSemantics manipulateSmallStepSemantics at h
+  unfold programSmallStepSemantics mutateSmallStepSemantics at h
   split at h
   case h_1 h_c =>
     simp only [ne_eq, true_and, iteOneZero_eq_zero_def, not_exists, not_and, not_forall,
@@ -84,13 +93,13 @@ theorem tsum_manipulate_support_superset (s : State Var)
   case h_3 _ =>
     simp only [not_true_eq_false] at h
 
-theorem tsum_manipulate_abort_support_superset (s : State Var)
+theorem tsum_mutate_abort_support_superset (s : State Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     (fun cs : reachState Var => semantics [Prog| e_loc *≔ e_val] s deterministic cs.prog cs.state).support
     ⊆ ∅ := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
-  unfold programSmallStepSemantics manipulateSmallStepSemantics at h'
+  unfold programSmallStepSemantics mutateSmallStepSemantics at h'
   split at h'
   case h_1 _ =>
     simp only [ne_eq, true_and, iteOneZero_eq_zero_def, not_exists, not_and, not_forall,

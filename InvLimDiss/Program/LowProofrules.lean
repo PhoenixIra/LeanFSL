@@ -52,13 +52,13 @@ theorem assign_mem_zero_one : programSmallStepSemantics [Prog| v ≔ e] s a c' s
     · apply Or.inl; intro _; exact h
   case h_2 _ => simp only [mem_insert_iff, mem_singleton_iff, zero_ne_one, or_false]
 
-theorem manipulate_eq_one_iff : programSmallStepSemantics [Prog| e_loc *≔ e_val] s a c' s' = 1
+theorem mutate_eq_one_iff : programSmallStepSemantics [Prog| e_loc *≔ e_val] s a c' s' = 1
     ↔ (c' = [Prog| ↓] ∧ a = Action.deterministic ∧ ∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l ≠ undef
         ∧ substituteHeap s l (e_val s.stack) = s')
       ∨ (c' = [Prog| ↯] ∧ a = Action.deterministic ∧ s = s'
         ∧ ((∃ l : ℕ+, (e_loc s.stack) = l ∧ s.heap l = undef) ∨ ¬ (e_loc s.stack).isInt ∨ 0 ≤ (e_loc s.stack)))
     := by
-  rw [programSmallStepSemantics, manipulateSmallStepSemantics]
+  rw [programSmallStepSemantics, mutateSmallStepSemantics]
   split
   case h_1 => simp only [ne_eq, iteOneZero_eq_one_def, true_and, false_and, or_false]
   case h_2 => simp only [iteOneZero_eq_one_def, ne_eq, false_and, true_and, false_or]
@@ -67,8 +67,8 @@ theorem manipulate_eq_one_iff : programSmallStepSemantics [Prog| e_loc *≔ e_va
     intro h
     cases h with | inl h => exact h_term h.left | inr h => exact h_err h.left
 
-theorem manipulate_mem_zero_one : programSmallStepSemantics [Prog| e_loc *≔ e_val] s a c' s' ∈ ({0, 1} : Set I) := by
-  rw [programSmallStepSemantics, manipulateSmallStepSemantics]
+theorem mutate_mem_zero_one : programSmallStepSemantics [Prog| e_loc *≔ e_val] s a c' s' ∈ ({0, 1} : Set I) := by
+  rw [programSmallStepSemantics, mutateSmallStepSemantics]
   split
   case h_1 => simp only [ne_eq, mem_insert_iff, iteOneZero_eq_zero_def, mem_singleton_iff,
     iteOneZero_eq_one_def, ← imp_iff_not_or, imp_self]
