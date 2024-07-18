@@ -377,6 +377,19 @@ lemma iteOneZero_eq_iteOneZero_iff {P Q : Prop} :
     case isTrue hp => rw [Eq.comm, iteOneZero_eq_one_def]; exact h.mp hp
     case isFalse hnp => rw [Eq.comm, iteOneZero_eq_zero_def]; exact (not_iff_not.mpr h).mp hnp
 
+lemma iteOneZero_le {P : Prop} {i : I} :
+    iteOneZero P ≤ i ↔ (P → 1 ≤ i) := by
+  apply Iff.intro
+  · intro h_ite h_P
+    rw [← iteOneZero_pos h_P]
+    exact h_ite
+  · intro h_imp
+    rw [iteOneZero_eq_iff]
+    split
+    case isTrue h_P => exact h_imp h_P
+    case isFalse => exact bot_le
+
+
 end Ite
 
 

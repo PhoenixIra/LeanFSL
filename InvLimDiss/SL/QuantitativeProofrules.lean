@@ -250,4 +250,98 @@ theorem qslInf_apply (P : α → StateRV Var) (s : State Var) :
 
 end Quantifiers
 
+section PointsTo
+
+open State HeapValue Syntax
+
+theorem qslSup_qslPointsTo_iff (e : ValueExp Var) (s : State Var) :
+    ∃ (q : ℚ), `[qsl| S (x : ℚ). e ↦ x] s = `[qsl| e ↦ q] s := by
+  by_cases ∃ l : ℕ+, (e s.stack) = l ∧ s.heap l ≠ undef
+  case pos h_alloc =>
+    obtain ⟨l, h_l, h_alloc⟩ := h_alloc
+    rw [undef_iff_exists_val] at h_alloc
+    obtain ⟨q, h_q⟩ := h_alloc
+    use q
+    apply le_antisymm
+    · apply sSup_le
+      simp only [Set.mem_range, Subtype.exists, exists_prop, qslPointsTo, forall_exists_index,
+        and_imp, forall_apply_eq_imp_iff₂]
+      rintro _ ⟨q', rfl⟩
+      simp only [qslPointsTo, iteOneZero_le]
+      rintro ⟨l', h_l', h_val⟩
+      rw [h_l] at h_l'
+      simp only [Nat.cast_inj, PNat.coe_inj] at h_l'
+      simp only [iteOneZero_eq_iff]
+      split
+      case isTrue _ => rfl
+      case isFalse h =>
+        exfalso
+        apply h
+        use l, h_l.symm
+        apply funext
+        intro l''
+        simp only [State.singleton]
+        split_ifs
+        case pos h_eq =>
+          rw [← h_eq]
+          exact h_q
+        case neg h_ne =>
+          have := congrFun h_val l''
+          rw [← h_l'] at h_ne
+          simp only [State.singleton, if_neg h_ne] at this
+          exact this
+    · apply le_sSup
+      simp only [Set.mem_range, Subtype.exists, exists_prop]
+      use (qslPointsTo e q)
+      apply And.intro
+      · use q
+      · rfl
+  case neg h =>
+    use (e s.stack)
+    apply le_antisymm
+    · simp only [qslPointsTo, iteOneZero_eq_iff]
+      split
+      case isTrue h' =>
+        exfalso
+        obtain ⟨l, h_l, h_alloc⟩ := h'
+        apply h
+        use l, h_l.symm
+        rw [h_alloc]
+        simp only [State.singleton, ↓reduceIte, ne_eq, not_false_eq_true]
+      case isFalse h' =>
+        apply sSup_le
+        simp only [Set.mem_range, Subtype.exists, exists_prop,
+          forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+        rintro _ ⟨e, rfl⟩
+        simp only [qslPointsTo, nonpos_iff_eq_zero, iteOneZero_eq_zero_def, not_exists, not_and]
+        rintro l h_l h_val
+        simp only [ne_eq, not_exists, not_and, not_not] at h
+        specialize h l h_l.symm
+        rw [h_val] at h
+        simp only [State.singleton, ↓reduceIte] at h
+    · simp only [qslPointsTo, iteOneZero_le, forall_exists_index, and_imp]
+      intro l h_l h_val
+      exfalso
+      apply h
+      use l, h_l.symm
+      rw [h_val]
+      simp only [State.singleton, ↓reduceIte, ne_eq, not_false_eq_true]
+
+
+theorem qslSup_qslPointsTo_qslSepMul_iff (e : ValueExp Var) (s : State Var) :
+    ∃ (q : ℚ), `[qsl| S (x : ℚ). e ↦ x ⋆ (e ↦ x -⋆ [[P]])] s
+             = `[qsl| e ↦ q ⋆ (e ↦ q -⋆ [[P]])] s := by
+  sorry
+
+
+
+
+
+
+
+
+
+
+end PointsTo
+
 end QSL

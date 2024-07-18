@@ -27,10 +27,10 @@ def slFalse : StateProp Var := λ _ => false
 def slEmp : StateProp Var := λ ⟨_,h⟩ => h = ∅
 
 def slPointsTo (loc val : ValueExp Var) : StateProp Var :=
-    λ ⟨s,h⟩ => ∃ n : ℕ+, n = (loc s) ∧ h n = HeapValue.val (val s)
+    λ ⟨s,h⟩ => ∃ l : ℕ+, l = (loc s) ∧ h = State.singleton l (val s)
 
 def slEquals (e e' : ValueExp Var) : StateProp Var :=
-    λ ⟨s,_⟩ => e s = e' s
+    λ ⟨s,h⟩ => e s = e' s ∧ h = ∅
 
 def slNot (P : StateProp Var) : StateProp Var := λ s => ¬ P s
 

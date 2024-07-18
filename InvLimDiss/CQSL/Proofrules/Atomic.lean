@@ -1,5 +1,6 @@
 import InvLimDiss.CQSL.WeakPre
 import InvLimDiss.SL.Framing.Simps
+import InvLimDiss.CQSL.Step.Framing
 
 /-!
   Proofrules for wrlp with atomic programs as one should use it for reasoning about concurrent probabilistic programs.
@@ -104,9 +105,70 @@ theorem wrlp_assign (h : x ∉ varStateRV RI) :
     = `[qsl| ([[P]] ⋆ [[RI]])(x ↦ e)] s := rfl
   rw [this, substituteStack_of_qslSepCon e h]
 
+open HeapValue State
+
 theorem wrlp_mutate :
-    `[qsl| (S (q : ℚ). e ↦ q) ⋆ (e ↦ e' -⋆ [[P]])
-          ⊢ wrlp [ [Prog| e *≔ e'] ] ([[P]] | [[RI]])] := by
+    `[qsl| (S (q : ℚ). e_loc ↦ q) ⋆ (e_loc ↦ e_val -⋆ [[P]])
+          ⊢ wrlp [ [Prog| e_loc *≔ e_val] ] ([[P]] | [[RI]])] := by
   rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
+  apply le_trans
+  pick_goal 2
+  · apply step_framing
+    simp only [writtenVarProgram, Set.empty_inter]
+  · refine monotone_qslSepMul ?_ le_rfl
+    intro s
+    by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
+    case pos h_alloc =>
+      obtain ⟨l, h_loc, h_alloc⟩ := h_alloc
+      rw [step_mutate s _ h_loc h_alloc, wrlp_eq_of_term]
+      simp only [State.substituteHeap]
+      apply sSup_le
+      rintro _ ⟨heap_remove, heap_remain, h_disjoint, h_union, rfl⟩
+      rw [← unit_le_div_iff_mul_le]
+      obtain ⟨q, h_q⟩ := qslSup_qslPointsTo_iff e_loc ⟨s.stack, heap_remove⟩
+      rw [h_q]
+      simp only [qslPointsTo, iteOneZero_le, forall_exists_index, and_imp]
+      intro l' h_loc' h_val'
+      simp only [h_loc, Nat.cast_inj, PNat.coe_inj] at h_loc'
+      rw [unit_le_div_iff_mul_le]
+      simp only [one_mul]
+      apply sInf_le_of_le
+      · use (singleton l (e_val s.stack))
+        apply And.intro
+        · rw [h_loc'] at h_val'
+          simp only
+          rw [State.disjoint_comm] at h_disjoint
+          apply disjoint_singleton_of_disjoint_alloc h_disjoint
+          simp only [h_val', State.singleton, ↓reduceIte, ne_eq, not_false_eq_true]
+        · rfl
+      · simp only [qslPointsTo]
+        rw [iteOneZero_pos]
+        · rw [unit_div_one, ← h_union, h_val', ← substituteLoc_union, h_loc',
+            substituteLoc_singleton_eq, union_comm]
+          apply disjoint_singleton_of_disjoint_singleton
+          rw [h_val', h_loc', disjoint_comm _ _] at h_disjoint
+          exact h_disjoint
+        · use l, h_loc.symm
+    case neg h_ne_alloc =>
+      apply sSup_le
+      rintro _ ⟨heap_remove, heap_remain, _, h_union, rfl⟩
+      rw [← unit_le_div_iff_mul_le]
+      obtain ⟨q, h_q⟩ := qslSup_qslPointsTo_iff e_loc ⟨s.stack, heap_remove⟩
+      rw [h_q]
+      simp only [qslPointsTo, iteOneZero_le, forall_exists_index, and_imp]
+      intro l h_loc h_val
+      exfalso
+      apply h_ne_alloc
+      use l, h_loc.symm
+      rw [← h_union, h_val]
+      apply ne_undef_of_union_of_ne_undef
+      simp only [State.singleton, ↓reduceIte, ne_eq, not_false_eq_true]
+
+
+theorem wrlp_lookup :
+    `[qsl| S (q : ℚ). e_loc ↦ q ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ q))
+          ⊢ wrlp [ [Prog| v ≔* e_loc] ] ([[P]] | [[RI]])] := by
   sorry
+
+end CQSL

@@ -26,12 +26,13 @@ noncomputable def qslFalse : StateRV Var := λ _ => 0
 noncomputable def qslEmp : StateRV Var := λ ⟨_,h⟩ => iteOneZero (h = ∅)
 
 noncomputable def qslPointsTo (loc val : ValueExp Var) : StateRV Var :=
-    λ s => iteOneZero (∃ n : ℕ+, n = loc s.stack ∧ s.heap n = HeapValue.val (val s.stack))
+    λ ⟨s,h⟩ => iteOneZero (∃ l : ℕ+, l = (loc s) ∧ h = State.singleton l (val s))
 
 noncomputable def qslEquals (e e' : ValueExp Var) : StateRV Var :=
-    λ s => iteOneZero (e s.stack = e' s.stack)
+    λ ⟨s,h⟩ => iteOneZero (e s = e' s ∧ h = ∅)
 
-noncomputable def qslReal (e : ProbExp Var) : StateRV Var := λ ⟨s,_⟩ => e s
+noncomputable def qslReal (e : ProbExp Var) : StateRV Var :=
+    λ ⟨s,h⟩ => e s * iteOneZero (h = ∅)
 
 noncomputable def qslIverson (P : State Var → Prop) : StateRV Var := λ s => iteOneZero (P s)
 

@@ -40,7 +40,7 @@ theorem varStateRV_of_qslPointsTo :
     use s.stack, q
     simp only [not_exists, Decidable.not_not] at h'
     specialize h' s.stack q
-    by_cases h_n : ∃ n : PNat, n = e s.stack ∧ s.heap n = e' s.stack
+    by_cases h_n : ∃ n : PNat, n = e s.stack ∧ s.heap = State.singleton n (e' s.stack)
     case pos =>
       rw [Eq.comm, unitInterval.iteOneZero_eq_iteOneZero_iff, not_iff] at h
       obtain h := h.mpr h_n
@@ -48,8 +48,10 @@ theorem varStateRV_of_qslPointsTo :
       obtain ⟨n, h_n, h_heap⟩ := h_n
       rw [← h'] at h_n
       specialize h n h_n
-      rw [h_heap, HeapValue.val.injEq] at h
-      exact Ne.symm h
+      rw [h_heap] at h
+      intro h_e
+      rw [h_e] at h
+      simp only [not_true_eq_false] at h
     case neg =>
       rw [unitInterval.iteOneZero_eq_iteOneZero_iff, not_iff] at h
       obtain ⟨n, h_n', h⟩ := h.mp h_n
@@ -57,8 +59,9 @@ theorem varStateRV_of_qslPointsTo :
       rw [substituteStack] at h
       simp only [not_exists, not_and] at h_n
       have := h_n n h_n'
-      rw [h, HeapValue.val.injEq] at this
-      exact this
+      intro h_e
+      rw [h, h_e] at this
+      simp only [not_true_eq_false] at this
 
 @[simp]
 theorem qslSubst_of_qslTrue : `[qsl| qTrue(v ↦ e)] = `[qsl| qTrue] := by

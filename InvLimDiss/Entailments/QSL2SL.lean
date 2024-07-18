@@ -203,20 +203,50 @@ theorem range_of_qslPointsTo : Set.range `[qsl Var| e ↦ e'] ⊆ {0,1} := by
 theorem range_of_qslEquals : Set.range `[qsl Var| e = e'] ⊆ {0,1} := by
   rintro i ⟨s, rfl⟩
   rw [qslEquals]
-  simp only [Set.mem_insert_iff, iteOneZero_eq_zero_def, Set.mem_singleton_iff,
+  simp only [Set.mem_insert_iff, iteOneZero_eq_zero_def, not_and, Set.mem_singleton_iff,
     iteOneZero_eq_one_def]
-  exact ne_or_eq (e s.stack) (e' s.stack)
+  cases eq_or_ne (e s.stack) (e' s.stack) with
+  | inl h_eq =>
+    cases eq_or_ne s.heap ∅ with
+    | inl h_heap_eq =>
+      apply Or.inr
+      exact ⟨h_eq, h_heap_eq⟩
+    | inr h_heap_ne =>
+      apply Or.inl
+      intro _
+      exact h_heap_ne
+  | inr h_ne =>
+    apply Or.inl
+    intro h_eq _
+    exact h_ne h_eq
 
-theorem range_of_qslReal : Set.range `[qsl Var | <e> ] = Set.range e := by
+theorem range_of_qslReal : Set.range `[qsl Var | <e> ] = Set.range e ∪ {0} := by
   rw [Set.ext_iff]
   intro i
   apply Iff.intro
   · rintro ⟨s, rfl⟩
-    use s.stack
-    rfl
-  · rintro ⟨s, rfl⟩
-    use ⟨s, inhabited_heap.default⟩
-    rfl
+    simp only [qslReal, Set.union_singleton, Set.mem_insert_iff, mul_eq_zero,
+      iteOneZero_eq_zero_def, Set.mem_range]
+    cases eq_or_ne s.heap ∅ with
+    | inl h_eq =>
+      apply Or.inr
+      simp only [h_eq, iteOneZero_true, mul_one, exists_apply_eq_apply]
+    | inr h_ne =>
+      apply Or.inl
+      apply Or.inr
+      exact h_ne
+  · rintro h
+    simp only [Set.mem_range, qslReal]
+    simp only [Set.union_singleton, Set.mem_insert_iff, Set.mem_range] at h
+    cases h with
+    | inl h_zero =>
+      use ⟨inhabited_stack.default, singleton 1 1⟩
+      simp only [singleton_ne_emptyHeap, iteOneZero_false, mul_zero]
+      exact h_zero.symm
+    | inr h_nonzero =>
+      obtain ⟨s, h_s⟩ := h_nonzero
+      use ⟨s, ∅⟩
+      simp only [h_s, iteOneZero_true, mul_one]
 
 theorem range_of_qslIverson : Set.range `[qsl Var | ⁅p⁆] ⊆ {0,1} := by
   rintro i ⟨s,rfl⟩
@@ -527,6 +557,7 @@ theorem atLeast_qslPointsTo_iff {i : I} (h_lt : 0 < i) (s : State Var) :
     exact this
   · intro h
     simp only at h
+    simp only
     rw [iteOneZero_eq_one_def.mpr h]
     exact le_one'
 

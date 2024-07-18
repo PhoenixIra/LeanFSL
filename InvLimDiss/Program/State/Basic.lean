@@ -637,4 +637,55 @@ theorem union_eq_emptyHeap_iff {heap heap' : Heap} :
 
 end emptyHeap
 
+section singleton
+
+lemma singleton_ne_emptyHeap : singleton l q ≠ ∅ := by
+  intro h
+  have := congrFun h l
+  simp only [singleton, ↓reduceIte, emptyHeap] at this
+
+lemma disjoint_singleton_of_disjoint_alloc {l : ℕ+} {q : ℚ} {heap₁ heap₂ : Heap}
+    (h_disjoint : disjoint heap₁ heap₂) (h_alloc : heap₂ l ≠ undef) :
+    disjoint heap₁ (singleton l q) := by
+  intro l'
+  cases h_disjoint l' with
+  | inl h₁ => exact Or.inl h₁
+  | inr h₂ =>
+    cases eq_or_ne l' l with
+    | inl h_eq =>
+      exfalso
+      rw [h_eq] at h₂
+      exact h_alloc h₂
+    | inr h_ne =>
+      apply Or.inr
+      simp only [singleton, ite_eq_right_iff, imp_false]
+      exact h_ne.symm
+
+lemma disjoint_singleton_of_disjoint_singleton {heap : Heap}
+    (h : disjoint heap (singleton l q)) :
+    disjoint heap (singleton l q') := by
+  intro l'
+  cases h l' with
+  | inl h => exact Or.inl h
+  | inr h =>
+    apply Or.inr
+    simp only [singleton, ite_eq_right_iff, imp_false]
+    rintro rfl
+    simp only [singleton, ↓reduceIte] at h
+
+
+lemma substituteLoc_singleton_eq :
+    substituteLoc (singleton l q) l q' = (singleton l q') := by
+  apply funext
+  intro l'
+  simp only [substituteLoc]
+  split
+  case isTrue h_l =>
+    simp only [singleton, if_pos h_l]
+  case isFalse h_l =>
+    simp only [singleton, if_neg h_l]
+
+
+end singleton
+
 end State

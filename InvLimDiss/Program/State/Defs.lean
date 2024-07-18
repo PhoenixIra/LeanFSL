@@ -163,4 +163,6 @@ instance union : Union Heap
 /-- A heap that is everywhere undefined. -/
 instance emptyHeap : EmptyCollection Heap := ⟨λ _ => undef⟩
 
+def singleton (l : ℕ+) (q : ℚ) : Heap := fun l' => if l = l' then val q else undef
+
 end State
