@@ -29,10 +29,10 @@ noncomputable def qslPointsTo (loc val : ValueExp Var) : StateRV Var :=
     λ ⟨s,h⟩ => iteOneZero (∃ l : ℕ+, l = (loc s) ∧ h = State.singleton l (val s))
 
 noncomputable def qslEquals (e e' : ValueExp Var) : StateRV Var :=
-    λ ⟨s,h⟩ => iteOneZero (e s = e' s ∧ h = ∅)
+    λ ⟨s,_⟩ => iteOneZero (e s = e' s)
 
 noncomputable def qslReal (e : ProbExp Var) : StateRV Var :=
-    λ ⟨s,h⟩ => e s * iteOneZero (h = ∅)
+    λ ⟨s,_⟩ => e s
 
 noncomputable def qslIverson (P : State Var → Prop) : StateRV Var := λ s => iteOneZero (P s)
 
