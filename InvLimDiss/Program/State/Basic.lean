@@ -673,6 +673,39 @@ lemma disjoint_singleton_of_disjoint_singleton {heap : Heap}
     rintro rfl
     simp only [singleton, ↓reduceIte] at h
 
+lemma singleton_eq_iff {heap : Heap} :
+    singleton l q = heap ↔ heap l = q ∧ ∀ l' ≠ l, heap l' = undef := by
+  apply Iff.intro
+  · intro h
+    apply And.intro
+    · rw [← congrFun h l]
+      simp only [singleton, ↓reduceIte]
+    · intro l' h_l
+      rw [← congrFun h l']
+      simp only [singleton, h_l.symm, ↓reduceIte]
+  · intro ⟨h_def, h_undef⟩
+    apply funext
+    intro l'
+    simp only [singleton]
+    split
+    case isTrue h_l => rw [← h_l, h_def]
+    case isFalse h_l =>
+      apply Eq.symm
+      apply h_undef l'
+      simp only [ne_eq, Eq.comm, h_l, not_false_eq_true]
+
+
+
+lemma singleton_eq_singleton_iff_eq :
+    singleton l q = singleton l q' ↔ q = q' := by
+  apply Iff.intro
+  · intro h
+    have := congrFun h l
+    simp only [singleton, ↓reduceIte, val.injEq] at this
+    exact this
+  · rintro rfl
+    rfl
+
 
 lemma substituteLoc_singleton_eq :
     substituteLoc (singleton l q) l q' = (singleton l q') := by

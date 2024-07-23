@@ -166,9 +166,69 @@ theorem wrlp_mutate :
       simp only [State.singleton, ↓reduceIte, ne_eq, not_false_eq_true]
 
 
-theorem wrlp_lookup :
+theorem wrlp_lookup (h : v ∉ varStateRV RI) :
     `[qsl| S (q : ℚ). e_loc ↦ q ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ q))
           ⊢ wrlp [ [Prog| v ≔* e_loc] ] ([[P]] | [[RI]])] := by
-  sorry
+  rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
+  rw [le_qslSepDiv_iff_qslSepMul_le]
+  apply le_trans
+  pick_goal 2
+  · apply step_framing
+    simp only [writtenVarProgram, Set.singleton_inter_eq_empty]
+    exact h
+  · refine monotone_qslSepMul ?_ le_rfl
+    intro s
+    by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
+    case pos h_alloc =>
+      obtain ⟨l, h_loc, h_alloc⟩ := h_alloc
+      rw [undef_iff_exists_val] at h_alloc
+      obtain ⟨q, h_q⟩ := h_alloc
+      rw [step_lookup s _ h_loc h_q, wrlp_eq_of_term]
+      simp only [substituteStack]
+      obtain ⟨q', h_q'⟩ := qslSup_qslPointsTo_qslSepMul_iff e_loc s
+        (fun x => `[qsl| e_loc ↦ x -⋆ [[P]]( v ↦ x)])
+      rw [h_q']; clear h_q'
+      apply sSup_le
+      rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+      simp only [qslPointsTo, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+      split
+      case isTrue h_l' =>
+        obtain ⟨l', h_l', h_singleton⟩ := h_l'
+        simp only [h_loc, Nat.cast_inj, PNat.coe_inj] at h_l'
+        obtain rfl := h_l'
+        have h_singleton' := h_singleton
+        rw [Eq.comm, singleton_eq_iff] at h_singleton'
+        simp only [← congrFun h_union l', h_singleton'.left, ne_eq, not_false_eq_true,
+          union_val_iff_of_val, val.injEq] at h_q
+        obtain rfl := h_q
+        clear h_singleton'
+        apply sInf_le
+        use (State.singleton l' q')
+        apply And.intro
+        · simp only [← h_singleton, State.disjoint_comm, h_disjoint]
+        · simp only [qslPointsTo]
+          rw [iteOneZero_pos]
+          · simp only [← h_union, qslSubst, substituteStack, ← h_singleton, unit_div_one]
+            rw [union_comm _ _ h_disjoint]
+          · use l', h_loc.symm
+      case isFalse h_l' =>
+        simp only [zero_le]
+    case neg h_nalloc =>
+      simp only [ne_eq, not_exists, not_and, not_not] at h_nalloc
+      apply sSup_le
+      simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
+        forall_apply_eq_imp_iff₂]
+      rintro _ ⟨q, rfl⟩
+      apply sSup_le
+      rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
+      simp only [qslPointsTo]
+      rw [iteOneZero_neg]
+      · simp only [zero_mul, zero_le]
+      · simp only [not_exists, not_and]
+        intro l h_l h_heap₁
+        specialize h_nalloc l h_l.symm
+        rw [← h_union, union_undef_iff_undef, h_heap₁] at h_nalloc
+        simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
+
 
 end CQSL
