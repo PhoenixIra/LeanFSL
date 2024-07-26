@@ -393,17 +393,44 @@ theorem wrle_compareAndSet (h : v ∉ varStateRV RI) :
 
 theorem wrle_allocate (h : v ∉ varStateRV RI) :
     `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ I (l : ℕ+).
-          ([⋆] i ∈ {0 ... n}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))
+          ([⋆] i ∈ { ... (n-1)}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))
           ⊢ wrle [ [Prog| v ≔ alloc(e_len)] ] ([[P]] | [[RI]])] := by
-  intro s
-  rw [qslSup_apply, iSup_le_iff]
-  intro n
-
-  sorry
+  rw [wrle_eq_of_not_final (by simp [finalProgram])]
+  rw [le_qslSepDiv_iff_qslSepMul_le]
+  apply le_trans
+  pick_goal 2
+  · apply step_framing
+    simp only [writtenVarProgram, Set.singleton_inter_eq_empty]
+    exact h
+  · refine monotone_qslSepMul ?_ le_rfl
+    intro s
+    by_cases ∃ n : ℕ, e_len s.stack = n
+    case pos h =>
+      obtain ⟨n, h_n⟩ := h
+      rw [step_alloc s _ h_n]
+      apply le_sInf
+      rintro _ ⟨l, h_nalloc, rfl⟩
+      rw [wrle_eq_of_term]
+      rw [qslSup_apply, iSup_le_iff]
+      intro n'
+      simp only [qslMul, qslEquals, substituteStack, allocateHeap, iteOneZero_eq_iff]
+      split
+      case isFalse h_n' =>
+        simp only [zero_mul, zero_le]
+      case isTrue h_n' =>
+        simp only [h_n, Nat.cast_inj] at h_n'
+        obtain rfl := h_n'
+        simp only [one_mul]
+        rw [qslInf_apply]
+        apply le_trans (iInf_le _ l)
+        apply sInf_le
+        use (bigSingleton l n 0), disjoint_bigSingleton_of_isNotAlloc h_nalloc
+        sorry
+    case neg h => sorry
 
 theorem wrle_free (h : v ∉ varStateRV RI) :
     `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ S (l : ℕ+). e_loc = (l : ℚ) ⬝
-          ([⋆] i ∈ {0 ... n}. (l+i : ℚ) ↦ (0:ℚ)) ⋆ [[P]](v ↦ (l:ℚ))
+          ([⋆] i ∈ { ... (n-1)}. (l+i : ℚ) ↦ (0:ℚ)) ⋆ [[P]](v ↦ (l:ℚ))
           ⊢ wrle [ [Prog| free(e_loc, e_len)] ] ([[P]] | [[RI]])] := by
   sorry
 

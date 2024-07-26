@@ -165,4 +165,10 @@ instance emptyHeap : EmptyCollection Heap := ⟨λ _ => undef⟩
 
 def singleton (l : ℕ+) (q : ℚ) : Heap := fun l' => if l = l' then val q else undef
 
+open PNat
+
+def bigSingleton (l : ℕ+) (n : ℕ) (qs : ℕ → ℚ) : Heap := match n with
+| 0 => ∅
+| n+1 => singleton ⟨l+n,PNat.add_right_nat⟩ (qs n) ∪ bigSingleton l n qs
+
 end State

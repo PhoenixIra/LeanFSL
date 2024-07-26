@@ -706,7 +706,6 @@ lemma singleton_eq_singleton_iff_eq :
   · rintro rfl
     rfl
 
-
 lemma substituteLoc_singleton_eq :
     substituteLoc (singleton l q) l q' = (singleton l q') := by
   apply funext
@@ -718,6 +717,61 @@ lemma substituteLoc_singleton_eq :
   case isFalse h_l =>
     simp only [singleton, if_neg h_l]
 
+theorem bigSingleton_eq_undef_iff (l : PNat) (n : ℕ) (qs : ℕ → ℚ) (l' : PNat) :
+    bigSingleton l n qs l' = undef ↔ l' < l ∨ l+n ≤ l' := by
+  induction n with
+  | zero =>
+    simp only [bigSingleton, emptyHeap, add_zero, PNat.coe_le_coe, true_iff]
+    exact lt_or_le l' l
+  | succ n ih =>
+    simp only [bigSingleton]
+    rw [union_undef_iff_undef]
+    apply Iff.intro
+    · rintro ⟨h_singleton, h_bigSingleton⟩
+      by_cases l' = l+n
+      case pos h_nsucc =>
+        have : l' = ⟨l+n, PNat.add_right_nat⟩ := PNat.eq h_nsucc
+        simp only [singleton, this, ↓reduceIte] at h_singleton
+      case neg h_nsucc =>
+        rw [ih] at h_bigSingleton
+        cases h_bigSingleton with
+        | inl h => exact Or.inl h
+        | inr h =>
+          apply Or.inr
+          rw [← add_assoc, Nat.succ_le]
+          apply lt_of_le_of_ne h (Ne.symm h_nsucc)
+    · rintro (h_l' | h_l')
+      · apply And.intro
+        · simp only [singleton, ite_eq_right_iff, imp_false]
+          intro h
+          rw [← h, ← PNat.coe_lt_coe, PNat.mk_coe, add_lt_iff_neg_left] at h_l'
+          exact not_lt_zero' h_l'
+        · rw [ih]
+          exact Or.inl h_l'
+      · apply And.intro
+        · simp only [singleton, ite_eq_right_iff, imp_false]
+          intro h
+          rw [← h, PNat.mk_coe, add_le_add_iff_left, add_le_iff_nonpos_right,
+            nonpos_iff_eq_zero] at h_l'
+          exact one_ne_zero h_l'
+        · rw [ih]
+          apply Or.inr
+          apply le_trans ?_ h_l'
+          rw [add_le_add_iff_left, le_add_iff_nonneg_right]
+          exact Nat.zero_le 1
+
+lemma disjoint_bigSingleton_of_isNotAlloc {heap : Heap} (h : isNotAlloc heap l n) :
+    disjoint heap (bigSingleton l n qs) := by
+  intro l'
+  by_cases l ≤ l' ∧ l' < l+n
+  case pos h_l' =>
+    rw [isNotAlloc_def] at h
+    exact Or.inl <| h l' h_l'.left h_l'.right
+  case neg h_l' =>
+    simp only [not_and_or, not_le, not_lt] at h_l'
+    apply Or.inr
+    rw [bigSingleton_eq_undef_iff]
+    exact h_l'
 
 end singleton
 
