@@ -345,8 +345,25 @@ theorem qslSup_qslPointsTo_iff (e : ValueExp Var) (s : State Var) :
   rw [← qslSepMul_qslEmp_eq `[qsl| e ↦ q], ← h]
   conv => right; left; intro x; rw [qslSepMul_qslEmp_eq]
 
-
-
+theorem qslMax_entailment_iff (P Q R : StateRV Var) :
+    `[qsl| [[P]] ⊔ [[Q]] ⊢ [[R]]] ↔ P ⊢ R ∧ Q ⊢ R := by
+  apply Iff.intro
+  · intro h
+    apply And.intro
+    · intro s
+      rw [Pi.le_def] at h
+      specialize h s
+      simp only [qslMax, Sup.sup, sup_le_iff] at h
+      exact h.left
+    · intro s
+      rw [Pi.le_def] at h
+      specialize h s
+      simp only [qslMax, Sup.sup, sup_le_iff] at h
+      exact h.right
+  · rintro ⟨h_P, h_Q⟩
+    intro s
+    simp only [qslMax, Sup.sup, sup_le_iff]
+    exact ⟨h_P s, h_Q s⟩
 
 
 

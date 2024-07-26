@@ -22,7 +22,7 @@ inductive Program where
   | lookup : Vars → (ValueExp Vars) → Program
   | compareAndSet :
     Vars → (ValueExp Vars) → (ValueExp Vars) → (ValueExp Vars) → Program
-  | allocate: Vars → (ValueExp Vars) → Program
+  | allocate : Vars → (ValueExp Vars) → Program
   | free' : (ValueExp Vars) → (ValueExp Vars) → Program
   | probabilisticBranching : (ProbExp Vars) → Program → Program → Program
   | conditionalBranching : (BoolExp Vars) → Program → Program → Program

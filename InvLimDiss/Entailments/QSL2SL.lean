@@ -262,7 +262,7 @@ theorem range_of_qslAdd :
   rfl
 
 theorem range_of_qslMul :
-    Set.range `[qsl| [[f₁]] · [[f₂]]] ⊆ Set.image2 Mul.mul (Set.range f₁) (Set.range f₂) := by
+    Set.range `[qsl| [[f₁]] ⬝ [[f₂]]] ⊆ Set.image2 Mul.mul (Set.range f₁) (Set.range f₂) := by
   rintro i ⟨s, rfl⟩
   simp only [Set.mem_image2, Set.mem_range, exists_exists_eq_and]
   use s, s
@@ -639,7 +639,7 @@ theorem atLeast_qslAdd_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {
 
 theorem atLeast_qslMul_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {values₁ values₂ : Set I}
     (h_subset₁ : Set.range f₁ ⊆ values₁) (h_subset₂ : Set.range f₂ ⊆ values₂) :
-    i ≤ `[qsl| [[f₁]] · [[f₂]]] s
+    i ≤ `[qsl| [[f₁]] ⬝ [[f₂]]] s
     ↔ ∃ i₁ ∈ values₁, ∃ i₂ ∈ values₂, i ≤ i₁ * i₂ ∧ `[sl| [[fun s => i₁ ≤ f₁ s]] ∧ [[fun s => i₂ ≤ f₂ s]]] s := by
   apply Iff.intro
   · intro h

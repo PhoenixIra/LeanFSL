@@ -90,14 +90,14 @@ theorem wrlp_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrlp [c] ([[P]] ⋆ [[r
       rw [this, wrlp_eq_of_term, wrlp_eq_of_term, qslSepMul_qslEmp_eq]
 
 theorem wrlp_skip : `[qsl| [[P]] ⊢ wrlp [ [Prog| skip] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
+  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le, Pi.le_def]
   intro s
   rw [step_skip, wrlp_eq_of_term]
 
 theorem wrlp_assign (h : x ∉ varStateRV RI) :
     `[qsl| [[P]](x ↦ e) ⊢ wrlp [ [Prog| x ≔ e] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
+  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le, Pi.le_def]
   intro s
   rw [step_assign, wrlp_eq_of_term]
@@ -110,7 +110,7 @@ open HeapValue State
 theorem wrlp_mutate :
     `[qsl| (S (q : ℚ). e_loc ↦ q) ⋆ (e_loc ↦ e_val -⋆ [[P]])
           ⊢ wrlp [ [Prog| e_loc *≔ e_val] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
+  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
@@ -169,7 +169,7 @@ theorem wrlp_mutate :
 theorem wrlp_lookup (h : v ∉ varStateRV RI) :
     `[qsl| S (q : ℚ). e_loc ↦ q ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ q))
           ⊢ wrlp [ [Prog| v ≔* e_loc] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_eq_of_not_final (by simp only [finalProgram, Bool.false_eq_true, not_false_eq_true])]
+  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
@@ -230,5 +230,193 @@ theorem wrlp_lookup (h : v ∉ varStateRV RI) :
         rw [← h_union, union_undef_iff_undef, h_heap₁] at h_nalloc
         simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
 
+theorem wrlp_compareAndSet_true (h : v ∉ varStateRV RI) :
+    `[qsl| e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ)))
+          ⊢ wrlp [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
+  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
+  rw [le_qslSepDiv_iff_qslSepMul_le]
+  apply le_trans
+  pick_goal 2
+  · apply step_framing
+    simp only [writtenVarProgram, Set.singleton_inter_eq_empty]
+    exact h
+  · refine monotone_qslSepMul ?_ le_rfl
+    intro s
+    by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
+    case pos h_alloc =>
+      obtain ⟨l, h_loc, h_alloc⟩ := h_alloc
+      rw [undef_iff_exists_val] at h_alloc
+      obtain ⟨q, h_q⟩ := h_alloc
+      cases eq_or_ne q (e_val s.stack)
+      case inl h_eq =>
+        rw [h_eq] at h_q
+        rw [step_cas_of_eq s _ h_loc h_q, wrlp_eq_of_term]
+        apply sSup_le
+        rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+        simp only [qslPointsTo, substituteStack, substituteHeap]
+        rw [← unit_le_div_iff_mul_le, iteOneZero_le, unit_le_div_iff_mul_le]
+        rintro ⟨l', h_l', h_singleton⟩
+        simp only [h_loc, Nat.cast_inj, PNat.coe_inj] at h_l'
+        obtain rfl := h_l'
+        simp only [one_mul]
+        apply sInf_le_of_le
+        · use (singleton l' (e_set s.stack))
+          apply And.intro
+          · simp only
+            rw [h_singleton, State.disjoint_comm] at h_disjoint
+            exact disjoint_singleton_of_disjoint_singleton h_disjoint
+          · rfl
+        · simp only [qslPointsTo]
+          rw [iteOneZero_pos]
+          pick_goal 2
+          · use l', h_loc.symm
+          · simp only [qslSubst, substituteStack, unit_div_one]
+            rw [← h_union, ← substituteLoc_union, h_singleton, substituteLoc_singleton_eq, union_comm]
+            rw [h_singleton, State.disjoint_comm] at h_disjoint
+            apply disjoint_singleton_of_disjoint_singleton
+            exact h_disjoint
+      case inr h_ne =>
+        apply sSup_le
+        rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
+        simp only [qslPointsTo]
+        rw [iteOneZero_neg]
+        · simp only [zero_mul, zero_le]
+        · simp only [not_exists, not_and]
+          intro l' h_loc' h_heap₁
+          simp only [h_loc, Nat.cast_inj, PNat.coe_inj] at h_loc'
+          obtain rfl := h_loc'
+          have := congrFun h_heap₁ l'
+          simp only [State.singleton, ↓reduceIte] at this
+          rw [← h_union, union_val_iff_of_val (by simp [this]), this] at h_q
+          simp only [val.injEq] at h_q
+          exact h_ne h_q.symm
+    case neg h_nalloc =>
+      apply sSup_le
+      rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
+      simp only [qslPointsTo]
+      rw [iteOneZero_neg]
+      · simp only [zero_mul, zero_le]
+      · simp only [not_exists, not_and]
+        rintro l h_loc h_singleton
+        simp only [ne_eq, not_exists, not_and, not_not] at h_nalloc
+        specialize h_nalloc l h_loc.symm
+        rw [← h_union, union_undef_iff_undef, h_singleton] at h_nalloc
+        simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
+
+theorem wrlp_compareAndSet_false (h : v ∉ varStateRV RI) :
+    `[qsl| S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))
+          ⊢ wrlp [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
+  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
+  rw [le_qslSepDiv_iff_qslSepMul_le]
+  apply le_trans
+  pick_goal 2
+  · apply step_framing
+    simp only [writtenVarProgram, Set.singleton_inter_eq_empty]
+    exact h
+  · refine monotone_qslSepMul ?_ le_rfl
+    intro s
+    by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
+    case pos h_alloc =>
+      obtain ⟨l, h_loc, h_alloc⟩ := h_alloc
+      rw [undef_iff_exists_val] at h_alloc
+      obtain ⟨q, h_q⟩ := h_alloc
+      cases eq_or_ne q (e_val s.stack)
+      case inl h_eq =>
+        apply sSup_le
+        simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
+          forall_apply_eq_imp_iff₂]
+        rintro _ ⟨q', rfl⟩
+        apply sSup_le
+        rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
+        simp only [qslMul, qslPointsTo, qslNot, qslEquals, sym_iteOneZero_eq,
+          iteOneZero_mul_iteOneZero_eq]
+        rw [iteOneZero_neg]
+        · simp only [zero_mul, zero_le]
+        · simp only [not_and, Decidable.not_not, forall_exists_index, and_imp]
+          rintro l' h_l' h_singleton
+          simp only [h_loc, Nat.cast_inj, PNat.coe_inj] at h_l'
+          obtain rfl := h_l'
+          rw [← h_eq]
+          rw [Eq.comm, singleton_eq_iff] at h_singleton
+          simp only [← h_union, h_singleton.left, ne_eq, not_false_eq_true, union_val_iff_of_val,
+            val.injEq] at h_q
+          exact h_q
+      case inr h_ne =>
+        rw [step_cas_of_neq s _ h_loc (undef_iff_exists_val.mpr ⟨q, h_q⟩) (by simp [h_q, h_ne])]
+        rw [wrlp_eq_of_term]
+        apply sSup_le
+        simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
+          forall_apply_eq_imp_iff₂]
+        rintro _ ⟨q', rfl⟩
+        apply sSup_le
+        rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+        simp only [qslMul, qslPointsTo, qslNot, qslEquals, sym_iteOneZero_eq,
+          iteOneZero_mul_iteOneZero_eq]
+        rw [iteOneZero_eq_iff]
+        split_ifs
+        case pos h_l =>
+          obtain ⟨⟨l', h_l', h_singleton⟩, _⟩ := h_l
+          simp only [h_loc, Nat.cast_inj, PNat.coe_inj] at h_l'
+          obtain rfl := h_l'
+          have h_alloc₁ := (singleton_eq_iff.mp (Eq.symm h_singleton)).left
+          simp only [← h_union, union_val_of_val h_alloc₁, val.injEq] at h_q
+          obtain rfl := h_q
+          simp only [one_mul, substituteStack, ge_iff_le]
+          apply sInf_le
+          use (singleton l' q')
+          apply And.intro
+          · simp only
+            rw [← h_singleton, State.disjoint_comm]
+            exact h_disjoint
+          · simp only [qslPointsTo]
+            rw [iteOneZero_pos]
+            · rw [qslSubst, ← h_singleton, ← h_union, union_comm _ _ h_disjoint]
+              simp only [substituteStack, unit_div_one]
+            · use l', h_loc.symm
+        case neg => simp only [zero_mul, substituteStack, zero_le]
+    case neg h_nalloc =>
+      apply sSup_le
+      simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
+        forall_apply_eq_imp_iff₂]
+      rintro _ ⟨q, rfl⟩
+      apply sSup_le
+      rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
+      simp only [qslMul, qslPointsTo, qslNot, qslEquals, sym_iteOneZero_eq,
+          iteOneZero_mul_iteOneZero_eq]
+      rw [iteOneZero_neg]
+      · simp only [zero_mul, zero_le]
+      · simp only [not_and, Decidable.not_not, forall_exists_index, and_imp]
+        rintro l h_loc h_singleton
+        simp only [ne_eq, not_exists, not_and, not_not] at h_nalloc
+        specialize h_nalloc l h_loc.symm
+        rw [← h_union, union_undef_iff_undef, h_singleton] at h_nalloc
+        simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
+
+theorem wrlp_compareAndSet (h : v ∉ varStateRV RI) :
+    `[qsl| (e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ))))
+      ⊔ (S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ))))
+          ⊢ wrlp [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
+  rw [qslMax_entailment_iff]
+  apply And.intro
+  · exact wrlp_compareAndSet_true h
+  · exact wrlp_compareAndSet_false h
+
+theorem wrlp_allocate (h : v ∉ varStateRV RI) :
+    `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ I (l : ℕ+).
+          ([⋆] i ∈ {0 ... n}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))
+          ⊢ wrlp [ [Prog| v ≔ alloc(e_len)] ] ([[P]] | [[RI]])] := by
+  intro s
+  apply sSup_le
+  simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
+    forall_apply_eq_imp_iff₂]
+  rintro _ ⟨q, rfl⟩
+
+  sorry
+
+theorem wrlp_free (h : v ∉ varStateRV RI) :
+    `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ S (l : ℕ+). e_loc = (l : ℚ) ⬝
+          ([⋆] i ∈ {0 ... n}. (l+i : ℚ) ↦ (0:ℚ)) ⋆ [[P]](v ↦ (l:ℚ))
+          ⊢ wrlp [ [Prog| free(e_loc, e_len)] ] ([[P]] | [[RI]])] := by
+  sorry
 
 end CQSL

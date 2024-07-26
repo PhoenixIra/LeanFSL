@@ -133,7 +133,7 @@ theorem qslSubst_of_qslAdd : `[qsl| ([[f]] + [[g]])(v ↦ e)] = `[qsl| [[f]](v �
   rfl
 
 @[simp]
-theorem qslSubst_of_qslMul : `[qsl| ([[f]] · [[g]])(v ↦ e)] = `[qsl| [[f]](v ↦ e) · [[g]](v ↦ e)] := by
+theorem qslSubst_of_qslMul : `[qsl| ([[f]] ⬝ [[g]])(v ↦ e)] = `[qsl| [[f]](v ↦ e) ⬝ [[g]](v ↦ e)] := by
   apply funext
   intro s
   rfl

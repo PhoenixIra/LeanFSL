@@ -389,6 +389,25 @@ lemma iteOneZero_le {P : Prop} {i : I} :
     case isTrue h_P => exact h_imp h_P
     case isFalse => exact bot_le
 
+@[simp]
+lemma sym_iteOneZero_eq {P : Prop} :
+    σ (iteOneZero P) = iteOneZero (¬ P) := by
+  simp only [iteOneZero_eq_iff]
+  split_ifs
+  case pos => exact symm_one
+  case neg => exact symm_zero
+
+lemma iteOneZero_mul_iteOneZero_eq {P Q : Prop} :
+    iteOneZero P * iteOneZero Q = iteOneZero (P ∧ Q) := by
+  simp only [iteOneZero_eq_iff, mul_ite, mul_one, mul_zero]
+  split_ifs
+  case pos => rfl
+  case neg h_Q h_P h => exfalso; apply h; exact ⟨h_P, h_Q⟩
+  case pos h_Q h_P h => exfalso; apply h_P; exact h.left
+  case neg => rfl
+  case pos h_Q h => exfalso; apply h_Q; exact h.right
+  case neg => rfl
+
 
 end Ite
 
