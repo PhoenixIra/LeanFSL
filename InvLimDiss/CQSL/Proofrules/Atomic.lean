@@ -1,20 +1,20 @@
-import InvLimDiss.CQSL.WeakPre
+import InvLimDiss.CQSL.WeakExpectation
 import InvLimDiss.SL.Framing.Simps
 import InvLimDiss.CQSL.Step.Framing
 
 /-!
-  Proofrules for wrlp with atomic programs as one should use it for reasoning about concurrent probabilistic programs.
+  Proofrules for wrle with atomic programs as one should use it for reasoning about concurrent probabilistic programs.
 -/
 
 namespace CQSL
 
 open QSL Syntax OrderHom unitInterval Atom Semantics
 
-private theorem support_wrlp_of_atom {c : Program Var} (h_atom : atomicProgram c)
+private theorem support_wrle_of_atom {c : Program Var} (h_atom : atomicProgram c)
     (s : State Var) (P resource : StateRV Var) :
     Function.support (fun cs : reachState Var =>
       programSmallStepSemantics c s a cs.prog cs.state
-      * (`[qsl| (wrlp [cs.prog] ([[P]] ⋆ [[resource]] | emp )) ⋆ emp ] cs.state))
+      * (`[qsl| (wrle [cs.prog] ([[P]] ⋆ [[resource]] | emp )) ⋆ emp ] cs.state))
     ⊆ { cs : reachState Var | cs.prog = [Prog| ↓]} := by
   intro cs h_cs
   simp only [Function.support_mul, Set.mem_inter_iff, Function.mem_support, ne_eq] at h_cs
@@ -24,16 +24,16 @@ private theorem support_wrlp_of_atom {c : Program Var} (h_atom : atomicProgram c
     cases h_fin_cs with
     | inl h => exact h
     | inr h =>
-      rw [h, wrlp_eq_of_abort, qslSepMul_qslEmp_eq, qslFalse] at h_qsl
+      rw [h, wrle_eq_of_abort, qslSepMul_qslEmp_eq, qslFalse] at h_qsl
       simp only [not_true_eq_false] at h_qsl
   · exfalso
     exact h_sem <| semantics_eq_zero_of_atomProgram h_atom h_fin_cs s a cs.state
 
-private theorem support_wrlp'_of_atom {c : Program Var} (h_atom : atomicProgram c)
+private theorem support_wrle'_of_atom {c : Program Var} (h_atom : atomicProgram c)
     (s : State Var) (P resource : StateRV Var) :
     Function.support (fun cs : reachState Var =>
       programSmallStepSemantics c s a cs.prog cs.state
-      * (`[qsl| (wrlp [cs.prog] ([[P]] | [[resource]] )) ⋆ [[resource]] ] cs.state))
+      * (`[qsl| (wrle [cs.prog] ([[P]] | [[resource]] )) ⋆ [[resource]] ] cs.state))
     ⊆ { cs : reachState Var | cs.prog = [Prog| ↓]} := by
   intro cs h_cs
   simp only [Function.support_mul, Set.mem_inter_iff, Function.mem_support, ne_eq] at h_cs
@@ -43,26 +43,26 @@ private theorem support_wrlp'_of_atom {c : Program Var} (h_atom : atomicProgram 
     cases h_fin_cs with
     | inl h => exact h
     | inr h =>
-      rw [h, wrlp_eq_of_abort, qslSepMul_comm, qslSepMul_qslFalse_eq, qslFalse] at h_qsl
+      rw [h, wrle_eq_of_abort, qslSepMul_comm, qslSepMul_qslFalse_eq, qslFalse] at h_qsl
       simp only [not_true_eq_false] at h_qsl
   · exfalso
     exact h_sem <| semantics_eq_zero_of_atomProgram h_atom h_fin_cs s a cs.state
 
-theorem wrlp_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrlp [c] ([[P]] ⋆ [[resource]] | emp)])
+theorem wrle_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrle [c] ([[P]] ⋆ [[resource]] | emp)])
     (h_atom : atomicProgram c) :
-    `[qsl| [[P]] ⊢ wrlp [c] ([[P]] | [[resource]])] := by
+    `[qsl| [[P]] ⊢ wrle [c] ([[P]] | [[resource]])] := by
   have := atomic_not_final h_atom
-  rw [wrlp_eq_of_not_final this, le_qslSepDiv_iff_qslSepMul_le]
+  rw [wrle_eq_of_not_final this, le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans h
-  rw [wrlp_eq_of_not_final this, qslEmp_qslSepDiv_eq, Pi.le_def]
+  rw [wrle_eq_of_not_final this, qslEmp_qslSepDiv_eq, Pi.le_def]
   intro s
   simp only [step, le_sInf_iff, Set.mem_setOf_eq, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂]
   intro a h_a
   apply sInf_le
   use a, h_a
-  rw[← tsum_subtype_eq_of_support_subset <| support_wrlp_of_atom h_atom s P resource]
-  rw[← tsum_subtype_eq_of_support_subset <| support_wrlp'_of_atom h_atom s P resource]
+  rw[← tsum_subtype_eq_of_support_subset <| support_wrle_of_atom h_atom s P resource]
+  rw[← tsum_subtype_eq_of_support_subset <| support_wrle'_of_atom h_atom s P resource]
   apply le_antisymm
   · apply tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]
@@ -75,7 +75,7 @@ theorem wrlp_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrlp [c] ([[P]] ⋆ [[r
       apply unit_mul_le_mul le_rfl
       have := cs.prop
       simp only [Set.mem_setOf_eq] at this
-      rw [this, wrlp_eq_of_term, wrlp_eq_of_term, qslSepMul_qslEmp_eq]
+      rw [this, wrle_eq_of_term, wrle_eq_of_term, qslSepMul_qslEmp_eq]
   · apply tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]
     intro cs
@@ -87,30 +87,30 @@ theorem wrlp_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrlp [c] ([[P]] ⋆ [[r
       apply unit_mul_le_mul le_rfl
       have := cs.prop
       simp only [Set.mem_setOf_eq] at this
-      rw [this, wrlp_eq_of_term, wrlp_eq_of_term, qslSepMul_qslEmp_eq]
+      rw [this, wrle_eq_of_term, wrle_eq_of_term, qslSepMul_qslEmp_eq]
 
-theorem wrlp_skip : `[qsl| [[P]] ⊢ wrlp [ [Prog| skip] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
+theorem wrle_skip : `[qsl| [[P]] ⊢ wrle [ [Prog| skip] ] ([[P]] | [[RI]])] := by
+  rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le, Pi.le_def]
   intro s
-  rw [step_skip, wrlp_eq_of_term]
+  rw [step_skip, wrle_eq_of_term]
 
-theorem wrlp_assign (h : x ∉ varStateRV RI) :
-    `[qsl| [[P]](x ↦ e) ⊢ wrlp [ [Prog| x ≔ e] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
+theorem wrle_assign (h : x ∉ varStateRV RI) :
+    `[qsl| [[P]](x ↦ e) ⊢ wrle [ [Prog| x ≔ e] ] ([[P]] | [[RI]])] := by
+  rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le, Pi.le_def]
   intro s
-  rw [step_assign, wrlp_eq_of_term]
+  rw [step_assign, wrle_eq_of_term]
   have : `[qsl| [[P]] ⋆ [[RI]]]  (s.substituteStack x (e s.stack))
     = `[qsl| ([[P]] ⋆ [[RI]])(x ↦ e)] s := rfl
   rw [this, substituteStack_of_qslSepCon e h]
 
 open HeapValue State
 
-theorem wrlp_mutate :
+theorem wrle_mutate :
     `[qsl| (S (q : ℚ). e_loc ↦ q) ⋆ (e_loc ↦ e_val -⋆ [[P]])
-          ⊢ wrlp [ [Prog| e_loc *≔ e_val] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
+          ⊢ wrle [ [Prog| e_loc *≔ e_val] ] ([[P]] | [[RI]])] := by
+  rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
@@ -121,7 +121,7 @@ theorem wrlp_mutate :
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
       obtain ⟨l, h_loc, h_alloc⟩ := h_alloc
-      rw [step_mutate s _ h_loc h_alloc, wrlp_eq_of_term]
+      rw [step_mutate s _ h_loc h_alloc, wrle_eq_of_term]
       simp only [State.substituteHeap]
       apply sSup_le
       rintro _ ⟨heap_remove, heap_remain, h_disjoint, h_union, rfl⟩
@@ -166,10 +166,10 @@ theorem wrlp_mutate :
       simp only [State.singleton, ↓reduceIte, ne_eq, not_false_eq_true]
 
 
-theorem wrlp_lookup (h : v ∉ varStateRV RI) :
+theorem wrle_lookup (h : v ∉ varStateRV RI) :
     `[qsl| S (q : ℚ). e_loc ↦ q ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ q))
-          ⊢ wrlp [ [Prog| v ≔* e_loc] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
+          ⊢ wrle [ [Prog| v ≔* e_loc] ] ([[P]] | [[RI]])] := by
+  rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
@@ -183,7 +183,7 @@ theorem wrlp_lookup (h : v ∉ varStateRV RI) :
       obtain ⟨l, h_loc, h_alloc⟩ := h_alloc
       rw [undef_iff_exists_val] at h_alloc
       obtain ⟨q, h_q⟩ := h_alloc
-      rw [step_lookup s _ h_loc h_q, wrlp_eq_of_term]
+      rw [step_lookup s _ h_loc h_q, wrle_eq_of_term]
       simp only [substituteStack]
       obtain ⟨q', h_q'⟩ := qslSup_qslPointsTo_qslSepMul_iff e_loc s
         (fun x => `[qsl| e_loc ↦ x -⋆ [[P]]( v ↦ x)])
@@ -230,10 +230,10 @@ theorem wrlp_lookup (h : v ∉ varStateRV RI) :
         rw [← h_union, union_undef_iff_undef, h_heap₁] at h_nalloc
         simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
 
-theorem wrlp_compareAndSet_true (h : v ∉ varStateRV RI) :
+theorem wrle_compareAndSet_true (h : v ∉ varStateRV RI) :
     `[qsl| e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ)))
-          ⊢ wrlp [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
+          ⊢ wrle [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
+  rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
@@ -250,7 +250,7 @@ theorem wrlp_compareAndSet_true (h : v ∉ varStateRV RI) :
       cases eq_or_ne q (e_val s.stack)
       case inl h_eq =>
         rw [h_eq] at h_q
-        rw [step_cas_of_eq s _ h_loc h_q, wrlp_eq_of_term]
+        rw [step_cas_of_eq s _ h_loc h_q, wrle_eq_of_term]
         apply sSup_le
         rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
         simp only [qslPointsTo, substituteStack, substituteHeap]
@@ -303,10 +303,10 @@ theorem wrlp_compareAndSet_true (h : v ∉ varStateRV RI) :
         rw [← h_union, union_undef_iff_undef, h_singleton] at h_nalloc
         simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
 
-theorem wrlp_compareAndSet_false (h : v ∉ varStateRV RI) :
+theorem wrle_compareAndSet_false (h : v ∉ varStateRV RI) :
     `[qsl| S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))
-          ⊢ wrlp [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
-  rw [wrlp_eq_of_not_final (by simp [finalProgram])]
+          ⊢ wrle [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
+  rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
@@ -343,7 +343,7 @@ theorem wrlp_compareAndSet_false (h : v ∉ varStateRV RI) :
           exact h_q
       case inr h_ne =>
         rw [step_cas_of_neq s _ h_loc (undef_iff_exists_val.mpr ⟨q, h_q⟩) (by simp [h_q, h_ne])]
-        rw [wrlp_eq_of_term]
+        rw [wrle_eq_of_term]
         apply sSup_le
         simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
           forall_apply_eq_imp_iff₂]
@@ -392,19 +392,19 @@ theorem wrlp_compareAndSet_false (h : v ∉ varStateRV RI) :
         rw [← h_union, union_undef_iff_undef, h_singleton] at h_nalloc
         simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
 
-theorem wrlp_compareAndSet (h : v ∉ varStateRV RI) :
+theorem wrle_compareAndSet (h : v ∉ varStateRV RI) :
     `[qsl| (e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ))))
       ⊔ (S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ))))
-          ⊢ wrlp [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
+          ⊢ wrle [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
   rw [qslMax_entailment_iff]
   apply And.intro
-  · exact wrlp_compareAndSet_true h
-  · exact wrlp_compareAndSet_false h
+  · exact wrle_compareAndSet_true h
+  · exact wrle_compareAndSet_false h
 
-theorem wrlp_allocate (h : v ∉ varStateRV RI) :
+theorem wrle_allocate (h : v ∉ varStateRV RI) :
     `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ I (l : ℕ+).
           ([⋆] i ∈ {0 ... n}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))
-          ⊢ wrlp [ [Prog| v ≔ alloc(e_len)] ] ([[P]] | [[RI]])] := by
+          ⊢ wrle [ [Prog| v ≔ alloc(e_len)] ] ([[P]] | [[RI]])] := by
   intro s
   apply sSup_le
   simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
@@ -413,10 +413,10 @@ theorem wrlp_allocate (h : v ∉ varStateRV RI) :
 
   sorry
 
-theorem wrlp_free (h : v ∉ varStateRV RI) :
+theorem wrle_free (h : v ∉ varStateRV RI) :
     `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ S (l : ℕ+). e_loc = (l : ℚ) ⬝
           ([⋆] i ∈ {0 ... n}. (l+i : ℚ) ↦ (0:ℚ)) ⋆ [[P]](v ↦ (l:ℚ))
-          ⊢ wrlp [ [Prog| free(e_loc, e_len)] ] ([[P]] | [[RI]])] := by
+          ⊢ wrle [ [Prog| free(e_loc, e_len)] ] ([[P]] | [[RI]])] := by
   sorry
 
 end CQSL

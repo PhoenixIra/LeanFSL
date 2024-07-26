@@ -2,7 +2,7 @@ import InvLimDiss.CQSL.Step.Atomic
 import InvLimDiss.CQSL.Step.Flow
 import InvLimDiss.CQSL.Step.Sequential
 import InvLimDiss.CQSL.Step.Concurrent
-import InvLimDiss.CQSL.WeakPre
+import InvLimDiss.CQSL.WeakExpectation
 import InvLimDiss.SL.Framing.Basic
 import Mathlib.SetTheory.Ordinal.FixedPointApproximants
 

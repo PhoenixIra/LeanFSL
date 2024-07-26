@@ -6,10 +6,10 @@ variable {Var : Type}
 
 open Syntax Semantics QSL unitInterval Action State HeapValue Classical OrdinalApprox
 
-theorem wrlp_frame {c : Program Var} {P : StateRV Var}
+theorem wrle_frame {c : Program Var} {P : StateRV Var}
     (h : (writtenVarProgram c) ∩ (varStateRV F) = ∅) :
-    `[qsl| wrlp [c] ([[P]] | [[RI]]) ⋆ [[F]] ⊢ wrlp [c] ([[P]] ⋆ [[F]] | [[RI]])] := by
-  unfold wrlp'
+    `[qsl| wrle [c] ([[P]] | [[RI]]) ⋆ [[F]] ⊢ wrle [c] ([[P]] ⋆ [[F]] | [[RI]])] := by
+  unfold wrle'
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
   induction (Order.succ <| Cardinal.mk <| Program Var → StateRV Var).ord
@@ -25,7 +25,7 @@ theorem wrlp_frame {c : Program Var} {P : StateRV Var}
     obtain ⟨j, h_j, rfl⟩ := h_Q
     cases eq_or_ne c [Prog| ↓] with
     | inl h_eq =>
-      unfold wrlp_step
+      unfold wrle_step
       simp only [h_eq]
       refine monotone_qslSepMul ?_ (le_rfl)
       apply sInf_le
@@ -35,7 +35,7 @@ theorem wrlp_frame {c : Program Var} {P : StateRV Var}
     | inr h_ne_term =>
       cases eq_or_ne c [Prog| ↯] with
       | inl h_eq =>
-        unfold wrlp_step
+        unfold wrle_step
         simp only [h_eq]
         rw [← le_qslSepDiv_iff_qslSepMul_le]
         apply sInf_le_of_le
@@ -46,7 +46,7 @@ theorem wrlp_frame {c : Program Var} {P : StateRV Var}
           · rfl
         · exact bot_le
       | inr h_ne_abort =>
-        conv => right; rw [wrlp_step]
+        conv => right; rw [wrle_step]
         simp only
         rw [le_qslSepDiv_iff_qslSepMul_le]
         apply le_trans
@@ -74,7 +74,7 @@ theorem wrlp_frame {c : Program Var} {P : StateRV Var}
           simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
             exists_exists_and_eq_and]
           use j, h_j
-          rw [wrlp_step]
+          rw [wrle_step]
           split
           case h_1 => simp only [ne_eq, not_true_eq_false] at h_ne_term
           case h_2 => simp only [ne_eq, not_true_eq_false] at h_ne_abort

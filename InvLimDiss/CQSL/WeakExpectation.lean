@@ -5,12 +5,12 @@ import InvLimDiss.Program.AtomicFinal
 import Mathlib.Order.FixedPoints
 
 /-! This file contains the concurrent bellman-fixpoint and lemmas about, especially
-  * `wrlp_step` the concurrent bellman-operator
-  * `wrlp_monotone` the concurrent bellman-operator is monotone
-  * `wrlp'` the fixpoint of the concurrent bellman-equation
-  * `wrlp_def` one unfolding of the bellman-solution
+  * `wrle_step` the concurrent bellman-operator
+  * `wrle_monotone` the concurrent bellman-operator is monotone
+  * `wrle'` the fixpoint of the concurrent bellman-equation
+  * `wrle_def` one unfolding of the bellman-solution
 
-  We also offer syntax as `wrlp` in the qsl environment. -/
+  We also offer syntax as `wrle` in the qsl environment. -/
 
 namespace CQSL
 
@@ -19,17 +19,17 @@ open QSL Syntax OrderHom unitInterval Atom Semantics
 variable {Var : Type}
 
 /-- The concurrent bellman-operator.-/
-noncomputable def wrlp_step (post : StateRV Var) (resource : StateRV Var) :
+noncomputable def wrle_step (post : StateRV Var) (resource : StateRV Var) :
     (Program Var → StateRV Var) → (Program Var → StateRV Var)
   | _, [Prog| ↓ ] => post
   | _, [Prog| ↯ ] => `[qsl| qFalse]
   | X, program => `[qsl| [[resource]] -⋆ [[step program (fun c => `[qsl| [[X c]] ⋆ [[resource]] ]) ]] ]
 
-theorem wrlp_monotone (post : StateRV Var) (resource : StateRV Var) : Monotone (wrlp_step post resource) := by
+theorem wrle_monotone (post : StateRV Var) (resource : StateRV Var) : Monotone (wrle_step post resource) := by
   intro X X' h_X
   rw [Pi.le_def]
   intro c
-  unfold wrlp_step
+  unfold wrle_step
   split
   case h_1 => exact le_rfl
   case h_2 => exact le_rfl
@@ -46,13 +46,13 @@ theorem wrlp_monotone (post : StateRV Var) (resource : StateRV Var) : Monotone (
     · exact le_rfl
 
 /-- The greatest solution to the concurrent bellman equation -/
-noncomputable def wrlp' (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :=
-  gfp ⟨wrlp_step post resource, wrlp_monotone post resource⟩ program
+noncomputable def wrle' (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :=
+  gfp ⟨wrle_step post resource, wrle_monotone post resource⟩ program
 
-syntax "wrlp [" term "] (" qsl " | " qsl ")" : qsl
+syntax "wrle [" term "] (" qsl " | " qsl ")" : qsl
 macro_rules
-  | `(term| `[qsl| wrlp [$c:term] ($p:qsl | $r:qsl)]) => `(wrlp' $c `[qsl| $p] `[qsl| $r])
-  | `(term| `[qsl $v| wrlp [$c:term] ($p:qsl | $r:qsl)]) => `(wrlp' $c `[qsl $v| $p] `[qsl $v| $r])
+  | `(term| `[qsl| wrle [$c:term] ($p:qsl | $r:qsl)]) => `(wrle' $c `[qsl| $p] `[qsl| $r])
+  | `(term| `[qsl $v| wrle [$c:term] ($p:qsl | $r:qsl)]) => `(wrle' $c `[qsl $v| $p] `[qsl $v| $r])
 
 open Lean PrettyPrinter Delaborator
 
@@ -60,19 +60,19 @@ def makeBrackets [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m 
   | `(term| `[qsl|$f:qsl]) => `(qsl| $f )
   | `(term| $t:term) => `(qsl|[[$t]])
 
-@[app_unexpander wrlp']
-def unexpanderWrlp : Unexpander
+@[app_unexpander wrle']
+def unexpanderwrle : Unexpander
   | `($_ $c:term $p $r) =>
-      do `(`[qsl| wrlp [$c:term] ($(← makeBrackets p):qsl | $(← makeBrackets r):qsl )])
+      do `(`[qsl| wrle [$c:term] ($(← makeBrackets p):qsl | $(← makeBrackets r):qsl )])
   | _ => throw ()
 
-theorem wrlp_def (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :
-    `[qsl| wrlp [program] ([[post]] | [[resource]])] = match program with
+theorem wrle_def (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :
+    `[qsl| wrle [program] ([[post]] | [[resource]])] = match program with
   | [Prog| ↓ ] => post
   | [Prog| ↯ ] => `[qsl| qFalse]
   | program => `[qsl| [[resource]] -⋆ [[step program
-    (fun c => `[qsl| wrlp [c] ([[post]] | [[resource]]) ⋆ [[resource]] ]) ]] ] := by
-  rw [wrlp', ← map_gfp, coe_mk, wrlp_step]
+    (fun c => `[qsl| wrle [c] ([[post]] | [[resource]]) ⋆ [[resource]] ]) ]] ] := by
+  rw [wrle', ← map_gfp, coe_mk, wrle_step]
   split
   case h_1 =>
     split
@@ -90,27 +90,27 @@ theorem wrlp_def (program : Program Var) (post : StateRV Var) (resource : StateR
     case h_2 => exfalso; apply h_n_err; rfl
     case h_3 => rfl
 
-theorem wrlp_eq_of_not_final {program : Program Var} (h_not_final : ¬ finalProgram program)
-    (post : StateRV Var) (resource : StateRV Var) : `[qsl| wrlp [program] ([[post]] | [[resource]])]
+theorem wrle_eq_of_not_final {program : Program Var} (h_not_final : ¬ finalProgram program)
+    (post : StateRV Var) (resource : StateRV Var) : `[qsl| wrle [program] ([[post]] | [[resource]])]
     = `[qsl| [[resource]] -⋆ [[step program
-      (fun c => `[qsl| wrlp [c] ([[post]] | [[resource]]) ⋆ [[resource]] ]) ]] ] := by
+      (fun c => `[qsl| wrle [c] ([[post]] | [[resource]]) ⋆ [[resource]] ]) ]] ] := by
   rw [finalPrograms_iff_or, not_or] at h_not_final
   obtain ⟨h_n_term, h_n_err⟩ := h_not_final
-  rw [wrlp_def]
+  rw [wrle_def]
   split
   case h_1 => simp only [not_true_eq_false] at h_n_term
   case h_2 => simp only [not_true_eq_false] at h_n_err
   case h_3 => rfl
 
-theorem wrlp_eq_of_term
+theorem wrle_eq_of_term
     (post : StateRV Var) (resource : StateRV Var) :
-    `[qsl| wrlp [ [Prog| ↓] ] ([[post]] | [[resource]])] = post := by
-  rw [wrlp_def]
+    `[qsl| wrle [ [Prog| ↓] ] ([[post]] | [[resource]])] = post := by
+  rw [wrle_def]
 
-theorem wrlp_eq_of_abort
+theorem wrle_eq_of_abort
     (post : StateRV Var) (resource : StateRV Var) :
-    `[qsl| wrlp [ [Prog| ↯] ] ([[post]] | [[resource]])] = `[qsl| qFalse] := by
-  rw [wrlp_def]
+    `[qsl| wrle [ [Prog| ↯] ] ([[post]] | [[resource]])] = `[qsl| qFalse] := by
+  rw [wrle_def]
 
 
 end CQSL

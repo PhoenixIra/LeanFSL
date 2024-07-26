@@ -1,10 +1,10 @@
 import InvLimDiss.CQSL.Step
-import InvLimDiss.CQSL.WeakPre
+import InvLimDiss.CQSL.WeakExpectation
 
 /-! This file contains the equviality theorem for the bellman-solution and the concurrent
 bellman-solution.
 
-`wrlp_of_emp_eq_bellman` states this equality. -/
+`wrle_of_emp_eq_bellman` states this equality. -/
 
 namespace Bellman
 
@@ -39,13 +39,13 @@ noncomputable def bellman_solution (post : StateRV Var) : (Program Var → State
 
 open OrderHom
 
-theorem wrlp_step_of_emp_eq_bellman {post : StateRV Var} :
-    wrlp_step post `[qsl| emp] = bellman_step post := by
+theorem wrle_step_of_emp_eq_bellman {post : StateRV Var} :
+    wrle_step post `[qsl| emp] = bellman_step post := by
   apply funext
   intro X
   apply funext
   intro c
-  rw [wrlp_step, bellman_step]
+  rw [wrle_step, bellman_step]
   split
   case h_1 => simp only
   case h_2 => simp only
@@ -53,8 +53,8 @@ theorem wrlp_step_of_emp_eq_bellman {post : StateRV Var} :
     simp only
     conv => left; rw [qslEmp_qslSepDiv_eq]; intro s; left; intro c; rw [qslSepMul_qslEmp_eq]
 
-theorem gfp_wrlp_eq_gfp_bellman {post : StateRV Var} :
-    gfp (⟨wrlp_step post `[qsl|emp], wrlp_monotone post `[qsl| emp]⟩)
+theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
+    gfp (⟨wrle_step post `[qsl|emp], wrle_monotone post `[qsl| emp]⟩)
     = gfp (⟨bellman_step post, bellman_monotone post⟩) := by
   apply le_antisymm
   · apply le_gfp
@@ -62,7 +62,7 @@ theorem gfp_wrlp_eq_gfp_bellman {post : StateRV Var} :
     intro X h_X
     apply le_trans h_X
     simp only [coe_mk]
-    conv => left; intro c s; rw [wrlp_step_of_emp_eq_bellman]
+    conv => left; intro c s; rw [wrle_step_of_emp_eq_bellman]
     apply bellman_monotone
     apply le_gfp
     exact h_X
@@ -71,15 +71,15 @@ theorem gfp_wrlp_eq_gfp_bellman {post : StateRV Var} :
     intro X h_X
     apply le_trans h_X
     simp only [coe_mk]
-    conv => left; intro c s; rw [← wrlp_step_of_emp_eq_bellman]
-    apply wrlp_monotone
+    conv => left; intro c s; rw [← wrle_step_of_emp_eq_bellman]
+    apply wrle_monotone
     apply le_gfp
     exact h_X
 
-theorem wrlp_of_emp_eq_bellman {c : Program Var} {post : StateRV Var} :
-    `[qsl| wrlp [c] ([[post]] | emp)] = bellman_solution post c := by
-  unfold wrlp' bellman_solution
+theorem wrle_of_emp_eq_bellman {c : Program Var} {post : StateRV Var} :
+    `[qsl| wrle [c] ([[post]] | emp)] = bellman_solution post c := by
+  unfold wrle' bellman_solution
   apply congrFun
-  exact gfp_wrlp_eq_gfp_bellman
+  exact gfp_wrle_eq_gfp_bellman
 
 end Bellman
