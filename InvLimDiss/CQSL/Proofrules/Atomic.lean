@@ -125,9 +125,8 @@ theorem wrle_mutate :
       simp only [State.substituteHeap]
       apply sSup_le
       rintro _ ⟨heap_remove, heap_remain, h_disjoint, h_union, rfl⟩
-      rw [← unit_le_div_iff_mul_le]
-      obtain ⟨q, h_q⟩ := qslSup_qslPointsTo_iff e_loc ⟨s.stack, heap_remove⟩
-      rw [h_q]
+      rw [← unit_le_div_iff_mul_le, qslSup_apply, iSup_le_iff]
+      intro q
       simp only [qslPointsTo, iteOneZero_le, forall_exists_index, and_imp]
       intro l' h_loc' h_val'
       simp only [h_loc, Nat.cast_inj, PNat.coe_inj] at h_loc'
@@ -154,8 +153,8 @@ theorem wrle_mutate :
       apply sSup_le
       rintro _ ⟨heap_remove, heap_remain, _, h_union, rfl⟩
       rw [← unit_le_div_iff_mul_le]
-      obtain ⟨q, h_q⟩ := qslSup_qslPointsTo_iff e_loc ⟨s.stack, heap_remove⟩
-      rw [h_q]
+      rw [qslSup_apply, iSup_le_iff]
+      intro q
       simp only [qslPointsTo, iteOneZero_le, forall_exists_index, and_imp]
       intro l h_loc h_val
       exfalso
@@ -185,9 +184,8 @@ theorem wrle_lookup (h : v ∉ varStateRV RI) :
       obtain ⟨q, h_q⟩ := h_alloc
       rw [step_lookup s _ h_loc h_q, wrle_eq_of_term]
       simp only [substituteStack]
-      obtain ⟨q', h_q'⟩ := qslSup_qslPointsTo_qslSepMul_iff e_loc s
-        (fun x => `[qsl| e_loc ↦ x -⋆ [[P]]( v ↦ x)])
-      rw [h_q']; clear h_q'
+      rw [qslSup_apply, iSup_le_iff]
+      intro q
       apply sSup_le
       rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
       simp only [qslPointsTo, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
@@ -203,7 +201,7 @@ theorem wrle_lookup (h : v ∉ varStateRV RI) :
         obtain rfl := h_q
         clear h_singleton'
         apply sInf_le
-        use (State.singleton l' q')
+        use (State.singleton l' q)
         apply And.intro
         · simp only [← h_singleton, State.disjoint_comm, h_disjoint]
         · simp only [qslPointsTo]
@@ -215,10 +213,8 @@ theorem wrle_lookup (h : v ∉ varStateRV RI) :
         simp only [zero_le]
     case neg h_nalloc =>
       simp only [ne_eq, not_exists, not_and, not_not] at h_nalloc
-      apply sSup_le
-      simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
-        forall_apply_eq_imp_iff₂]
-      rintro _ ⟨q, rfl⟩
+      rw [qslSup_apply, iSup_le_iff]
+      intro q
       apply sSup_le
       rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
       simp only [qslPointsTo]
@@ -322,10 +318,8 @@ theorem wrle_compareAndSet_false (h : v ∉ varStateRV RI) :
       obtain ⟨q, h_q⟩ := h_alloc
       cases eq_or_ne q (e_val s.stack)
       case inl h_eq =>
-        apply sSup_le
-        simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
-          forall_apply_eq_imp_iff₂]
-        rintro _ ⟨q', rfl⟩
+        rw [qslSup_apply, iSup_le_iff]
+        intro q
         apply sSup_le
         rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
         simp only [qslMul, qslPointsTo, qslNot, qslEquals, sym_iteOneZero_eq,
@@ -344,10 +338,8 @@ theorem wrle_compareAndSet_false (h : v ∉ varStateRV RI) :
       case inr h_ne =>
         rw [step_cas_of_neq s _ h_loc (undef_iff_exists_val.mpr ⟨q, h_q⟩) (by simp [h_q, h_ne])]
         rw [wrle_eq_of_term]
-        apply sSup_le
-        simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
-          forall_apply_eq_imp_iff₂]
-        rintro _ ⟨q', rfl⟩
+        rw [qslSup_apply, iSup_le_iff]
+        intro q
         apply sSup_le
         rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
         simp only [qslMul, qslPointsTo, qslNot, qslEquals, sym_iteOneZero_eq,
@@ -363,7 +355,7 @@ theorem wrle_compareAndSet_false (h : v ∉ varStateRV RI) :
           obtain rfl := h_q
           simp only [one_mul, substituteStack, ge_iff_le]
           apply sInf_le
-          use (singleton l' q')
+          use (singleton l' q)
           apply And.intro
           · simp only
             rw [← h_singleton, State.disjoint_comm]
@@ -375,10 +367,8 @@ theorem wrle_compareAndSet_false (h : v ∉ varStateRV RI) :
             · use l', h_loc.symm
         case neg => simp only [zero_mul, substituteStack, zero_le]
     case neg h_nalloc =>
-      apply sSup_le
-      simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
-        forall_apply_eq_imp_iff₂]
-      rintro _ ⟨q, rfl⟩
+      rw [qslSup_apply, iSup_le_iff]
+      intro q
       apply sSup_le
       rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
       simp only [qslMul, qslPointsTo, qslNot, qslEquals, sym_iteOneZero_eq,
@@ -406,10 +396,8 @@ theorem wrle_allocate (h : v ∉ varStateRV RI) :
           ([⋆] i ∈ {0 ... n}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))
           ⊢ wrle [ [Prog| v ≔ alloc(e_len)] ] ([[P]] | [[RI]])] := by
   intro s
-  apply sSup_le
-  simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
-    forall_apply_eq_imp_iff₂]
-  rintro _ ⟨q, rfl⟩
+  rw [qslSup_apply, iSup_le_iff]
+  intro n
 
   sorry
 

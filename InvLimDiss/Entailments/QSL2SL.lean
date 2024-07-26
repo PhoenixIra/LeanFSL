@@ -326,16 +326,13 @@ theorem range_of_qslSup_of_finite {f : α → StateRV Var}
   apply le_antisymm
   · apply sSup_le_sSup
     rintro _ ⟨x, rfl⟩
-    simp only [Set.mem_range, Subtype.exists, exists_prop]
-    use (f x)
-    apply And.intro
-    · use x
-    · rfl
+    simp only [Set.mem_range, Subtype.exists, exists_prop, exists_exists_eq_and,
+      exists_apply_eq_apply]
   · apply sSup_le_sSup
     rintro _ ⟨⟨fx,⟨x',h_fx⟩⟩,rfl⟩
     simp only [Set.mem_setOf_eq]
     use x'
-    rw [h_fx]
+    rw [← h_fx]
 
 theorem range_of_qslInf {f : α → StateRV Var} (h_nonempty : Nonempty α) :
     Set.range `[qsl| I x. [[f x]]] ⊆ closure ({ i | ∃ x, i ∈ Set.range (f x)}) := by
@@ -397,14 +394,11 @@ theorem range_of_qslInf_of_finite {f : α → StateRV Var}
     rintro _ ⟨⟨fx,⟨x',h_fx⟩⟩,rfl⟩
     simp only [Set.mem_setOf_eq]
     use x'
-    rw [h_fx]
+    rw [← h_fx]
   · apply sInf_le_sInf
     rintro _ ⟨x, rfl⟩
-    simp only [Set.mem_range, Subtype.exists, exists_prop]
-    use (f x)
-    apply And.intro
-    · use x
-    · rfl
+    simp only [Set.mem_range, Subtype.exists, exists_prop, exists_exists_eq_and,
+      exists_apply_eq_apply]
 
 theorem range_of_qslSepMul :
     Set.range `[qsl| [[f₁]] ⋆ [[f₂]]] ⊆ closure (Set.image2 Mul.mul (Set.range f₁) (Set.range f₂)) := by
@@ -658,9 +652,8 @@ theorem atLeast_qslSup_if {α : Type} { i : I } {f : α → StateRV Var} {s : St
     `[sl| ∃ x. [[fun s => i ≤ f x s]]] s → i ≤ `[qsl| S x. [[f x]]] s := by
   rw [qslSup_apply, slExists_apply ]
   rintro ⟨x, h⟩
-  rw [le_sSup_iff]
+  rw [le_iSup_iff]
   intro j hj
-  simp only [upperBounds, Set.mem_setOf_eq, forall_exists_index, forall_apply_eq_imp_iff] at hj
   calc i
   _ ≤ f x s := h
   _ ≤ j := hj x
@@ -680,18 +673,15 @@ theorem atLeast_qslSup_iff {α : Type} { i : I } {f : α → StateRV Var} {s : S
 
 theorem atLeast_qslInf_iff {α : Type} { i : I } {f : α → StateRV Var} {s : State Var} :
     i ≤ `[qsl| I x. [[f x]]] s ↔ `[sl| ∀ x. [[fun s => i ≤ f x s]]] s := by
-  rw [qslInf_apply, slAll_apply ]
+  rw [qslInf_apply, slAll_apply]
   apply Iff.intro
   · intro h x
-    rw [le_sInf_iff] at h
-    apply h (f x s)
-    use x
+    rw [le_iInf_iff] at h
+    apply h x
   · rintro h
-    rw [le_sInf_iff]
-    rintro j ⟨x, hx⟩
-    calc i
-    _ ≤ f x s := h x
-    _ = j := hx
+    rw [le_iInf_iff]
+    rintro x
+    exact h x
 
 theorem atLeast_qslSepMul_if { i : I } {f₁ f₂ : StateRV Var} {s : State Var} :
     (∃ j₁, ∃ j₂, i ≤ j₁ * j₂ ∧ `[sl| [[fun s => j₁ ≤ f₁ s]] ∗ [[fun s => j₂ ≤ f₂ s]]] s)

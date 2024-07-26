@@ -219,34 +219,12 @@ end Separating
 section Quantifiers
 
 theorem qslSup_apply (P : α → StateRV Var) (s : State Var) :
-    `[qsl| S x. [[P x]]] s = sSup {y | ∃ x, P x s = y} := by
-  rw [qslSup, sSup_apply, iSup, Set.range]
-  simp only [Subtype.exists, exists_prop]
-  apply le_antisymm
-  · apply sSup_le_sSup
-    rintro i ⟨P', ⟨⟨x, hx⟩, hP'⟩⟩
-    use x
-    rw [hx, hP']
-  · apply sSup_le_sSup
-    rintro i ⟨x, hx⟩
-    use (P x)
-    refine And.intro ?_ hx
-    use x
+    `[qsl| S x. [[P x]]] s = ⨆ x, P x s := by
+  rw [qslSup, iSup_apply]
 
 theorem qslInf_apply (P : α → StateRV Var) (s : State Var) :
-    `[qsl| I x. [[P x]]] s = sInf {y | ∃ x, P x s = y} := by
-  rw [qslInf, sInf_apply, iInf, Set.range]
-  simp only [Subtype.exists, exists_prop]
-  apply le_antisymm
-  · apply sInf_le_sInf
-    intro i ⟨x, hx⟩
-    use (P x)
-    refine And.intro ?_ hx
-    use x
-  · apply sInf_le_sInf
-    intro i ⟨P', ⟨⟨x, hx⟩, hP'⟩⟩
-    use x
-    rw [hx, hP']
+    `[qsl| I x. [[P x]]] s = ⨅ x, P x s := by
+  rw [qslInf, iInf_apply]
 
 end Quantifiers
 
@@ -255,95 +233,95 @@ section PointsTo
 open State HeapValue Syntax
 
 
-theorem qslSup_qslPointsTo_qslSepMul_iff (e : ValueExp Var) (s : State Var) (P : ℚ → StateRV Var) :
-    ∃ (q : ℚ), `[qsl| S (x : ℚ). e ↦ x ⋆ [[P x]]] s
-             = `[qsl| e ↦ q ⋆ [[P q]]] s := by
-  by_cases ∃ l : ℕ+, (e s.stack) = l ∧ s.heap l ≠ undef
-  case pos h_alloc =>
-    obtain ⟨l, h_l, h_alloc⟩ := h_alloc
-    rw [undef_iff_exists_val] at h_alloc
-    obtain ⟨q, h_q⟩ := h_alloc
-    use q
-    apply le_antisymm
-    · apply sSup_le
-      simp only [Set.mem_range, Subtype.exists, exists_prop, qslPointsTo, forall_exists_index,
-        and_imp, forall_apply_eq_imp_iff₂]
-      rintro _ ⟨q', rfl⟩
-      apply sSup_le
-      rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
-      apply le_sSup_of_le
-      · use heap₁, heap₂, h_disjoint, h_union
-      · simp only [qslPointsTo, iteOneZero_eq_iff]
-        split_ifs
-        case pos h' h =>
-          simp only [one_mul]
-          obtain ⟨l, h_l, h_heap⟩ := h
-          obtain ⟨l', h_l', h_heap'⟩ := h'
-          simp only [← h_l, Nat.cast_inj, PNat.coe_inj] at h_l'
-          rw [h_l', h_heap, singleton_eq_singleton_iff_eq] at h_heap'
-          rw [h_heap']
-        case neg h' h =>
-          exfalso
-          obtain ⟨l' , h_l', h_heap⟩ := h'
-          simp only [h_l, Nat.cast_inj, PNat.coe_inj] at h_l'
-          obtain rfl := h_l'
-          have h_heap₁ := congrFun h_heap l'
-          simp only [State.singleton, ↓reduceIte] at h_heap₁
-          have h_q' := congrFun h_union l'
-          simp only [union_eq_of_left h_heap₁, h_q, val.injEq] at h_q'
-          simp only [not_exists, not_and] at h
-          apply h l' h_l.symm
-          rw [h_heap, h_q']
-        case pos =>
-          simp only [zero_mul, one_mul, zero_le]
-        case neg =>
-          simp only [zero_mul, le_refl]
-    · apply le_sSup
-      simp only [Set.mem_range, Subtype.exists, exists_prop]
-      use (`[qsl| e ↦ q ⋆ [[P q]]])
-      apply And.intro
-      · use q
-      · rfl
-  case neg h =>
-    simp only [ne_eq, not_exists, not_and, not_not] at h
-    use (e s.stack)
-    apply le_antisymm
-    · apply sSup_le
-      simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
-        forall_apply_eq_imp_iff₂]
-      rintro _ ⟨q, rfl⟩
-      apply sSup_le
-      rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
-      simp only [qslPointsTo, iteOneZero_eq_iff]
-      split
-      case isTrue h' =>
-        exfalso
-        obtain ⟨l, h_l, h_heap⟩ := h'
-        rw [Eq.comm, singleton_eq_iff] at h_heap
-        obtain ⟨h_heap₁_def, _⟩ := h_heap
-        have := h l h_l.symm
-        rw [← h_union, union_undef_iff_undef, h_heap₁_def] at this
-        simp only [false_and] at this
-      case isFalse h' =>
-        simp only [zero_mul, zero_le]
-    · apply sSup_le
-      rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
-      simp only [qslPointsTo, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
-      rw [if_neg]
-      · simp only [zero_le]
-      · simp only [not_exists, not_and]
-        intro l h_l h_heap₁
-        have h_heap_l := congrFun h_union l
-        rw [h l h_l.symm, union_undef_iff_undef] at h_heap_l
-        rw [Eq.comm, singleton_eq_iff, h_heap_l.left] at h_heap₁
-        simp only [ne_eq, false_and] at h_heap₁
+-- theorem qslSup_qslPointsTo_qslSepMul_iff (e : ValueExp Var) (s : State Var) (P : ℚ → StateRV Var) :
+--     ∃ (q : ℚ), `[qsl| S (x : ℚ). e ↦ x ⋆ [[P x]]] s
+--              = `[qsl| e ↦ q ⋆ [[P q]]] s := by
+--   by_cases ∃ l : ℕ+, (e s.stack) = l ∧ s.heap l ≠ undef
+--   case pos h_alloc =>
+--     obtain ⟨l, h_l, h_alloc⟩ := h_alloc
+--     rw [undef_iff_exists_val] at h_alloc
+--     obtain ⟨q, h_q⟩ := h_alloc
+--     use q
+--     apply le_antisymm
+--     · apply sSup_le
+--       simp only [Set.mem_range, Subtype.exists, exists_prop, qslPointsTo, forall_exists_index,
+--         and_imp, forall_apply_eq_imp_iff₂]
+--       rintro _ ⟨q', rfl⟩
+--       apply sSup_le
+--       rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+--       apply le_sSup_of_le
+--       · use heap₁, heap₂, h_disjoint, h_union
+--       · simp only [qslPointsTo, iteOneZero_eq_iff]
+--         split_ifs
+--         case pos h' h =>
+--           simp only [one_mul]
+--           obtain ⟨l, h_l, h_heap⟩ := h
+--           obtain ⟨l', h_l', h_heap'⟩ := h'
+--           simp only [← h_l, Nat.cast_inj, PNat.coe_inj] at h_l'
+--           rw [h_l', h_heap, singleton_eq_singleton_iff_eq] at h_heap'
+--           rw [h_heap']
+--         case neg h' h =>
+--           exfalso
+--           obtain ⟨l' , h_l', h_heap⟩ := h'
+--           simp only [h_l, Nat.cast_inj, PNat.coe_inj] at h_l'
+--           obtain rfl := h_l'
+--           have h_heap₁ := congrFun h_heap l'
+--           simp only [State.singleton, ↓reduceIte] at h_heap₁
+--           have h_q' := congrFun h_union l'
+--           simp only [union_eq_of_left h_heap₁, h_q, val.injEq] at h_q'
+--           simp only [not_exists, not_and] at h
+--           apply h l' h_l.symm
+--           rw [h_heap, h_q']
+--         case pos =>
+--           simp only [zero_mul, one_mul, zero_le]
+--         case neg =>
+--           simp only [zero_mul, le_refl]
+--     · apply le_sSup
+--       simp only [Set.mem_range, Subtype.exists, exists_prop]
+--       use (`[qsl| e ↦ q ⋆ [[P q]]])
+--       apply And.intro
+--       · use q
+--       · rfl
+--   case neg h =>
+--     simp only [ne_eq, not_exists, not_and, not_not] at h
+--     use (e s.stack)
+--     apply le_antisymm
+--     · apply sSup_le
+--       simp only [Set.mem_range, Subtype.exists, exists_prop, forall_exists_index, and_imp,
+--         forall_apply_eq_imp_iff₂]
+--       rintro _ ⟨q, rfl⟩
+--       apply sSup_le
+--       rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
+--       simp only [qslPointsTo, iteOneZero_eq_iff]
+--       split
+--       case isTrue h' =>
+--         exfalso
+--         obtain ⟨l, h_l, h_heap⟩ := h'
+--         rw [Eq.comm, singleton_eq_iff] at h_heap
+--         obtain ⟨h_heap₁_def, _⟩ := h_heap
+--         have := h l h_l.symm
+--         rw [← h_union, union_undef_iff_undef, h_heap₁_def] at this
+--         simp only [false_and] at this
+--       case isFalse h' =>
+--         simp only [zero_mul, zero_le]
+--     · apply sSup_le
+--       rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
+--       simp only [qslPointsTo, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+--       rw [if_neg]
+--       · simp only [zero_le]
+--       · simp only [not_exists, not_and]
+--         intro l h_l h_heap₁
+--         have h_heap_l := congrFun h_union l
+--         rw [h l h_l.symm, union_undef_iff_undef] at h_heap_l
+--         rw [Eq.comm, singleton_eq_iff, h_heap_l.left] at h_heap₁
+--         simp only [ne_eq, false_and] at h_heap₁
 
-theorem qslSup_qslPointsTo_iff (e : ValueExp Var) (s : State Var) :
-    ∃ (q : ℚ), `[qsl| S (x : ℚ). e ↦ x] s = `[qsl| e ↦ q] s := by
-  obtain ⟨q, h⟩ := qslSup_qslPointsTo_qslSepMul_iff e s (fun _ => `[qsl| emp])
-  use q
-  rw [← qslSepMul_qslEmp_eq `[qsl| e ↦ q], ← h]
-  conv => right; left; intro x; rw [qslSepMul_qslEmp_eq]
+-- theorem qslSup_qslPointsTo_iff (e : ValueExp Var) (s : State Var) :
+--     ∃ (q : ℚ), `[qsl| S (x : ℚ). e ↦ x] s = `[qsl| e ↦ q] s := by
+--   obtain ⟨q, h⟩ := qslSup_qslPointsTo_qslSepMul_iff e s (fun _ => `[qsl| emp])
+--   use q
+--   rw [← qslSepMul_qslEmp_eq `[qsl| e ↦ q], ← h]
+--   conv => right; left; intro x; rw [qslSepMul_qslEmp_eq]
 
 theorem qslMax_entailment_iff (P Q R : StateRV Var) :
     `[qsl| [[P]] ⊔ [[Q]] ⊢ [[R]]] ↔ P ⊢ R ∧ Q ⊢ R := by

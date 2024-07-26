@@ -49,9 +49,11 @@ noncomputable def qslAdd (P Q : StateRV Var) : StateRV Var := λ s => truncatedA
 
 noncomputable def qslMul (P Q : StateRV Var) : StateRV Var := λ s => P s * Q s
 
-noncomputable def qslSup {α : Type} (P : α → StateRV Var) : StateRV Var := sSup {P x | x : α}
+noncomputable def qslSup {α : Type} (P : α → StateRV Var) : StateRV Var := ⨆ (x : α), P x
+--  sSup {P x | x : α}
 
-noncomputable def qslInf {α : Type} (P : α → StateRV Var) : StateRV Var := sInf {P x | x : α}
+noncomputable def qslInf {α : Type} (P : α → StateRV Var) : StateRV Var := ⨅ (x : α), P x
+-- sInf {P x | x : α}
 
 noncomputable def qslSepMul (P Q : StateRV Var) : StateRV Var :=
   fun s => sSup { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap ∧ x = P ⟨s.stack, h₁⟩ * Q ⟨s.stack, h₂⟩}
