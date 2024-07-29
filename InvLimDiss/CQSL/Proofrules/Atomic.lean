@@ -393,7 +393,7 @@ theorem wrle_compareAndSet (h : v ∉ varStateRV RI) :
 
 theorem wrle_allocate (h : v ∉ varStateRV RI) :
     `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ I (l : ℕ+).
-          ([⋆] i ∈ { ... (n-1)}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))
+          ([⋆] i ∈ { ... n}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))
           ⊢ wrle [ [Prog| v ≔ alloc(e_len)] ] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
@@ -425,13 +425,57 @@ theorem wrle_allocate (h : v ∉ varStateRV RI) :
         apply le_trans (iInf_le _ l)
         apply sInf_le
         use (bigSingleton l n 0), disjoint_bigSingleton_of_isNotAlloc h_nalloc
-        sorry
-    case neg h => sorry
+        rw [qslBigSepMul_of_qslPointsTo_of_bigSingleton_eq_one]
+        simp only [unit_div_one, qslSubst, substituteStack]
+        rw [union_bigSingleton_eq_allocateLoc h_nalloc]
+    case neg h =>
+      simp only [not_exists] at h
+      rw [step_alloc_of_abort s _ h]
+      apply iSup_le
+      rintro ⟨_, n, rfl⟩
+      simp only [qslMul, nonpos_iff_eq_zero, mul_eq_zero]
+      apply Or.inl
+      simp only [qslEquals, h n, iteOneZero_false]
 
-theorem wrle_free (h : v ∉ varStateRV RI) :
+theorem wrle_free :
     `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ S (l : ℕ+). e_loc = (l : ℚ) ⬝
-          ([⋆] i ∈ { ... (n-1)}. (l+i : ℚ) ↦ (0:ℚ)) ⋆ [[P]](v ↦ (l:ℚ))
+          ([⋆] i ∈ { ... (n-1)}. S (q:ℚ). (l+i : ℚ) ↦ q) ⋆ [[P]]
           ⊢ wrle [ [Prog| free(e_loc, e_len)] ] ([[P]] | [[RI]])] := by
-  sorry
+  rw [wrle_eq_of_not_final (by simp [finalProgram])]
+  rw [le_qslSepDiv_iff_qslSepMul_le]
+  apply le_trans
+  pick_goal 2
+  · apply step_framing
+    simp only [writtenVarProgram, Set.empty_inter]
+  · refine monotone_qslSepMul ?_ le_rfl
+    intro s
+    by_cases (∃ l : ℕ+, l = e_loc s.stack ∧ ∃ n : ℕ, n = e_len s.stack ∧ isAlloc s.heap l n)
+    case pos h =>
+      obtain ⟨l, h_l, n, h_n, h_alloc⟩ := h
+      rw [step_free s _ h_l h_n h_alloc, wrle_eq_of_term]
+      apply iSup_le
+      simp only [freeHeap, Subtype.forall, Set.mem_range, forall_exists_index,
+        forall_apply_eq_imp_iff]
+      intro n'
+      simp only [qslMul, qslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+      split_ifs
+      case neg => exact nonneg'
+      case pos h_n' =>
+        simp only [← h_n, Nat.cast_inj] at h_n'
+        obtain rfl := h_n'
+        apply iSup_le
+        simp only [Subtype.forall, Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
+        intro l'
+        simp only [qslMul, qslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+        split_ifs
+        case neg => exact nonneg'
+        case pos h_l' =>
+          apply sSup_le
+          rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+
+
+
+
+
 
 end CQSL

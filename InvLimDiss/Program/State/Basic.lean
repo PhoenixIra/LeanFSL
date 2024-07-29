@@ -297,6 +297,38 @@ lemma freeHeap_change (heap : Heap) (l : PNat) (n : ℕ) :
       rw [← PNat.coe_inj, PNat.mk_coe] at h
       exact lt_of_le_of_ne h_lt h
 
+lemma disjoint_freeLoc_removedHeap {heap : Heap} :
+    disjoint (freeLoc heap l n) (removedHeap heap l n) := by
+  intro l'
+  induction n with
+  | zero =>
+    apply Or.inr
+    simp only [removedHeap, add_zero, PNat.coe_lt_coe, ite_eq_right_iff, and_imp]
+    intro h h'
+    have := lt_of_le_of_lt h h'
+    simp only [lt_self_iff_false] at this
+  | succ n ih =>
+    cases eq_or_ne l' ⟨l+n,PNat.add_right_nat⟩ with
+    | inl h_eq =>
+      apply Or.inl
+      rw [h_eq]
+      simp only [freeLoc, removeLoc, ↓reduceIte]
+    | inr h_ne =>
+      cases ih with
+      | inl h_free =>
+        apply Or.inl
+        simp only [freeLoc, removeLoc, h_free, ite_self]
+      | inr h_removed =>
+        apply Or.inr
+        simp only [removedHeap, ite_eq_right_iff, and_imp] at h_removed
+        simp only [removedHeap, ite_eq_right_iff, and_imp]
+        intro h_le h_lt
+        apply h_removed
+        · exact h_le
+        · rw [← add_assoc, Nat.lt_succ] at h_lt
+          rw [ne_eq, ← Subtype.coe_inj] at h_ne
+          exact lt_of_le_of_ne h_lt h_ne
+
 end free
 
 section disjoint
@@ -408,6 +440,14 @@ theorem union_eq_of_left {heap₁ heap₂ : Heap} {l : ℕ+} {q : ℚ} (h : heap
     (heap₁ ∪ heap₂) l = q := by
   simp only [Union.union, h]
 
+theorem union_eq_of_left_undef {heap₁ heap₂ : Heap}  (h : heap₁ l = undef) :
+    (heap₁ ∪ heap₂) l = heap₂ l := by
+  simp only [Union.union, h]
+
+theorem union_eq_of_right_undef {heap₁ heap₂ : Heap}  (h : heap₂ l = undef) :
+    (heap₁ ∪ heap₂) l = heap₁ l := by
+  simp only [Union.union, h]
+  cases (heap₁ l) <;> simp only
 
 theorem substituteLoc_union {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ} :
     (substituteLoc heap₁ l q) ∪ heap₂ = substituteLoc (heap₁ ∪ heap₂) l q := by
@@ -574,6 +614,19 @@ theorem union_freeLoc {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ}
     simp only [Union.union]
     rw [freeLoc_heap.left l' h_le]
 
+lemma union_freeHeap_removedHeap (heap : Heap) (l : ℕ+) (n : ℕ) :
+    heap = freeLoc heap l n ∪ removedHeap heap l n := by
+  apply funext
+  intro l'
+  by_cases l ≤ l' ∧ l' < l+n
+  case pos h =>
+    rw [union_eq_of_left_undef]
+    · simp only [removedHeap]
+      rw [if_pos h]
+    · exact freeHeap_change _ _ _ _ h.left h.right
+  case neg h =>
+
+
 
 
 end union
@@ -694,8 +747,6 @@ lemma singleton_eq_iff {heap : Heap} :
       apply h_undef l'
       simp only [ne_eq, Eq.comm, h_l, not_false_eq_true]
 
-
-
 lemma singleton_eq_singleton_iff_eq :
     singleton l q = singleton l q' ↔ q = q' := by
   apply Iff.intro
@@ -716,6 +767,19 @@ lemma substituteLoc_singleton_eq :
     simp only [singleton, if_pos h_l]
   case isFalse h_l =>
     simp only [singleton, if_neg h_l]
+
+lemma subsituteLoc_eq_union_singleton {heap : Heap} (h : heap l = undef) :
+    substituteLoc heap l q = heap ∪ (singleton l q) := by
+  apply funext
+  intro l'
+  rw [substituteLoc]
+  split_ifs
+  case pos h_eq =>
+    obtain rfl := h_eq
+    simp only [union_eq_of_left_undef h, singleton, ↓reduceIte]
+  case neg h_ne =>
+    rw [union_eq_of_right_undef]
+    simp only [singleton, h_ne, ↓reduceIte]
 
 theorem bigSingleton_eq_undef_iff (l : PNat) (n : ℕ) (qs : ℕ → ℚ) (l' : PNat) :
     bigSingleton l n qs l' = undef ↔ l' < l ∨ l+n ≤ l' := by
@@ -786,6 +850,24 @@ lemma disjoint_singleton_bigSingleton (h : l+n ≤ l') :
   | inr h_ne =>
     apply Or.inl
     simp only [singleton, h_ne, ↓reduceIte]
+
+lemma union_bigSingleton_eq_allocateLoc {heap : Heap} (h : isNotAlloc heap l n) :
+    heap ∪ (bigSingleton l n 0) = allocateLoc heap l n := by
+  induction n with
+  | zero => simp only [bigSingleton, union_emptyHeap, allocateLoc]
+  | succ n ih =>
+    simp only [bigSingleton, Pi.zero_apply, allocateLoc]
+    obtain ⟨h_heap, h⟩ := h
+    rw [union_comm (singleton _ 0)]
+    pick_goal 2
+    · apply disjoint_singleton_bigSingleton
+      rfl
+    · rw [← union_assoc, ih h, subsituteLoc_eq_union_singleton]
+      rw [allocateLoc_remain]
+      · exact h_heap
+      · apply Or.inr
+        rfl
+
 
 end singleton
 

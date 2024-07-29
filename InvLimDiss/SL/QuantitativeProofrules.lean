@@ -270,9 +270,6 @@ theorem qslBigSepMul_of_qslPointsTo_of_bigSingleton_eq_one {l : ℕ+} {stack : S
       simp only [PNat.mk_coe, Nat.cast_add, and_self]
     · simp only [ih, mul_one]
 
-
-
-
 end PointsTo
 
 end QSL

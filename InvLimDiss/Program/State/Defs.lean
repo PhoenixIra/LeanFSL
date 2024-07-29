@@ -150,6 +150,10 @@ noncomputable def freeHeap
     (s : State Var) (l : PNat) (n : ℕ) : State Var :=
   ⟨s.stack, freeLoc s.heap l n⟩
 
+def removedHeap
+    (heap : Heap) (l : PNat) (n : ℕ) : Heap :=
+  fun l' => if l ≤ l' ∧ l' < l+n then heap l' else undef
+
 /-- The disjointness property of heaps -/
 def disjoint (heap₁ heap₂ : Heap) : Prop := ∀ n, heap₁ n = undef ∨ heap₂ n = undef
 
