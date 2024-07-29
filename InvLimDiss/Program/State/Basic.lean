@@ -773,6 +773,20 @@ lemma disjoint_bigSingleton_of_isNotAlloc {heap : Heap} (h : isNotAlloc heap l n
     rw [bigSingleton_eq_undef_iff]
     exact h_l'
 
+lemma disjoint_singleton_bigSingleton (h : l+n ≤ l') :
+    disjoint (singleton l' q) (bigSingleton l n qs) := by
+  intro l''
+  cases eq_or_ne l' l'' with
+  | inl h_eq =>
+    apply Or.inr
+    rw [bigSingleton_eq_undef_iff]
+    apply Or.inr
+    rw [← h_eq]
+    exact h
+  | inr h_ne =>
+    apply Or.inl
+    simp only [singleton, h_ne, ↓reduceIte]
+
 end singleton
 
 end State

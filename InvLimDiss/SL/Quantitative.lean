@@ -58,8 +58,8 @@ noncomputable def qslSepMul (P Q : StateRV Var) : StateRV Var :=
 
 noncomputable def qslBigSepMul (n : Nat) (P : ℕ → StateRV Var) : StateRV Var :=
   match n with
-  | 0 => (P 0)
-  | n+1 => qslSepMul (P (n+1)) (qslBigSepMul n P)
+  | 0 => qslEmp
+  | n+1 => qslSepMul (P n) (qslBigSepMul n P)
 
 noncomputable def qslSepDiv (P Q : StateRV Var) : StateRV Var :=
   fun s => sInf { x | ∃ h', disjoint s.heap h' ∧ x = Q ⟨s.stack,s.heap ∪ h'⟩ / P ⟨s.stack,h'⟩ }

@@ -252,6 +252,26 @@ theorem qslMax_entailment_iff (P Q R : StateRV Var) :
     simp only [qslMax, Sup.sup, sup_le_iff]
     exact ⟨h_P s, h_Q s⟩
 
+theorem qslBigSepMul_of_qslPointsTo_of_bigSingleton_eq_one {l : ℕ+} {stack : Stack Var}:
+    `[qsl| [⋆] i ∈ { ... n}. (l+i:ℚ) ↦ (0:ℚ)] ⟨stack, bigSingleton l n 0⟩ = 1 := by
+  induction n with
+  | zero => simp only [qslBigSepMul, qslEmp, bigSingleton, iteOneZero_true]
+  | succ n ih =>
+    simp only [qslBigSepMul, bigSingleton, Pi.zero_apply]
+    apply le_antisymm le_one'
+    apply le_sSup
+    use (singleton ⟨l+n,PNat.add_right_nat⟩ 0), (bigSingleton l n 0)
+    use disjoint_singleton_bigSingleton le_rfl
+    apply And.intro (by simp only)
+    simp only [qslPointsTo]
+    rw [iteOneZero_pos]
+    pick_goal 2
+    · use ⟨l+n,PNat.add_right_nat⟩
+      simp only [PNat.mk_coe, Nat.cast_add, and_self]
+    · simp only [ih, mul_one]
+
+
+
 
 end PointsTo
 
