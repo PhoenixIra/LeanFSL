@@ -56,7 +56,7 @@ split
 case h_1 h => exact h.symm
 case h_2 h'=> exfalso; exact h h'
 
-theorem undef_iff_exists_val {heap : Heap} {l : PNat} :
+theorem neq_undef_iff_exists_val {heap : Heap} {l : PNat} :
     heap l ≠ undef ↔ ∃ q, heap l = val q := by
   apply Iff.intro
   · intro h
@@ -66,6 +66,19 @@ theorem undef_iff_exists_val {heap : Heap} {l : PNat} :
   · rintro ⟨q, h_l⟩
     rw [h_l]
     simp only [ne_eq, not_false_eq_true]
+
+theorem undef_iff_forall_neq_val {heap : Heap} {l : PNat} :
+    heap l = undef ↔ ∀ q, heap l ≠ val q := by
+  apply Iff.intro
+  · intro h q
+    simp only [h, ne_eq, not_false_eq_true]
+  · intro h_neq_val
+    by_contra h_neq_undef
+    rw [← ne_eq, neq_undef_iff_exists_val] at h_neq_undef
+    obtain ⟨q, h_q⟩ := h_neq_undef
+    apply h_neq_val q
+    exact h_q
+
 
 /-- The state, a stack heap pair. -/
 structure State (Variable : Type) where
@@ -115,16 +128,12 @@ noncomputable def removeLocationHeap
 /-- Checks whether a certain consecutive part of the heap is unallocated. -/
 noncomputable def isNotAlloc
     (heap : Heap) (l : PNat) (n : ℕ): Prop :=
-  match n with
-  | Nat.zero => true
-  | Nat.succ n => heap ⟨l+n,PNat.add_right_nat⟩ = undef ∧ isNotAlloc heap l n
+  ∀ l', l ≤ l' → l' < l+n → heap l' = undef
 
 /-- Adds 0 values to a consecutive part of the heap. -/
 noncomputable def allocateLoc
     (heap : Heap) (l : PNat) (n : ℕ) : Heap :=
-  match n with
-  | Nat.zero => heap
-  | Nat.succ n => substituteLoc (allocateLoc heap l n) ⟨l+n,PNat.add_right_nat⟩ 0
+  fun l' => if l ≤ l' ∧ l' < l+n then val 0 else heap l'
 
 @[simp]
 noncomputable def allocateHeap
@@ -134,16 +143,12 @@ noncomputable def allocateHeap
 /-- Checks whether a certain part of the heap is allocated
   (i.e. the reverse but not negation of `isNotAlloc`). -/
 noncomputable def isAlloc (heap : Heap) (l : PNat) (n : ℕ) : Prop :=
-  match n with
-  | 0 => true
-  | Nat.succ n => (∃ v, heap ⟨l+n,PNat.add_right_nat⟩ = val v) ∧ isAlloc heap l n
+  ∀ l', l ≤ l' → l' < l+n → heap l' ≠ undef
 
 /-- Removed a consecutive part of the heap. -/
 noncomputable def freeLoc
     (heap : Heap) (l : PNat) (n : ℕ) : Heap :=
-  match n with
-  | 0 => heap
-  | Nat.succ n => removeLoc (freeLoc heap l n) ⟨l+n,PNat.add_right_nat⟩
+  fun l' => if l ≤ l' ∧ l' < l+n then undef else heap l'
 
 @[simp]
 noncomputable def freeHeap
@@ -171,8 +176,7 @@ def singleton (l : ℕ+) (q : ℚ) : Heap := fun l' => if l = l' then val q else
 
 open PNat
 
-def bigSingleton (l : ℕ+) (n : ℕ) (qs : ℕ → ℚ) : Heap := match n with
-| 0 => ∅
-| n+1 => singleton ⟨l+n,PNat.add_right_nat⟩ (qs n) ∪ bigSingleton l n qs
+def bigSingleton (l : ℕ+) (n : ℕ) (qs : ℕ → ℚ) : Heap :=
+  fun l' => if l ≤ l' ∧ l' < l+n then qs (l'-l) else undef
 
 end State

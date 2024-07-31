@@ -1,6 +1,8 @@
 import InvLimDiss.CQSL.WeakExpectation
 import InvLimDiss.SL.Framing.Simps
 import InvLimDiss.CQSL.Step.Framing
+import InvLimDiss.SL.Conservativity
+import InvLimDiss.SL.ClassicalProofrules
 
 /-!
   Proofrules for wrle with atomic programs as one should use it for reasoning about concurrent probabilistic programs.
@@ -180,7 +182,7 @@ theorem wrle_lookup (h : v ∉ varStateRV RI) :
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
       obtain ⟨l, h_loc, h_alloc⟩ := h_alloc
-      rw [undef_iff_exists_val] at h_alloc
+      rw [neq_undef_iff_exists_val] at h_alloc
       obtain ⟨q, h_q⟩ := h_alloc
       rw [step_lookup s _ h_loc h_q, wrle_eq_of_term]
       simp only [substituteStack]
@@ -241,7 +243,7 @@ theorem wrle_compareAndSet_true (h : v ∉ varStateRV RI) :
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
       obtain ⟨l, h_loc, h_alloc⟩ := h_alloc
-      rw [undef_iff_exists_val] at h_alloc
+      rw [neq_undef_iff_exists_val] at h_alloc
       obtain ⟨q, h_q⟩ := h_alloc
       cases eq_or_ne q (e_val s.stack)
       case inl h_eq =>
@@ -314,7 +316,7 @@ theorem wrle_compareAndSet_false (h : v ∉ varStateRV RI) :
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
       obtain ⟨l, h_loc, h_alloc⟩ := h_alloc
-      rw [undef_iff_exists_val] at h_alloc
+      rw [neq_undef_iff_exists_val] at h_alloc
       obtain ⟨q, h_q⟩ := h_alloc
       cases eq_or_ne q (e_val s.stack)
       case inl h_eq =>
@@ -336,7 +338,7 @@ theorem wrle_compareAndSet_false (h : v ∉ varStateRV RI) :
             val.injEq] at h_q
           exact h_q
       case inr h_ne =>
-        rw [step_cas_of_neq s _ h_loc (undef_iff_exists_val.mpr ⟨q, h_q⟩) (by simp [h_q, h_ne])]
+        rw [step_cas_of_neq s _ h_loc (neq_undef_iff_exists_val.mpr ⟨q, h_q⟩) (by simp [h_q, h_ne])]
         rw [wrle_eq_of_term]
         rw [qslSup_apply, iSup_le_iff]
         intro q
@@ -439,7 +441,7 @@ theorem wrle_allocate (h : v ∉ varStateRV RI) :
 
 theorem wrle_free :
     `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ S (l : ℕ+). e_loc = (l : ℚ) ⬝
-          ([⋆] i ∈ { ... (n-1)}. S (q:ℚ). (l+i : ℚ) ↦ q) ⋆ [[P]]
+          ([⋆] i ∈ { ... n}. S (q:ℚ). (l+i : ℚ) ↦ q) ⋆ [[P]]
           ⊢ wrle [ [Prog| free(e_loc, e_len)] ] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
@@ -453,9 +455,8 @@ theorem wrle_free :
     case pos h =>
       obtain ⟨l, h_l, n, h_n, h_alloc⟩ := h
       rw [step_free s _ h_l h_n h_alloc, wrle_eq_of_term]
+      rw [qslSup_apply]
       apply iSup_le
-      simp only [freeHeap, Subtype.forall, Set.mem_range, forall_exists_index,
-        forall_apply_eq_imp_iff]
       intro n'
       simp only [qslMul, qslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
       split_ifs
@@ -472,10 +473,46 @@ theorem wrle_free :
         case pos h_l' =>
           apply sSup_le
           rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
-
-
-
-
-
+          simp_rw [conservative_pointsTo, conservative_sup, conservative_bigSepMul]
+          simp only [qslIverson, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+          split_ifs
+          case pos h =>
+            rw [SL.slBigSepCon_eq_one_iff_removedHeap] at h
+            obtain ⟨h_removedHeap₁, h_alloc₁⟩ := h
+            rw [removedHeap_of_union h_union.symm h_alloc₁] at h_removedHeap₁
+            rw [h_removedHeap₁] at h_union h_disjoint
+            rw [remainHeap_of_union_removeHeap h_union.symm h_disjoint]
+            simp only [← h_l, Nat.cast_inj, PNat.coe_inj] at h_l'
+            rw [h_l']
+            rfl
+          case neg => simp only [zero_le]
+    case neg h =>
+      simp only [not_exists, not_and] at h
+      rw [qslSup_apply]
+      apply iSup_le
+      intro n
+      simp only [qslMul, qslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+      split_ifs
+      case neg => exact nonneg'
+      case pos h_n =>
+        rw [qslSup_apply]
+        apply iSup_le
+        intro l
+        simp only [qslMul, qslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+        split_ifs
+        case neg => exact nonneg'
+        case pos h_l =>
+          specialize h l h_l.symm n h_n.symm
+          apply sSup_le
+          rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
+          simp_rw [conservative_pointsTo, conservative_sup, conservative_bigSepMul]
+          simp only [qslIverson, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+          split_ifs
+          case neg => exact nonneg'
+          case pos h_alloc =>
+            rw [SL.slBigSepCon_eq_one_iff_removedHeap] at h_alloc
+            exfalso
+            apply h
+            exact isAlloc_of_union_of_isAlloc h_alloc.right h_union.symm
 
 end CQSL

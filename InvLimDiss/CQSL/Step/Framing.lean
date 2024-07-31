@@ -101,7 +101,7 @@ theorem step_framing_of_lookup (inner : Program Var → StateRV Var)
   by_cases h_alloc : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
   case pos =>
     obtain ⟨l, h_l, h_alloc⟩ := h_alloc
-    rw [undef_iff_exists_val] at h_alloc
+    rw [neq_undef_iff_exists_val] at h_alloc
     obtain ⟨q, h_alloc⟩ := h_alloc
     rw [step_lookup ⟨s.stack, heap₁⟩ _ h_l h_alloc]
     have h_heap : s.heap l = q := by
@@ -128,7 +128,7 @@ theorem step_framing_of_cas (inner : Program Var → StateRV Var)
   by_cases h_alloc : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
   case pos =>
     obtain ⟨l, h_l, h_alloc⟩ := h_alloc
-    have h_value := undef_iff_exists_val.mp h_alloc
+    have h_value := neq_undef_iff_exists_val.mp h_alloc
     obtain ⟨q, h_value⟩ := h_value
     by_cases h_q : q = (e_cmp s.stack)
     case pos =>

@@ -32,23 +32,26 @@ def slPointsTo (loc val : ValueExp Var) : StateProp Var :=
 def slEquals (e e' : ValueExp Var) : StateProp Var :=
     λ ⟨s,_⟩ => e s = e' s
 
+def slSubst (P : StateProp Var) (v : Var) (e : ValueExp Var) : StateProp Var :=
+  fun s => P (s.substituteStack v (e s.stack))
+
 def slNot (P : StateProp Var) : StateProp Var := λ s => ¬ P s
 
 def slAnd (P Q : StateProp Var) : StateProp Var := P ⊓ Q
 
 def slOr (P Q : StateProp Var) : StateProp Var := P ⊔ Q
 
-def slExists {α : Type} (P : α → StateProp Var) : StateProp Var := sSup {P x | x : α}
+def slExists {α : Type} (P : α → StateProp Var) : StateProp Var := ⨆ (x : α), P x
 
-def slAll {α : Type} (P : α → StateProp Var) : StateProp Var := sInf {P x | x : α}
+def slAll {α : Type} (P : α → StateProp Var) : StateProp Var := ⨅ (x : α), P x
 
 def slSepCon (P Q : StateProp Var) : StateProp Var :=
   λ ⟨s,h⟩ => ∃ h₁ h₂, P ⟨s, h₁⟩ ∧ Q ⟨s, h₂⟩ ∧ disjoint h₁ h₂ ∧ h₁ ∪ h₂ = h
 
 def slBigSepCon (n : Nat) (P : ℕ → StateProp Var) : StateProp Var :=
   match n with
-  | 0 => (P 0)
-  | n+1 => slSepCon (P (n+1)) (slBigSepCon n P)
+  | 0 => slEmp
+  | n+1 => slSepCon (P (n)) (slBigSepCon n P)
 
 def slSepImp (P Q : StateProp Var) : StateProp Var :=
   λ ⟨s,h⟩ => ∀ h', disjoint h h' → P ⟨s,h'⟩ → Q ⟨s,(h ∪ h')⟩
@@ -64,13 +67,14 @@ syntax "emp" : sl
 syntax term " ↦ " term : sl
 syntax term:51 " = " term:51 : sl
 syntax "[[" term "]]" : sl
+syntax sl:min "( " term " ↦ " term " )" : sl
 syntax:40 "¬" sl:41 : sl
 syntax:35 sl:36 " ∧ " sl:35 : sl
 syntax:30 sl:31 " ∨ " sl:30 : sl
 syntax:max "∃ " explicitBinders ". " sl : sl
 syntax:max "∀ " explicitBinders ". " sl : sl
 syntax:35 sl:36 " ∗ " sl:35 : sl
-syntax:36 "[∗] " binderIdent "∈ {0 ... "term" }. " sl:36 : sl
+syntax:36 "[∗] " binderIdent  " ∈ " " { " " ... " term " }. " sl:36 : sl
 syntax:25 sl:26 " -∗ " sl:25 : sl
 syntax "("sl")" : sl
 
@@ -87,15 +91,16 @@ macro_rules
   | `(term| `[sl| $l:term ↦ $r:term]) => `(slPointsTo $l $r)
   | `(term| `[sl| $l:term = $r:term]) => `(slEquals $l $r)
   | `(term| `[sl| [[$t:term]]]) => `($t)
+  | `(term| `[sl| $f( $x:term ↦ $e ) ]) => `(slSubst `[sl|$f] $x $e)
   | `(term| `[sl| ¬ $f:sl]) => `(slNot `[sl|$f])
   | `(term| `[sl| $l:sl ∧ $r:sl]) => `(slAnd `[sl|$l] `[sl|$r])
   | `(term| `[sl| $l:sl ∨ $r:sl]) => `(slOr `[sl|$l] `[sl|$r])
   | `(term| `[sl| ∃ $xs. $f:sl]) => do expandExplicitBinders ``slExists xs (← `(`[sl|$f]))
   | `(term| `[sl| ∀ $xs. $f:sl]) => do expandExplicitBinders ``slAll xs (← `(`[sl|$f]))
   | `(term| `[sl| $l:sl ∗ $r:sl]) => `(slSepCon `[sl|$l] `[sl|$r])
-  | `(term| `[sl| [∗] $x:ident ∈ {0 ... $m}. $f:sl]) =>
+  | `(term| `[sl| [∗] $x:ident ∈ { ... $m}. $f:sl]) =>
       `(slBigSepCon $m (fun $x ↦ `[sl| $f]))
-  | `(term| `[sl| [∗] $_:hole ∈ {0 ... $m}. $f:sl]) =>
+  | `(term| `[sl| [∗] $_:hole ∈ { ... $m}. $f:sl]) =>
       `(slBigSepCon $m (fun _ ↦ `[sl| $f]))
   | `(term| `[sl| $l:sl -∗ $r:sl]) => `(slSepImp `[sl|$l] `[sl|$r])
   | `(term| `[sl| ($f:sl)]) => `(`[sl|$f])
@@ -107,15 +112,16 @@ macro_rules
   | `(term| `[sl $v:term| $l:term ↦ $r:term]) => `(@slPointsTo $v $l $r)
   | `(term| `[sl $v:term| $l:term = $r:term]) => `(@slEquals $v $l $r)
   | `(term| `[sl $_| [[$t:term]]]) => `($t)
+  | `(term| `[sl $v:term| $f( $x:term ↦ $e ) ]) => `(@slSubst $v `[sl $v|$f] $x $e)
   | `(term| `[sl $v:term| ¬ $f:sl]) => `(slNot `[sl $v|$f])
   | `(term| `[sl $v:term| $l:sl ∧ $r:sl]) => `(slAnd `[sl $v|$l] `[sl $v|$r])
   | `(term| `[sl $v:term| $l:sl ∨ $r:sl]) => `(slOr `[sl $v|$l] `[sl $v|$r])
   | `(term| `[sl $v:term| ∃ $xs. $f:sl]) => do expandExplicitBinders ``slExists xs (← `(`[sl $v|$f]))
   | `(term| `[sl $v:term| ∀ $xs. $f:sl]) => do expandExplicitBinders ``slAll xs (← `(`[sl $v|$f]))
   | `(term| `[sl $v:term| $l:sl ∗ $r:sl]) => `(slSepCon `[sl $v|$l] `[sl $v|$r])
-  | `(term| `[sl $v:term| [∗] $x:ident ∈ {0 ... $m}. $f:sl]) =>
+  | `(term| `[sl $v:term| [∗] $x:ident ∈ { ... $m}. $f:sl]) =>
       `(slBigSepCon $m (fun $x ↦ `[sl $v| $f]))
-  | `(term| `[sl $v:term| [∗] $_:hole ∈ {0 ... $m}. $f:sl]) =>
+  | `(term| `[sl $v:term| [∗] $_:hole ∈ { ... $m}. $f:sl]) =>
       `(slBigSepCon $m (fun _ ↦ `[sl $v| $f]))
   | `(term| `[sl $v:term| $l:sl -∗ $r:sl]) => `(slSepImp `[sl $v|$l] `[sl $v|$r])
   | `(term| `[sl $v:term| ($f:sl)]) => `(`[sl $v|$f])
@@ -161,10 +167,17 @@ def unexpandSlNot : Unexpander
   | `($_ $t) => `(`[sl| ¬ [[$t]]])
   | _ => throw ()
 
+@[app_unexpander slSubst]
+def unexpandSlSubst : Unexpander
+  | `($_ `[sl|$f] $v:term $e:term) =>
+    if isAtom f then `(`[sl| $f( $v ↦ $e) ]) else `(`[sl| ($f)( $v:term ↦ $e:term) ])
+  | `($_ $f $v $e) => `(`[sl| [[$f]]( $v ↦ $e) ])
+  | _ => throw ()
+
 def requireBracketsAnd : TSyntax `sl → Bool
   | `(sl| ¬ $_:sl) => false
   | `(sl| $_:sl ∗ $_:sl) => false
-  | `(sl| [∗] $_ ∈ {0 ... $_}. $_) => false
+  | `(sl| [∗] $_ ∈ { ... $_}. $_) => false
   | `(sl| $_:sl ∧ $_:sl) => false
   | `(sl| $f:sl) => !isAtom f
 
@@ -212,7 +225,7 @@ def unexpandSlSepCon : Unexpander
 @[app_unexpander slBigSepCon]
 def unexpandBigSepCon : Unexpander
   | `($_ $n fun $x:ident => $f) => do
-      `(`[sl| [∗] $x:ident ∈ {0 ... $n}. $(← bracketsAnd f)])
+      `(`[sl| [∗] $x:ident ∈ { ... $n}. $(← bracketsAnd f)])
   | _ => throw ()
 
 def requireBracketsSepImp : TSyntax `sl → Bool
@@ -220,7 +233,7 @@ def requireBracketsSepImp : TSyntax `sl → Bool
   | `(sl| $_:sl -∗ $_:sl) => false
   | `(sl| $_:sl ∧ $_:sl) => false
   | `(sl| $_:sl ∗ $_:sl) => false
-  | `(sl| [∗] $_ ∈ {0 ... $_}. $_) => false
+  | `(sl| [∗] $_ ∈ { ... $_}. $_) => false
   | `(sl| $_:sl ∨ $_:sl) => false
   | `(sl| $f:sl) => !isAtom f
 

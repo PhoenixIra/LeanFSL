@@ -451,6 +451,18 @@ theorem truncatedAdd_zero (i : I) : truncatedAdd i 0 = i := by
   case isTrue h => exact le_antisymm h le_one'
   case isFalse _ => rfl
 
+theorem one_truncatedAdd (i : I) : truncatedAdd 1 i = 1 := by
+  simp only [truncatedAdd, coe_one, min_def, le_add_iff_nonneg_right]
+  rw [←Subtype.coe_inj, Subtype.coe_mk, coe_one]
+  rw [if_pos]
+  exact nonneg'
+
+theorem truncatedAdd_one (i : I) : truncatedAdd i 1 = 1 := by
+  simp only [truncatedAdd, coe_one, min_def, le_add_iff_nonneg_left]
+  rw [←Subtype.coe_inj, Subtype.coe_mk, coe_one]
+  rw [if_pos]
+  exact nonneg'
+
 theorem truncatedAdd_assoc (i j k : I) :
     truncatedAdd (truncatedAdd i j) k = truncatedAdd i ( truncatedAdd j k) := by
   simp only [truncatedAdd, min_def, Subtype.mk.injEq]

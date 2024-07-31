@@ -5,332 +5,6 @@ namespace State
 
 open Rat Classical HeapValue
 
-section substituteVar
-
-theorem substituteVar_stack {s : Stack Var} {v : Var} {q : ℚ} :
-    (∀ v', v ≠ v' → (substituteVar s v q) v' = s v')
-    ∧ (∀ v', v = v' → (substituteVar s v q) v' = q) := by
-  apply And.intro
-  · intro v' h_ne
-    exact (if_neg h_ne)
-  · intro v' h_eq
-    unfold substituteVar
-    rw [ite_eq_left_iff]
-    intro h_ne
-    exfalso
-    exact h_ne h_eq
-
-end substituteVar
-
-section substituteLoc
-
-theorem substituteLoc_heap {heap : Heap} {l : PNat} {q : ℚ} :
-    (∀ l', l ≠ l' → (substituteLoc heap l q) l' = heap l')
-    ∧ (∀ l', l = l' → (substituteLoc heap l q) l' = val q) := by
-  unfold substituteLoc
-  apply And.intro
-  · intro l' h_ne
-    exact (if_neg h_ne)
-  · intro l' h_eq
-    rw [ite_eq_left_iff]
-    intro h_ne
-    exfalso
-    exact h_ne h_eq
-
-end substituteLoc
-
-section removeLoc
-
-theorem removeLoc_heap {heap : Heap} {l : PNat} :
-    (∀ l', l ≠ l' → (removeLoc heap l) l' = heap l')
-    ∧ (∀ l', l = l' → (removeLoc heap l) l' = undef) := by
-  unfold removeLoc
-  apply And.intro
-  · intro l' h_ne
-    exact (if_neg h_ne)
-  . intro l' h_eq
-    rw [ite_eq_left_iff]
-    intro h_ne
-    exfalso
-    exact h_ne h_eq
-
-end removeLoc
-
-section allocate
-
-theorem isNotAlloc_def (heap : Heap) (l : PNat) (n : ℕ) :
-    isNotAlloc heap l n ↔ ∀ l', l ≤ l' → l' < l+n → heap l' = undef := by
-  induction n with
-  | zero =>
-    unfold isNotAlloc; simp only [Nat.zero_eq, add_zero, true_iff]
-    intro l' h_le h_lt
-    exfalso
-    exact not_le_of_lt h_lt h_le
-  | succ n ih =>
-    unfold isNotAlloc
-    apply Iff.intro
-    · rintro ⟨h_none, h_alloc⟩ l' h_le h_lt
-      rw [Nat.add_succ, Nat.lt_succ] at h_lt
-      by_cases h : l' = ⟨l + n, PNat.add_right_nat⟩
-      · rw [h]; exact h_none
-      · apply ih.mp h_alloc l' h_le
-        rw [← PNat.coe_inj, PNat.mk_coe] at h
-        exact lt_of_le_of_ne h_lt h
-    · intro h
-      rw [Nat.add_succ] at h
-      apply And.intro
-      · apply h ⟨l+n,PNat.add_right_nat⟩
-        · rw [← PNat.coe_le_coe, PNat.mk_coe]
-          exact le_self_add
-        · exact(Nat.lt_succ.mpr le_rfl)
-      · have : ∀ l', l ≤ l' → l' < l + n → heap l' = undef := by
-          intro l' h_le h_lt
-          exact h l' h_le (Nat.lt_succ.mpr <| le_of_lt h_lt)
-        exact ih.mpr this
-
-theorem allocateLoc_heap {heap : Heap} {l : PNat} {n : ℕ} :
-      (∀ l', (l' < l ∨ l+n ≤ l') → (allocateLoc heap l n) l' = heap l')
-      ∧ (∀ l', l ≤ l' → l' < l+n → (allocateLoc heap l n) l' = val 0) := by
-  apply And.intro
-  · induction n with
-    | zero => intro l' _; simp only [allocateHeap, allocateLoc]
-    | succ n ih =>
-      intro l' h_l
-      unfold allocateLoc
-      cases h_l with
-      | inl h_lt =>
-        rw [substituteLoc_heap.left l']
-        · exact ih l' (Or.inl h_lt)
-        · intro h_eq
-          rw [← PNat.coe_inj, PNat.mk_coe] at h_eq
-          rw [← PNat.coe_lt_coe, ← h_eq, add_lt_iff_neg_left] at h_lt
-          exact not_lt_zero' h_lt
-      | inr h_le =>
-        rw [substituteLoc_heap.left l']
-        · rw [Nat.add_succ, Nat.succ_le_iff] at h_le
-          apply le_of_lt at h_le
-          exact ih l' (Or.inr h_le)
-        · intro h_eq
-          rw [← PNat.coe_inj, PNat.mk_coe] at h_eq
-          rw [← h_eq, add_le_add_iff_left, Nat.succ_le, ← not_le] at h_le
-          exact h_le le_rfl
-  · intro l' h_l₁ h_l₂
-    induction n with
-    | zero =>
-      rw [add_zero] at h_l₂
-      exfalso
-      exact not_le_of_lt h_l₂ h_l₁
-    | succ n ih =>
-      rw [Nat.add_succ] at h_l₂
-      cases lt_or_eq_of_le (Nat.le_of_lt_succ h_l₂) with
-      | inl h_lt =>
-        specialize ih h_lt
-        unfold allocateLoc
-        rw [substituteLoc_heap.left l']
-        · exact ih
-        · intro h
-          rw [← PNat.coe_inj, PNat.mk_coe] at h
-          exact (ne_of_lt h_lt).symm h
-      | inr h_eq =>
-        unfold allocateLoc
-        apply substituteLoc_heap.right l'
-        rw [← PNat.coe_inj, PNat.mk_coe]
-        exact h_eq.symm
-
-lemma allocateLoc_remain (heap : Heap) (l : PNat) (n : ℕ) :
-    ∀ l', (l' < l ∨ l+n ≤ l') → (allocateLoc heap l n) l' = heap l' := by
-  induction n with
-  | zero => intro l' _; unfold allocateLoc; rfl
-  | succ n ih =>
-    intro l' h_l'
-    unfold allocateLoc
-    cases h_l' with
-    | inl h =>
-      have : ⟨l+n,PNat.add_right_nat⟩ ≠ l' := by {
-        intro h_eq
-        rw [← PNat.coe_lt_coe, ← h_eq, PNat.mk_coe, add_lt_iff_neg_left] at h
-        exact not_lt_zero' h
-      }
-      rw [substituteLoc_heap.left l' this]
-      exact ih l' (Or.inl h)
-    | inr h =>
-      rw [Nat.add_succ, Nat.succ_le] at h
-      cases eq_or_ne ⟨l+n,PNat.add_right_nat⟩ l' with
-      | inl h_eq =>
-        exfalso
-        rw [← PNat.coe_inj, PNat.mk_coe] at h_eq
-        exact (ne_of_lt h) h_eq
-      | inr h_ne => rw [substituteLoc_heap.left l' h_ne]; exact ih l' (Or.inr <| le_of_lt h)
-
-lemma allocateHeap_change (heap : Heap) (l : PNat) (n : ℕ) :
-    ∀ l', l ≤ l' → l' < ⟨l+n,PNat.add_right_nat⟩ → (allocateLoc heap l n) l' = val 0 := by
-  induction n with
-  | zero =>
-    intro l' h_le h_lt
-    rw [← PNat.coe_lt_coe, PNat.mk_coe, add_zero] at h_lt
-    exfalso
-    exact not_le_of_lt h_lt h_le
-  | succ n ih =>
-    intro l' h_le h_lt
-    unfold allocateLoc
-    rw [← PNat.coe_lt_coe, PNat.mk_coe, Nat.add_succ, Nat.lt_succ] at h_lt
-    by_cases h : l' = ⟨l + n, PNat.add_right_nat⟩
-    · exact substituteLoc_heap.right l' h.symm
-    · rw [substituteLoc_heap.left l' (Ne.symm h)]
-      exact ih l' h_le (lt_of_le_of_ne h_lt h)
-
-end allocate
-
-section free
-
-theorem isAlloc_def (heap : Heap) (l : PNat) (n : ℕ) :
-    isAlloc heap l n ↔ ∀ l', l ≤ l' → l' < l+n → ∃ x, heap l' = val x := by
-  induction n with
-  | zero =>
-    unfold isAlloc; simp only [Nat.zero_eq, add_zero, true_iff]
-    intro l' h_le h_lt
-    exfalso
-    exact not_le_of_lt h_lt h_le
-  | succ n ih =>
-    unfold isAlloc
-    apply Iff.intro
-    · rintro ⟨⟨x, h_some⟩, h_alloc⟩ l' h_le h_lt
-      rw [Nat.add_succ, Nat.lt_succ] at h_lt
-      by_cases h : l' = ⟨l + n, PNat.add_right_nat⟩
-      · use x; rw [h]; exact h_some
-      · apply ih.mp h_alloc l' h_le
-        rw [← PNat.coe_inj, PNat.mk_coe] at h
-        exact lt_of_le_of_ne h_lt h
-    · intro h
-      rw [Nat.add_succ] at h
-      apply And.intro
-      · apply h ⟨l+n,PNat.add_right_nat⟩
-        · rw [← PNat.coe_le_coe, PNat.mk_coe]; exact le_self_add
-        · exact Nat.lt_succ.mpr le_rfl
-      · have : ∀ l', l ≤ l' → l' < l + n → ∃ x, heap l' = val x := by
-          intro l' h_le h_lt
-          exact h l' h_le (Nat.lt_succ.mpr <| le_of_lt h_lt)
-        exact ih.mpr this
-
-theorem freeLoc_heap {heap : Heap} {l : PNat} {n : ℕ} :
-      (∀ l', (l' < l ∨ l+n ≤ l') → (freeLoc heap l n) l' = heap l')
-      ∧ (∀ l', l ≤ l' → l' < l+n → (freeLoc heap l n) l' = undef) := by
-  apply And.intro
-  · induction n with
-    | zero => intro l' _; simp only [freeLoc]
-    | succ n ih =>
-      intro l' h_l
-      unfold freeLoc
-      cases h_l with
-      | inl h_lt =>
-        rw [removeLoc_heap.left l']
-        · exact ih l' (Or.inl h_lt)
-        · intro h_eq
-          rw [ ← h_eq, ← PNat.coe_lt_coe, PNat.mk_coe, add_lt_iff_neg_left] at h_lt
-          exact not_lt_zero' h_lt
-      | inr h_le =>
-        rw [removeLoc_heap.left l']
-        · rw [Nat.add_succ, Nat.succ_le_iff] at h_le
-          apply le_of_lt at h_le
-          exact ih l' (Or.inr h_le)
-        · intro h_eq; rw [← h_eq, PNat.mk_coe, add_le_add_iff_left, Nat.succ_le, ← not_le] at h_le
-          exact h_le le_rfl
-  · intro l' h_l₁ h_l₂
-    induction n with
-    | zero =>
-      rw [add_zero] at h_l₂
-      exfalso
-      exact not_le_of_lt h_l₂ h_l₁
-    | succ n ih =>
-      rw [Nat.add_succ] at h_l₂
-      cases lt_or_eq_of_le (Nat.le_of_lt_succ h_l₂) with
-      | inl h_lt =>
-        specialize ih h_lt
-        unfold freeLoc
-        rw [removeLoc_heap.left l']
-        · exact ih
-        · rw [ne_eq, ← PNat.coe_inj, PNat.mk_coe]
-          exact (ne_of_lt h_lt).symm
-      | inr h_eq =>
-        unfold freeLoc
-        apply removeLoc_heap.right l'
-        rw [← PNat.coe_inj, PNat.mk_coe]
-        exact h_eq.symm
-
-lemma freeLoc_remain (heap : Heap) (l : PNat) (n : ℕ) :
-    ∀ l', (l' < l ∨ l+n ≤ l') → (freeLoc heap l n) l' = heap l' := by
-  induction n with
-  | zero => intro l' _; unfold freeLoc; rfl
-  | succ n ih =>
-    intro l' h_l'
-    unfold freeLoc
-    cases h_l' with
-    | inl h =>
-      have : ⟨l+n,PNat.add_right_nat⟩ ≠ l' := by {
-        intro h_eq
-        rw [← PNat.coe_lt_coe, ← h_eq, PNat.mk_coe, add_lt_iff_neg_left] at h
-        exact not_lt_zero' h
-      }
-      rw [removeLoc_heap.left l' this]
-      exact ih l' (Or.inl h)
-    | inr h =>
-      rw [Nat.add_succ, Nat.succ_le] at h
-      cases eq_or_ne ⟨l+n, PNat.add_right_nat⟩ l' with
-      | inl h_eq =>
-        exfalso
-        rw [← PNat.coe_inj, PNat.mk_coe] at h_eq
-        exact (ne_of_lt h) h_eq
-      | inr h_ne => rw [removeLoc_heap.left l' h_ne]; exact ih l' (Or.inr <| le_of_lt h)
-
-lemma freeHeap_change (heap : Heap) (l : PNat) (n : ℕ) :
-    ∀ l', l ≤ l' → l' < l+n → (freeLoc heap l n) l' = undef := by
-  induction n with
-  | zero => intro l' h_le h_lt; rw [add_zero] at h_lt; exfalso; exact not_le_of_lt h_lt h_le
-  | succ n ih =>
-    intro l' h_le h_lt
-    unfold freeLoc
-    rw [Nat.add_succ, Nat.lt_succ] at h_lt
-    by_cases h : l' = ⟨l + n, PNat.add_right_nat⟩
-    · exact removeLoc_heap.right l' h.symm
-    · rw [removeLoc_heap.left l' (Ne.symm h)]
-      apply ih l' h_le
-      rw [← PNat.coe_inj, PNat.mk_coe] at h
-      exact lt_of_le_of_ne h_lt h
-
-lemma disjoint_freeLoc_removedHeap {heap : Heap} :
-    disjoint (freeLoc heap l n) (removedHeap heap l n) := by
-  intro l'
-  induction n with
-  | zero =>
-    apply Or.inr
-    simp only [removedHeap, add_zero, PNat.coe_lt_coe, ite_eq_right_iff, and_imp]
-    intro h h'
-    have := lt_of_le_of_lt h h'
-    simp only [lt_self_iff_false] at this
-  | succ n ih =>
-    cases eq_or_ne l' ⟨l+n,PNat.add_right_nat⟩ with
-    | inl h_eq =>
-      apply Or.inl
-      rw [h_eq]
-      simp only [freeLoc, removeLoc, ↓reduceIte]
-    | inr h_ne =>
-      cases ih with
-      | inl h_free =>
-        apply Or.inl
-        simp only [freeLoc, removeLoc, h_free, ite_self]
-      | inr h_removed =>
-        apply Or.inr
-        simp only [removedHeap, ite_eq_right_iff, and_imp] at h_removed
-        simp only [removedHeap, ite_eq_right_iff, and_imp]
-        intro h_le h_lt
-        apply h_removed
-        · exact h_le
-        · rw [← add_assoc, Nat.lt_succ] at h_lt
-          rw [ne_eq, ← Subtype.coe_inj] at h_ne
-          exact lt_of_le_of_ne h_lt h_ne
-
-end free
-
 section disjoint
 
 theorem disjoint.symm {h₁ h₂ : Heap} (h : disjoint h₁ h₂) : disjoint h₂ h₁ := fun n => Or.symm (h n)
@@ -376,7 +50,6 @@ theorem disjoint_allocateLoc {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ}
     (h : disjoint heap₁ heap₂) (h_notAlloc: isNotAlloc heap₂ l m) :
     disjoint (allocateLoc heap₁ l m) heap₂ := by
   intro l'
-  rw [isNotAlloc_def] at h_notAlloc
   by_cases h_l' : l ≤ l' ∧ l' < l + m
   case pos => exact Or.inr <| h_notAlloc l' h_l'.left h_l'.right
   case neg =>
@@ -385,8 +58,16 @@ theorem disjoint_allocateLoc {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ}
     | inl h =>
       apply Or.inl
       simp only [not_and_or, not_le, not_lt] at h_l'
-      rw [allocateLoc_heap.left l' h_l']
-      exact h
+      rw [allocateLoc, if_neg]
+      · exact h
+      · intro h_l
+        cases h_l' with
+        | inl h_lt =>
+          apply not_le_of_lt h_lt
+          exact h_l.left
+        | inr h_lt =>
+          apply not_le_of_lt h_l.right
+          exact h_lt
 
 theorem disjoint_freeLoc {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ}
     (h : disjoint heap₁ heap₂) : disjoint (freeLoc heap₁ l m) heap₂ := by
@@ -396,10 +77,11 @@ theorem disjoint_freeLoc {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ}
   | inl h =>
     apply Or.inl
     by_cases h_le : l ≤ l' ∧ l' < l + m
-    case pos => exact freeLoc_heap.right l' h_le.left h_le.right
+    case pos => simp only [freeLoc, h_le, and_self, ↓reduceIte]
     case neg =>
       simp only [not_and_or, not_le, not_lt] at h_le
-      rw [freeLoc_heap.left l' h_le]
+      simp only [freeLoc, ite_eq_left_iff, not_and, not_lt]
+      intro _
       exact h
 
 
@@ -537,82 +219,86 @@ theorem isNotAlloc_union (heap₁ heap₂ : Heap) (l : ℕ+) (n : ℕ):
     isNotAlloc (heap₁ ∪ heap₂) l n ↔ isNotAlloc heap₁ l n ∧ isNotAlloc heap₂ l n := by
   apply Iff.intro
   · intro h
-    induction n with
-    | zero => simp only [isNotAlloc, and_self]
-    | succ n ih =>
-      unfold isNotAlloc at h ⊢
-      obtain ⟨h_undef, h⟩ := h
-      specialize ih h
-      rw [union_undef_iff_undef] at h_undef
-      use ⟨h_undef.left, ih.left⟩, h_undef.right, ih.right
+    apply And.intro
+    · intro l' h_le h_lt
+      specialize h l' h_le h_lt
+      rw [union_undef_iff_undef] at h
+      exact h.left
+    · intro l' h_le h_lt
+      specialize h l' h_le h_lt
+      rw [union_undef_iff_undef] at h
+      exact h.right
   · intro h
-    induction n with
-    | zero => simp only [isNotAlloc]
-    | succ n ih =>
-      unfold isNotAlloc at h ⊢
-      obtain ⟨⟨h_undef₁, h₁⟩, h_undef₂, h₂⟩ := h
-      specialize ih ⟨h₁, h₂⟩
-      rw [union_undef_iff_undef]
-      use ⟨h_undef₁, h_undef₂⟩
+    intro l' h_le h_lt
+    rw [union_undef_iff_undef]
+    obtain ⟨h₁, h₂⟩ := h
+    exact ⟨h₁ l' h_le h_lt, h₂ l' h_le h_lt⟩
 
 theorem allocateLoc_union {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ} :
     allocateLoc heap₁ l m ∪ heap₂ = allocateLoc (heap₁ ∪ heap₂) l m := by
   apply funext
   intro l'
-  induction m with
-  | zero => simp only [allocateLoc]
-  | succ n ih =>
-    conv => left; rw [Union.union, union]
-    simp only [allocateLoc, substituteLoc]
+  rw [allocateLoc]
+  split_ifs
+  case pos h =>
+    rw [Union.union, union]
+    simp only
     split
-    case h_1 h_val =>
-      split
-      case isTrue h_l' => rw [if_pos h_l'] at h_val; exact h_val.symm
-      case isFalse h_l' =>
-        rw [if_neg h_l'] at h_val
-        rw [← ih]
-        simp only [Union.union]
-        rw [h_val]
-    case h_2 h_val =>
-      split
-      case isTrue h_l' => simp only [if_pos h_l'] at h_val
-      case isFalse h_l' =>
-        rw [if_neg h_l'] at h_val
-        rw [← ih]
-        simp only [Union.union]
-        rw [h_val]
+    case h_1 q h_q =>
+      rw [allocateLoc, if_pos h] at h_q
+      exact h_q.symm
+    case h_2 q h_q =>
+      simp only [allocateLoc, if_pos h] at h_q
+  case neg h =>
+    rw [Union.union, union]
+    simp only
+    split
+    case h_1 q h_q =>
+      rw [allocateLoc, if_neg h] at h_q
+      simp only [h_q]
+    case h_2 q h_q =>
+      rw [allocateLoc, if_neg h] at h_q
+      simp only [h_q]
+
+theorem isAlloc_of_zero {heap : Heap} : isAlloc heap l 0 := by
+  intro l' h_le h_lt
+  exfalso
+  apply not_le_of_lt h_lt
+  simp only [add_zero, PNat.coe_le_coe, h_le]
+
+theorem isAlloc_of_isAlloc_succ {heap : Heap} {l : ℕ+} {m : ℕ} (h : isAlloc heap l (m+1)) :
+    isAlloc heap l m := by
+  simp only [isAlloc, ne_eq] at h
+  simp only [isAlloc, ne_eq]
+  intro l' h_le h_lt
+  apply h l' h_le
+  apply lt_trans h_lt
+  simp only [add_lt_add_iff_left, lt_add_iff_pos_right, zero_lt_one]
 
 theorem isAlloc_union {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ}
     (h : isAlloc heap₁ l m) : isAlloc (heap₁ ∪ heap₂) l m := by
-  induction m with
-  | zero => simp only [isAlloc]
-  | succ n ih =>
-    unfold isAlloc at h ⊢
-    obtain ⟨⟨v, heap_v⟩, h_alloc⟩ := h
-    apply And.intro
-    · use v
-      exact union_eq_of_left heap_v
-    · exact ih h_alloc
+  intro l' h_le h_lt
+  specialize h l' h_le h_lt
+  rw [neq_undef_iff_exists_val] at h
+  obtain ⟨q, h_q⟩ := h
+  simp only [union_eq_of_left h_q, ne_eq, not_false_eq_true]
 
 theorem union_freeLoc {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ}
     (h_alloc : isAlloc heap₁ l m) (h_disjoint : disjoint heap₁ heap₂) :
     (freeLoc heap₁ l m) ∪ heap₂ = freeLoc (heap₁ ∪ heap₂) l m := by
   apply funext
   intro l'
-  by_cases h_le : l ≤ l' ∧ l' < l + m
+  by_cases h_l' : l ≤ l' ∧ l' < l + m
   case pos =>
-    rw [freeLoc_heap.right l' h_le.left h_le.right]
-    simp only [Union.union]
-    rw [freeLoc_heap.right l' h_le.left h_le.right]
-    simp only
-    rw [isAlloc_def] at h_alloc
-    obtain ⟨x, h_x⟩ := h_alloc l' h_le.left h_le.right
-    exact undef_of_disjoint_of_val h_disjoint h_x
+    simp only [Union.union, freeLoc, if_pos h_l']
+    specialize h_alloc l' h_l'.left h_l'.right
+    cases h_disjoint l' with
+    | inl h_undef => exfalso; exact h_alloc h_undef
+    | inr h_undef => exact h_undef
   case neg =>
-    simp only [not_and_or, not_le, not_lt] at h_le
-    rw [freeLoc_heap.left l' h_le]
+    simp only [freeLoc, if_neg h_l']
     simp only [Union.union]
-    rw [freeLoc_heap.left l' h_le]
+    simp only [freeLoc, if_neg h_l']
 
 lemma union_freeHeap_removedHeap (heap : Heap) (l : ℕ+) (n : ℕ) :
     heap = freeLoc heap l n ∪ removedHeap heap l n := by
@@ -623,13 +309,191 @@ lemma union_freeHeap_removedHeap (heap : Heap) (l : ℕ+) (n : ℕ) :
     rw [union_eq_of_left_undef]
     · simp only [removedHeap]
       rw [if_pos h]
-    · exact freeHeap_change _ _ _ _ h.left h.right
+    · simp only [freeLoc, h, and_self, ↓reduceIte]
   case neg h =>
-
-
-
+    simp only [Union.union, freeLoc, if_neg h]
+    split
+    case h_1 h => exact h
+    case h_2 h_undef => simp only [h_undef, removedHeap, ite_self]
 
 end union
+
+section free
+
+lemma disjoint_freeLoc_removedHeap {heap : Heap} :
+    disjoint (freeLoc heap l n) (removedHeap heap l n) := by
+  intro l'
+  induction n with
+  | zero =>
+    apply Or.inr
+    simp only [removedHeap, add_zero, PNat.coe_lt_coe, ite_eq_right_iff, and_imp]
+    intro h h'
+    have := lt_of_le_of_lt h h'
+    simp only [lt_self_iff_false] at this
+  | succ n ih =>
+    cases eq_or_ne l' ⟨l+n,PNat.add_right_nat⟩ with
+    | inl h_eq =>
+      apply Or.inl
+      rw [h_eq]
+      simp only [freeLoc, PNat.mk_coe, add_lt_add_iff_left, lt_add_iff_pos_right, zero_lt_one,
+        and_true, ite_eq_left_iff, not_le]
+      intro h_lt
+      rw [←Subtype.coe_lt_coe, Subtype.coe_mk] at h_lt
+      exfalso
+      apply not_le_of_lt h_lt
+      exact Nat.le_add_right l n
+    | inr h_ne =>
+      cases ih with
+      | inl h_free =>
+        apply Or.inl
+        simp only [freeLoc, ite_eq_left_iff, not_and, not_lt]
+        intro h
+        simp only [freeLoc, ite_eq_left_iff, not_and, not_lt] at h_free
+        apply h_free
+        intro h_lt
+        specialize h h_lt
+        apply le_trans ?_ h
+        simp only [add_le_add_iff_left, le_add_iff_nonneg_right, zero_le]
+      | inr h_removed =>
+        apply Or.inr
+        simp only [removedHeap, ite_eq_right_iff, and_imp] at h_removed
+        simp only [removedHeap, ite_eq_right_iff, and_imp]
+        intro h_le h_lt
+        apply h_removed h_le
+        rw [← add_assoc, Nat.lt_succ] at h_lt
+        rw [ne_eq, ← Subtype.coe_inj] at h_ne
+        exact lt_of_le_of_ne h_lt h_ne
+
+lemma disjoint_singleton_removedHeap {l : ℕ+} {n : ℕ} {heap : Heap} :
+    disjoint (singleton ⟨l+n, PNat.add_right_nat⟩ q) (removedHeap heap l n) := by
+  intro l'
+  by_cases l' = ⟨l+n, PNat.add_right_nat⟩
+  case pos h =>
+    apply Or.inr
+    simp only [removedHeap, ite_eq_right_iff, and_imp]
+    intro _ h_lt
+    exfalso
+    simp only [h, PNat.mk_coe, lt_self_iff_false] at h_lt
+  case neg h =>
+    apply Or.inl
+    simp only [singleton, ite_eq_right_iff, imp_false]
+    exact (Ne.symm h)
+
+@[simp]
+lemma removedHeap_of_zero {heap : Heap} : removedHeap heap l 0 = ∅ := by
+  apply funext
+  intro l'
+  simp only [removedHeap, add_zero, PNat.coe_lt_coe, emptyHeap, ite_eq_right_iff, and_imp]
+  intro h_le h_lt
+  have := not_le_of_lt h_lt
+  contradiction
+
+lemma removedHeap_of_succ {heap : Heap} :
+    removedHeap heap l (n+1)
+    = fun l' : ℕ+ => if l' = ⟨l+n, PNat.add_right_nat⟩ then heap l' else removedHeap heap l n l' := by
+  apply funext
+  intro l'
+  split
+  case isTrue h =>
+    simp only [removedHeap, h, add_lt_add_iff_left, lt_add_iff_pos_right, zero_lt_one, and_true,
+      ite_eq_left_iff, not_le]
+    intro h'
+    exfalso
+    simp only [PNat.mk_coe, add_lt_add_iff_left, lt_add_iff_pos_right, zero_lt_one, and_true,
+      not_le] at h'
+    rw [← PNat.coe_lt_coe, PNat.mk_coe] at h'
+    simp only [add_lt_iff_neg_left, not_lt_zero'] at h'
+  case isFalse h =>
+    simp only [removedHeap]
+    split
+    case isTrue h_l' =>
+      rw [if_pos]
+      apply And.intro h_l'.left
+      apply lt_of_le_of_ne (Nat.le_of_lt_succ h_l'.right)
+      rw [← PNat.coe_inj, PNat.mk_coe] at h
+      exact h
+    case isFalse h_l' =>
+      rw [if_neg]
+      simp only [not_and, not_lt]
+      intro h_le
+      simp only [not_and, not_lt] at h_l'
+      specialize h_l' h_le
+      apply le_trans ?_ h_l'
+      simp only [add_le_add_iff_left, le_add_iff_nonneg_right, zero_le]
+
+@[simp]
+lemma removedHeap_of_singleton_union {heap : Heap} (h : l' < l ∨ l+n ≤ l') :
+    removedHeap (singleton l' q ∪ heap) l n = removedHeap heap l n := by
+  apply funext
+  intro l''
+  simp only [removedHeap, Union.union, singleton]
+  split_ifs
+  case pos h_l h_l'' =>
+    exfalso
+    obtain rfl := h_l''
+    cases h with
+    | inl h_lt =>
+      have := not_le_of_lt h_lt
+      exact this h_l.left
+    | inr h_lt =>
+      have := not_le_of_lt h_l.right
+      exact this h_lt
+  case neg => rfl
+  case neg => rfl
+
+lemma removedHeap_of_removedHeap {heap : Heap} :
+    removedHeap (removedHeap heap l n) l n = removedHeap heap l n := by
+  apply funext
+  intro l'
+  simp only [removedHeap, ite_eq_left_iff]
+  intro h
+  rw [if_neg h]
+
+lemma isAlloc_of_union_of_isAlloc {heap heap₁ heap₂ : Heap}
+    (h_alloc : isAlloc heap₁ l n) (h_union : heap = heap₁ ∪ heap₂) :
+    isAlloc heap l n := by
+  intro l' h_le h_lt
+  rw [h_union]
+  specialize h_alloc l' h_le h_lt
+  apply ne_undef_of_union_of_ne_undef
+  exact h_alloc
+
+lemma removedHeap_of_union {heap heap₁ heap₂ : Heap}
+    (h_union : heap = heap₁ ∪ heap₂) (h_alloc : isAlloc heap₁ l n) :
+    removedHeap heap₁ l n = removedHeap heap l n := by
+  apply funext
+  intro l'
+  simp only [removedHeap]
+  rename isAlloc heap₁ l n => h_alloc₁
+  split_ifs
+  case pos h_l' =>
+    specialize h_alloc₁ l' h_l'.left h_l'.right
+    rw [h_union, union_val_iff_of_val h_alloc₁]
+  case neg => rfl
+
+lemma remainHeap_of_union_removeHeap {heap heap' : Heap}
+    (h : heap = removedHeap heap l n ∪ heap') (h_disjoint : disjoint (removedHeap heap l n) heap') :
+    heap' = freeLoc heap l n := by
+  apply funext
+  intro l'
+  simp only [freeLoc]
+  split
+  case isTrue h_l' =>
+    specialize h_disjoint l'
+    simp only [removedHeap, h_l', and_self, ↓reduceIte] at h_disjoint
+    cases h_disjoint with
+    | inl h_heap =>
+      rw [h, union_undef_iff_undef] at h_heap
+      exact h_heap.right
+    | inr h_heap' => exact h_heap'
+  case isFalse h_l' =>
+    have := congr_fun h l'
+    simp only [Union.union, removedHeap, h_l', ↓reduceIte] at this
+    exact this.symm
+
+
+
+end free
 
 section emptyHeap
 
@@ -691,6 +555,11 @@ theorem union_eq_emptyHeap_iff {heap heap' : Heap} :
 end emptyHeap
 
 section singleton
+
+lemma singleton_eq : singleton l q l = q := by simp only [singleton, ↓reduceIte]
+
+lemma singleton_eq_of_ne (h : l ≠ l') : singleton l q l' = undef := by
+  simp only [singleton, h, ↓reduceIte]
 
 lemma singleton_ne_emptyHeap : singleton l q ≠ ∅ := by
   intro h
@@ -757,6 +626,15 @@ lemma singleton_eq_singleton_iff_eq :
   · rintro rfl
     rfl
 
+lemma singleton_union_of_neq {heap : Heap} (h : l ≠ l') :
+    (singleton l q ∪ heap) l' = heap l' := by
+  rw [union_eq_of_left_undef]
+  rw [singleton_eq_of_ne h]
+
+lemma singleton_union {heap : Heap} :
+    (singleton l q ∪ heap) l = q := by
+  simp only [Union.union, singleton, ↓reduceIte]
+
 lemma substituteLoc_singleton_eq :
     substituteLoc (singleton l q) l q' = (singleton l q') := by
   apply funext
@@ -783,53 +661,20 @@ lemma subsituteLoc_eq_union_singleton {heap : Heap} (h : heap l = undef) :
 
 theorem bigSingleton_eq_undef_iff (l : PNat) (n : ℕ) (qs : ℕ → ℚ) (l' : PNat) :
     bigSingleton l n qs l' = undef ↔ l' < l ∨ l+n ≤ l' := by
-  induction n with
-  | zero =>
-    simp only [bigSingleton, emptyHeap, add_zero, PNat.coe_le_coe, true_iff]
-    exact lt_or_le l' l
-  | succ n ih =>
-    simp only [bigSingleton]
-    rw [union_undef_iff_undef]
-    apply Iff.intro
-    · rintro ⟨h_singleton, h_bigSingleton⟩
-      by_cases l' = l+n
-      case pos h_nsucc =>
-        have : l' = ⟨l+n, PNat.add_right_nat⟩ := PNat.eq h_nsucc
-        simp only [singleton, this, ↓reduceIte] at h_singleton
-      case neg h_nsucc =>
-        rw [ih] at h_bigSingleton
-        cases h_bigSingleton with
-        | inl h => exact Or.inl h
-        | inr h =>
-          apply Or.inr
-          rw [← add_assoc, Nat.succ_le]
-          apply lt_of_le_of_ne h (Ne.symm h_nsucc)
-    · rintro (h_l' | h_l')
-      · apply And.intro
-        · simp only [singleton, ite_eq_right_iff, imp_false]
-          intro h
-          rw [← h, ← PNat.coe_lt_coe, PNat.mk_coe, add_lt_iff_neg_left] at h_l'
-          exact not_lt_zero' h_l'
-        · rw [ih]
-          exact Or.inl h_l'
-      · apply And.intro
-        · simp only [singleton, ite_eq_right_iff, imp_false]
-          intro h
-          rw [← h, PNat.mk_coe, add_le_add_iff_left, add_le_iff_nonpos_right,
-            nonpos_iff_eq_zero] at h_l'
-          exact one_ne_zero h_l'
-        · rw [ih]
-          apply Or.inr
-          apply le_trans ?_ h_l'
-          rw [add_le_add_iff_left, le_add_iff_nonneg_right]
-          exact Nat.zero_le 1
+  simp only [bigSingleton, ite_eq_right_iff, imp_false, not_and_or, not_le, not_lt]
+
+theorem bigSingleton_of_zero :
+    bigSingleton l 0 qs = ∅ := by
+  apply funext
+  intro l'
+  simp only [bigSingleton, add_zero, PNat.coe_lt_coe, emptyHeap, ite_eq_right_iff, imp_false,
+    not_and, not_lt, imp_self]
 
 lemma disjoint_bigSingleton_of_isNotAlloc {heap : Heap} (h : isNotAlloc heap l n) :
     disjoint heap (bigSingleton l n qs) := by
   intro l'
   by_cases l ≤ l' ∧ l' < l+n
   case pos h_l' =>
-    rw [isNotAlloc_def] at h
     exact Or.inl <| h l' h_l'.left h_l'.right
   case neg h_l' =>
     simp only [not_and_or, not_le, not_lt] at h_l'
@@ -851,22 +696,63 @@ lemma disjoint_singleton_bigSingleton (h : l+n ≤ l') :
     apply Or.inl
     simp only [singleton, h_ne, ↓reduceIte]
 
+lemma union_singleton_bigSingle :
+    (bigSingleton l n qs) ∪ (singleton ⟨l+n,PNat.add_right_nat⟩ (qs n))
+    = bigSingleton l (n+1) qs := by
+  apply funext
+  intro l'
+  simp only [Union.union, bigSingleton, singleton]
+  split
+  case h_1 q h_q =>
+    rw [← h_q]
+    split
+    case isTrue h_l' =>
+      obtain ⟨h_le, h_lt⟩ := h_l'
+      rw [if_pos]
+      apply And.intro h_le
+      apply lt_trans h_lt
+      simp only [add_lt_add_iff_left, lt_add_iff_pos_right, zero_lt_one]
+    case isFalse h_l' =>
+      simp only [if_neg h_l'] at h_q
+  case h_2 q h_q =>
+    split
+    case isTrue h_l =>
+      rw [if_pos]
+      · simp only [← h_l, PNat.mk_coe, add_tsub_cancel_left]
+      · simp only [← h_l, PNat.mk_coe, add_lt_add_iff_left, lt_add_iff_pos_right, zero_lt_one,
+          and_true]
+        rw [← Subtype.coe_le_coe]; nth_rw 2 [Subtype.coe_mk]
+        exact Nat.le_add_right (↑l) n
+    case isFalse h_l =>
+      split
+      case isTrue h_l' =>
+        rw [if_pos] at h_q
+        · simp only at h_q
+        · apply And.intro h_l'.left
+          have := Nat.le_of_lt_succ h_l'.right
+          apply lt_of_le_of_ne this
+          simp only [Nat.add_eq, ne_eq]
+          rw [← Subtype.val_inj, Subtype.coe_mk] at h_l
+          exact Ne.symm h_l
+      case isFalse => rfl
+
 lemma union_bigSingleton_eq_allocateLoc {heap : Heap} (h : isNotAlloc heap l n) :
     heap ∪ (bigSingleton l n 0) = allocateLoc heap l n := by
-  induction n with
-  | zero => simp only [bigSingleton, union_emptyHeap, allocateLoc]
-  | succ n ih =>
-    simp only [bigSingleton, Pi.zero_apply, allocateLoc]
-    obtain ⟨h_heap, h⟩ := h
-    rw [union_comm (singleton _ 0)]
-    pick_goal 2
-    · apply disjoint_singleton_bigSingleton
-      rfl
-    · rw [← union_assoc, ih h, subsituteLoc_eq_union_singleton]
-      rw [allocateLoc_remain]
-      · exact h_heap
-      · apply Or.inr
-        rfl
+  apply funext
+  intro l'
+  simp only [allocateLoc]
+  split_ifs
+  case pos h_l' =>
+    simp only [Union.union]
+    specialize h l' h_l'.left h_l'.right
+    simp only [h, bigSingleton, h_l', and_self, ↓reduceIte, Pi.zero_apply]
+  case neg h_l' =>
+    simp only [Union.union]
+    split
+    case h_1 q h_q => exact h_q.symm
+    case h_2 q h_q =>
+      simp only [bigSingleton, Pi.zero_apply, if_neg h_l']
+      exact h_q.symm
 
 
 end singleton
