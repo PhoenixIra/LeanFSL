@@ -91,14 +91,14 @@ theorem wrle_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrle [c] ([[P]] ⋆ [[r
       simp only [Set.mem_setOf_eq] at this
       rw [this, wrle_eq_of_term, wrle_eq_of_term, qslSepMul_qslEmp_eq]
 
-theorem wrle_skip : `[qsl| [[P]] ⊢ wrle [ [Prog| skip] ] ([[P]] | [[RI]])] := by
+theorem wrle_skip : `[qsl| [[P]] ⊢ wrle [skip] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le, Pi.le_def]
   intro s
   rw [step_skip, wrle_eq_of_term]
 
-theorem wrle_assign (h : x ∉ varStateRV RI) :
-    `[qsl| [[P]](x ↦ e) ⊢ wrle [ [Prog| x ≔ e] ] ([[P]] | [[RI]])] := by
+theorem wrle_assign (h : x ∉ varRV RI) :
+    `[qsl| [[P]](x ↦ e) ⊢ wrle [x ≔ e] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le, Pi.le_def]
   intro s
@@ -111,13 +111,13 @@ open HeapValue State
 
 theorem wrle_mutate :
     `[qsl| (S (q : ℚ). e_loc ↦ q) ⋆ (e_loc ↦ e_val -⋆ [[P]])
-          ⊢ wrle [ [Prog| e_loc *≔ e_val] ] ([[P]] | [[RI]])] := by
+          ⊢ wrle [e_loc *≔ e_val] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
-    simp only [writtenVarProgram, Set.empty_inter]
+    simp only [wrtStmt, Set.empty_inter]
   · refine monotone_qslSepMul ?_ le_rfl
     intro s
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
@@ -167,15 +167,15 @@ theorem wrle_mutate :
       simp only [State.singleton, ↓reduceIte, ne_eq, not_false_eq_true]
 
 
-theorem wrle_lookup (h : v ∉ varStateRV RI) :
+theorem wrle_lookup (h : v ∉ varRV RI) :
     `[qsl| S (q : ℚ). e_loc ↦ q ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ q))
-          ⊢ wrle [ [Prog| v ≔* e_loc] ] ([[P]] | [[RI]])] := by
+          ⊢ wrle [v ≔* e_loc] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
-    simp only [writtenVarProgram, Set.singleton_inter_eq_empty]
+    simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
   · refine monotone_qslSepMul ?_ le_rfl
     intro s
@@ -228,15 +228,15 @@ theorem wrle_lookup (h : v ∉ varStateRV RI) :
         rw [← h_union, union_undef_iff_undef, h_heap₁] at h_nalloc
         simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
 
-theorem wrle_compareAndSet_true (h : v ∉ varStateRV RI) :
+theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
     `[qsl| e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ)))
-          ⊢ wrle [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
+          ⊢ wrle [v ≔ cas(e_loc, e_val, e_set)] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
-    simp only [writtenVarProgram, Set.singleton_inter_eq_empty]
+    simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
   · refine monotone_qslSepMul ?_ le_rfl
     intro s
@@ -301,15 +301,15 @@ theorem wrle_compareAndSet_true (h : v ∉ varStateRV RI) :
         rw [← h_union, union_undef_iff_undef, h_singleton] at h_nalloc
         simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
 
-theorem wrle_compareAndSet_false (h : v ∉ varStateRV RI) :
+theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
     `[qsl| S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))
-          ⊢ wrle [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
+          ⊢ wrle [v ≔ cas(e_loc, e_val, e_set)] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
-    simp only [writtenVarProgram, Set.singleton_inter_eq_empty]
+    simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
   · refine monotone_qslSepMul ?_ le_rfl
     intro s
@@ -384,16 +384,16 @@ theorem wrle_compareAndSet_false (h : v ∉ varStateRV RI) :
         rw [← h_union, union_undef_iff_undef, h_singleton] at h_nalloc
         simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
 
-theorem wrle_compareAndSet (h : v ∉ varStateRV RI) :
+theorem wrle_compareAndSet (h : v ∉ varRV RI) :
     `[qsl| (e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ))))
       ⊔ (S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ))))
-          ⊢ wrle [ [Prog| v ≔ cas(e_loc, e_val, e_set)] ] ([[P]] | [[RI]])] := by
+          ⊢ wrle [v ≔ cas(e_loc, e_val, e_set)] ([[P]] | [[RI]])] := by
   rw [qslMax_entailment_iff]
   apply And.intro
   · exact wrle_compareAndSet_true h
   · exact wrle_compareAndSet_false h
 
-theorem wrle_allocate (h : v ∉ varStateRV RI) :
+theorem wrle_allocate (h : v ∉ varRV RI) :
     `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ I (l : ℕ+).
           ([⋆] i ∈ { ... n}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))
           ⊢ wrle [ [Prog| v ≔ alloc(e_len)] ] ([[P]] | [[RI]])] := by
@@ -402,7 +402,7 @@ theorem wrle_allocate (h : v ∉ varStateRV RI) :
   apply le_trans
   pick_goal 2
   · apply step_framing
-    simp only [writtenVarProgram, Set.singleton_inter_eq_empty]
+    simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
   · refine monotone_qslSepMul ?_ le_rfl
     intro s
@@ -442,13 +442,13 @@ theorem wrle_allocate (h : v ∉ varStateRV RI) :
 theorem wrle_free :
     `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ S (l : ℕ+). e_loc = (l : ℚ) ⬝
           ([⋆] i ∈ { ... n}. S (q:ℚ). (l+i : ℚ) ↦ q) ⋆ [[P]]
-          ⊢ wrle [ [Prog| free(e_loc, e_len)] ] ([[P]] | [[RI]])] := by
+          ⊢ wrle [free(e_loc, e_len)] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_qslSepDiv_iff_qslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
-    simp only [writtenVarProgram, Set.empty_inter]
+    simp only [wrtStmt, Set.empty_inter]
   · refine monotone_qslSepMul ?_ le_rfl
     intro s
     by_cases (∃ l : ℕ+, l = e_loc s.stack ∧ ∃ n : ℕ, n = e_len s.stack ∧ isAlloc s.heap l n)

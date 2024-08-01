@@ -2,6 +2,7 @@ import InvLimDiss.Program.State
 import InvLimDiss.Program.Expressions
 import InvLimDiss.SL.Entailment
 import InvLimDiss.Analysis.Probabilities
+import InvLimDiss.SL.Classical
 
 /-@
 This file contains definitions and syntax about unit valued quantitative separation logic
@@ -76,8 +77,9 @@ syntax term:51 " = " term:51 : qsl
 syntax "<" term:51 ">" : qsl
 syntax "[[" term "]]" : qsl
 syntax "⁅" term "⁆" : qsl
-syntax qsl:min "( " term " ↦ " term " )" : qsl
-syntax "~" qsl:min : qsl
+syntax "⁅" sl "⁆" : qsl
+syntax:41 qsl:42 "( " term " ↦ " term " )" : qsl
+syntax:40 "~" qsl:41 : qsl
 syntax:35 qsl:36 " ⊓ " qsl:35 : qsl
 syntax:30 qsl:31 " ⊔ " qsl:30 : qsl
 syntax:30 qsl:31 " + " qsl:30 : qsl
@@ -104,6 +106,7 @@ macro_rules
   | `(term| `[qsl| [[$t:term]]]) => `($t)
   | `(term| `[qsl| < $t:term >]) => `(qslReal $t)
   | `(term| `[qsl| ⁅$t:term⁆]) => `(qslIverson $t)
+  | `(term| `[qsl| ⁅$l:sl⁆]) => `(qslIverson `[sl| $l])
   | `(term| `[qsl| $f( $x:term ↦ $e ) ]) => `(qslSubst `[qsl|$f] $x $e)
   | `(term| `[qsl| ~ $f:qsl]) => `(qslNot `[qsl|$f])
   | `(term| `[qsl| $l:qsl ⊓ $r:qsl]) => `(qslMin `[qsl|$l] `[qsl|$r])
@@ -129,6 +132,7 @@ macro_rules
   | `(term| `[qsl $_| [[$t:term]]]) => `($t)
   | `(term| `[qsl $v:term| <$t:term>]) => `(@qslReal $v $t)
   | `(term| `[qsl $v:term| ⁅$t:term⁆]) => `(@qslIverson $v $t)
+  | `(term| `[qsl $v:term| ⁅$l:sl⁆]) => `(@qslIverson $v `[sl $v| $l])
   | `(term| `[qsl $v:term| $f( $x:term ↦ $e ) ]) => `(@qslSubst $v `[qsl $v|$f] $x $e)
   | `(term| `[qsl $v:term| ~ $f:qsl]) => `(qslNot `[qsl $v|$f])
   | `(term| `[qsl $v:term| $l:qsl ⊓ $r:qsl]) => `(qslMin `[qsl $v|$l] `[qsl $v|$r])
@@ -178,7 +182,8 @@ def unexpandQslReal : Unexpander
 
 @[app_unexpander qslIverson]
 def unexpandQslIverson : Unexpander
-  | `($_ $t) => `(`[qsl| ⁅$t:term⁆])
+  | `($_ `[sl| $l:sl]) => `(`[qsl| ⁅$l:sl⁆])
+  | `($_ $t:term) => `(`[qsl| ⁅$t:term⁆])
   | _ => throw ()
 
 def isAtom : TSyntax `qsl → Bool

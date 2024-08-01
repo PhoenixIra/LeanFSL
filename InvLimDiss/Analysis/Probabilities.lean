@@ -176,6 +176,10 @@ lemma zero_unit_div (i : I) (h : 0 < i) : 0 / i = 0 := by
   split_ifs
   simp only [coe_zero, zero_div]
 
+lemma zero_unit_div_of_ne (i : I) (h : i ≠ 0) : 0 / i = 0 := by
+  apply zero_unit_div
+  exact lt_of_le_of_ne nonneg' (Ne.symm h)
+
 @[simp]
 lemma unit_div_one (i : I) : i / 1 = i := by
   rw [Subtype.mk_eq_mk, coe_div]
@@ -439,24 +443,28 @@ theorem le_truncatedAdd (i j k : I) : i ≤ truncatedAdd j k ↔ i ≤ (j:ℝ) +
     simp only [le_min_iff]
     exact ⟨le_one', h⟩
 
+@[simp]
 theorem zero_truncatedAdd (i : I) : truncatedAdd 0 i = i := by
   simp only [truncatedAdd, coe_zero, zero_add, min_def]
   split
   case isTrue h => exact le_antisymm h le_one'
   case isFalse _ => rfl
 
+@[simp]
 theorem truncatedAdd_zero (i : I) : truncatedAdd i 0 = i := by
   simp only [truncatedAdd, coe_zero, add_zero, min_def]
   split
   case isTrue h => exact le_antisymm h le_one'
   case isFalse _ => rfl
 
+@[simp]
 theorem one_truncatedAdd (i : I) : truncatedAdd 1 i = 1 := by
   simp only [truncatedAdd, coe_one, min_def, le_add_iff_nonneg_right]
   rw [←Subtype.coe_inj, Subtype.coe_mk, coe_one]
   rw [if_pos]
   exact nonneg'
 
+@[simp]
 theorem truncatedAdd_one (i : I) : truncatedAdd i 1 = 1 := by
   simp only [truncatedAdd, coe_one, min_def, le_add_iff_nonneg_left]
   rw [←Subtype.coe_inj, Subtype.coe_mk, coe_one]

@@ -54,6 +54,14 @@ macro_rules
   | `(term| `[qsl| wrle [$c:term] ($p:qsl | $r:qsl)]) => `(wrle' $c `[qsl| $p] `[qsl| $r])
   | `(term| `[qsl $v| wrle [$c:term] ($p:qsl | $r:qsl)]) => `(wrle' $c `[qsl $v| $p] `[qsl $v| $r])
 
+
+syntax "wrle [" program "] (" qsl " | " qsl ")" : qsl
+macro_rules
+  | `(term| `[qsl| wrle [$c:program] ($p:qsl | $r:qsl)]) =>
+    `(wrle' [Prog| $c] `[qsl| $p] `[qsl| $r])
+  | `(term| `[qsl $v| wrle [$c:program] ($p:qsl | $r:qsl)]) =>
+    `(wrle' [Prog| $c] `[qsl $v| $p] `[qsl $v| $r])
+
 open Lean PrettyPrinter Delaborator
 
 def makeBrackets [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `qsl)
@@ -62,6 +70,8 @@ def makeBrackets [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m 
 
 @[app_unexpander wrle']
 def unexpanderwrle : Unexpander
+  | `($_ [Prog| $c:program] $p $r) =>
+      do `(`[qsl| wrle [$c:program] ($(← makeBrackets p):qsl | $(← makeBrackets r):qsl )])
   | `($_ $c:term $p $r) =>
       do `(`[qsl| wrle [$c:term] ($(← makeBrackets p):qsl | $(← makeBrackets r):qsl )])
   | _ => throw ()

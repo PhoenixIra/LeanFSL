@@ -4,7 +4,6 @@ import InvLimDiss.CQSL.Step.Sequential
 import InvLimDiss.CQSL.Step.Concurrent
 import InvLimDiss.CQSL.WeakExpectation
 import InvLimDiss.SL.Framing.Basic
-import Mathlib.SetTheory.Ordinal.FixedPointApproximants
 
 namespace CQSL
 
@@ -46,7 +45,7 @@ theorem step_framing_of_skip (inner : Program Var → StateRV Var) :
   use heap₁, heap₂
 
 theorem step_framing_of_assign (inner : Program Var → StateRV Var)
-    (h : v ∉ varStateRV P) :
+    (h : v ∉ varRV P) :
     `[qsl| [[step ([Prog| v ≔ e]) (fun c' => inner c')]] ⋆ [[P]]]
       ⊢ step ([Prog| v ≔ e]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
@@ -59,7 +58,7 @@ theorem step_framing_of_assign (inner : Program Var → StateRV Var)
   use heap₁, heap₂, h_disjoint, h_union
   rw [Subtype.mk_le_mk]
   simp only [substituteStack, Set.Icc.coe_mul]
-  rw [substituteVar_eq_of_not_varStateRV h (e s.stack)]
+  rw [substituteVar_eq_of_not_varRV h (e s.stack)]
 
 theorem step_framing_of_mutate (inner : Program Var → StateRV Var) :
     `[qsl| [[step ([Prog| e_loc *≔ e_val]) (fun c' => inner c')]] ⋆ [[P]]]
@@ -90,7 +89,7 @@ theorem step_framing_of_mutate (inner : Program Var → StateRV Var) :
       simp only [zero_mul, zero_le]
 
 theorem step_framing_of_lookup (inner : Program Var → StateRV Var)
-    (h : v ∉ varStateRV P) :
+    (h : v ∉ varRV P) :
     `[qsl| [[step ([Prog| v ≔* e_loc]) (fun c' => inner c')]] ⋆ [[P]]]
       ⊢ step ([Prog| v ≔* e_loc]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
@@ -110,14 +109,14 @@ theorem step_framing_of_lookup (inner : Program Var → StateRV Var)
     apply le_sSup_of_le
     · use heap₁, heap₂, h_disjoint, h_union
     · simp only [substituteStack]
-      rw [substituteVar_eq_of_not_varStateRV h q]
+      rw [substituteVar_eq_of_not_varRV h q]
   case neg =>
     simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
     rw [step_lookup_of_abort _ _ h_alloc]
     simp only [zero_mul, zero_le]
 
 theorem step_framing_of_cas (inner : Program Var → StateRV Var)
-    (h : v ∉ varStateRV P) :
+    (h : v ∉ varRV P) :
     `[qsl| [[step ([Prog| v ≔ cas(e_loc, e_cmp, e_val)]) (fun c' => inner c')]] ⋆ [[P]]]
       ⊢ step ([Prog| v ≔ cas(e_loc, e_cmp, e_val)]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
@@ -145,7 +144,7 @@ theorem step_framing_of_cas (inner : Program Var → StateRV Var)
         rw [← h_union]
         use substituteLoc_union
       · simp only [substituteStack]
-        rw [substituteVar_eq_of_not_varStateRV h 1]
+        rw [substituteVar_eq_of_not_varRV h 1]
     case neg =>
       have h_ne_val : heap₁ l ≠ e_cmp s.stack := by
         intro h; simp only [h, val.injEq] at h_value; exact h_q h_value.symm
@@ -159,14 +158,14 @@ theorem step_framing_of_cas (inner : Program Var → StateRV Var)
       apply le_sSup_of_le
       · use heap₁, heap₂, h_disjoint, h_union
       · simp only [substituteStack]
-        rw [substituteVar_eq_of_not_varStateRV h 0]
+        rw [substituteVar_eq_of_not_varRV h 0]
   case neg =>
       simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
       rw [step_cas_of_abort _ _ h_alloc]
       simp only [zero_mul, zero_le]
 
 theorem step_framing_of_allocate (inner : Program Var → StateRV Var)
-    (h : v ∉ varStateRV P) :
+    (h : v ∉ varRV P) :
     `[qsl| [[step ([Prog| v ≔ alloc(e)]) (fun c' => inner c')]] ⋆ [[P]]]
       ⊢ step ([Prog| v ≔ alloc(e)]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
@@ -188,7 +187,7 @@ theorem step_framing_of_allocate (inner : Program Var → StateRV Var)
       simp only [substituteStack, allocateHeap, ← h_union]
       use allocateLoc_union
     · simp only [substituteStack]
-      rw [substituteVar_eq_of_not_varStateRV h l]
+      rw [substituteVar_eq_of_not_varRV h l]
       refine unit_mul_le_mul ?_ le_rfl
       apply sInf_le
       use l, h_ne_alloc.left
@@ -401,7 +400,7 @@ theorem step_framing_of_concurrent (inner : Program Var → StateRV Var)
             exact le_trans (min_le_right _ _) le_rfl
 
 theorem step_framing (inner : Program Var → StateRV Var)
-    (h : (writtenVarProgram c) ∩ (varStateRV P) = ∅) :
+    (h : (wrtStmt c) ∩ (varRV P) = ∅) :
     `[qsl| [[step c (fun c' => inner c')]] ⋆ [[P]]]
       ⊢ step c (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
   induction c generalizing inner with
@@ -409,17 +408,17 @@ theorem step_framing (inner : Program Var → StateRV Var)
   | abort => exact step_framing_of_abort inner
   | skip' => exact step_framing_of_skip inner
   | assign v e =>
-    simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
+    simp only [wrtStmt, Set.singleton_inter_eq_empty] at h
     exact step_framing_of_assign inner h
   | mutate e_loc e_val => exact step_framing_of_mutate inner
   | lookup v e_loc =>
-    simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
+    simp only [wrtStmt, Set.singleton_inter_eq_empty] at h
     exact step_framing_of_lookup inner h
   | compareAndSet v e_loc e_cmp e_val =>
-    simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
+    simp only [wrtStmt, Set.singleton_inter_eq_empty] at h
     exact step_framing_of_cas inner h
   | allocate v e_n =>
-    simp only [writtenVarProgram, Set.singleton_inter_eq_empty] at h
+    simp only [wrtStmt, Set.singleton_inter_eq_empty] at h
     exact step_framing_of_allocate inner h
   | free' e_loc e_n => exact step_framing_of_free inner
   | probabilisticBranching e c₁ c₂ => exact step_framing_of_probBranching inner
@@ -427,10 +426,10 @@ theorem step_framing (inner : Program Var → StateRV Var)
   | loop e c => exact step_framing_of_loop inner
   | sequential c₁ c₂ ih₁ ih₂ =>
     clear ih₂
-    simp only [writtenVarProgram, Set.union_inter_distrib_right, Set.union_empty_iff] at h
-    exact step_framing_of_sequential inner (ih₁ _ h.left)
+    simp only [wrtStmt, Set.union_inter_distrib_right, Set.union_empty_iff] at h
+    exact step_framing_of_sequential inner (ih₁ _ h)
   | concurrent c₁ c₂ ih₁ ih₂ =>
-    simp only [writtenVarProgram, Set.union_inter_distrib_right, Set.union_empty_iff] at h
+    simp only [wrtStmt, Set.union_inter_distrib_right, Set.union_empty_iff] at h
     apply step_framing_of_concurrent
     · exact ih₁ _ h.left
     · exact ih₂ _ h.right

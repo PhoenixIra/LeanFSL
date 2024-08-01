@@ -32,6 +32,9 @@ def slPointsTo (loc val : ValueExp Var) : StateProp Var :=
 def slEquals (e e' : ValueExp Var) : StateProp Var :=
     λ ⟨s,_⟩ => e s = e' s
 
+def slExp (e : BoolExp Var) : StateProp Var :=
+    λ ⟨s,_⟩ => e s
+
 def slSubst (P : StateProp Var) (v : Var) (e : ValueExp Var) : StateProp Var :=
   fun s => P (s.substituteStack v (e s.stack))
 
@@ -56,7 +59,6 @@ def slBigSepCon (n : Nat) (P : ℕ → StateProp Var) : StateProp Var :=
 def slSepImp (P Q : StateProp Var) : StateProp Var :=
   λ ⟨s,h⟩ => ∀ h', disjoint h h' → P ⟨s,h'⟩ → Q ⟨s,(h ∪ h')⟩
 
-
 open Lean
 
 declare_syntax_cat sl
@@ -66,8 +68,9 @@ syntax "sFalse" : sl
 syntax "emp" : sl
 syntax term " ↦ " term : sl
 syntax term:51 " = " term:51 : sl
+syntax "<" term:51 ">" : sl
 syntax "[[" term "]]" : sl
-syntax sl:min "( " term " ↦ " term " )" : sl
+syntax:41 sl:42 "( " term " ↦ " term " )" : sl
 syntax:40 "¬" sl:41 : sl
 syntax:35 sl:36 " ∧ " sl:35 : sl
 syntax:30 sl:31 " ∨ " sl:30 : sl
@@ -90,6 +93,7 @@ macro_rules
   | `(term| `[sl| emp]) => `(slEmp)
   | `(term| `[sl| $l:term ↦ $r:term]) => `(slPointsTo $l $r)
   | `(term| `[sl| $l:term = $r:term]) => `(slEquals $l $r)
+  | `(term| `[sl| < $e:term >]) => `(slExp $e)
   | `(term| `[sl| [[$t:term]]]) => `($t)
   | `(term| `[sl| $f( $x:term ↦ $e ) ]) => `(slSubst `[sl|$f] $x $e)
   | `(term| `[sl| ¬ $f:sl]) => `(slNot `[sl|$f])
@@ -111,6 +115,7 @@ macro_rules
   | `(term| `[sl $v:term| emp]) => `(@slEmp $v)
   | `(term| `[sl $v:term| $l:term ↦ $r:term]) => `(@slPointsTo $v $l $r)
   | `(term| `[sl $v:term| $l:term = $r:term]) => `(@slEquals $v $l $r)
+  | `(term| `[sl $v:term| < $e:term >]) => `(@slExp $v $e)
   | `(term| `[sl $_| [[$t:term]]]) => `($t)
   | `(term| `[sl $v:term| $f( $x:term ↦ $e ) ]) => `(@slSubst $v `[sl $v|$f] $x $e)
   | `(term| `[sl $v:term| ¬ $f:sl]) => `(slNot `[sl $v|$f])
@@ -153,6 +158,10 @@ def unexpandSlEquals : Unexpander
   | `($_ $l $r) => `(`[sl| $l:term = $r:term])
   | _ => throw ()
 
+@[app_unexpander slExp]
+def unexpandSlExpr : Unexpander
+  | `($_ $e) => `(`[sl| <$e:term>])
+  | _ => throw ()
 
 def isAtom : TSyntax `sl → Bool
   | `(sl| emp) => true

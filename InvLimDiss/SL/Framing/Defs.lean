@@ -6,8 +6,8 @@ import InvLimDiss.Program.Semantics
   However, when we also want to move it along a program semantics object, we require
   certain additional criteria on the program and the formula.
   We formulate these requirements here:
-  * `writtenVarProgram` are the program variables on the left side of assignments
-  * `varStateRV` are the program variables occuring in a random variable-/
+  * `wrtProg` are the program variables on the left side of assignments
+  * `varRV` are the program variables occuring in a random variable-/
 
 open Syntax Semantics QSL State
 
@@ -15,8 +15,8 @@ namespace Syntax
 
 variable {Var : Type}
 
-/-- Variables on the left of assignments in a program -/
-def writtenVarProgram : Program Var → Set Var
+/-- Variables on the left of assignments in this statement -/
+def wrtStmt : Program Var → Set Var
   | [Prog| ↓] => ∅
   | [Prog| ↯] => ∅
   | [Prog| skip] => ∅
@@ -26,11 +26,28 @@ def writtenVarProgram : Program Var → Set Var
   | [Prog| v ≔ cas(_, _, _)] => {v}
   | [Prog| v ≔ alloc(_)] => {v}
   | [Prog| free(_, _)] => ∅
-  | [Prog| if _ then [[c₁]] else [[c₂]] fi] => writtenVarProgram c₁ ∪ writtenVarProgram c₂
-  | [Prog| pif _ then [[c₁]] else [[c₂]] fi] => writtenVarProgram c₁ ∪ writtenVarProgram c₂
-  | [Prog| [[c₁]] ; [[c₂]]] => writtenVarProgram c₁ ∪ writtenVarProgram c₂
-  | [Prog| while _ begin [[c]] fi] => writtenVarProgram c
-  | [Prog| [[c₁]] || [[c₂]]] => writtenVarProgram c₁ ∪ writtenVarProgram c₂
+  | [Prog| if _ then [[_]] else [[_]] fi] => ∅
+  | [Prog| pif _ then [[_]] else [[_]] fi] => ∅
+  | [Prog| [[c₁]] ; [[_]]] => wrtStmt c₁
+  | [Prog| while _ begin [[_]] fi] => ∅
+  | [Prog| [[c₁]] || [[c₂]]] => wrtStmt c₁ ∪ wrtStmt c₂
+
+/-- Variables on the left of assignments in the program -/
+def wrtProg : Program Var → Set Var
+  | [Prog| ↓] => ∅
+  | [Prog| ↯] => ∅
+  | [Prog| skip] => ∅
+  | [Prog| v ≔ _] => {v}
+  | [Prog| _ *≔ _] => ∅
+  | [Prog| v ≔* _] => {v}
+  | [Prog| v ≔ cas(_, _, _)] => {v}
+  | [Prog| v ≔ alloc(_)] => {v}
+  | [Prog| free(_, _)] => ∅
+  | [Prog| if _ then [[c₁]] else [[c₂]] fi] => wrtProg c₁ ∪ wrtProg c₂
+  | [Prog| pif _ then [[c₁]] else [[c₂]] fi] => wrtProg c₁ ∪ wrtProg c₂
+  | [Prog| [[c₁]] ; [[c₂]]] => wrtProg c₁ ∪ wrtProg c₂
+  | [Prog| while _ begin [[c]] fi] => wrtProg c
+  | [Prog| [[c₁]] || [[c₂]]] => wrtProg c₁ ∪ wrtProg c₂
 
 end Syntax
 
@@ -38,6 +55,6 @@ namespace QSL
 
 /-- Variables occuring in an expression, semantically defined. I.e. variables that never change
   the outcome of `f`. -/
-def varStateRV (f : StateRV Var) : Set Var := { v | ∃ s q, f s ≠ f (s.substituteStack v q)}
+def varRV (f : StateRV Var) : Set Var := { v | ∃ s q, f s ≠ f (s.substituteStack v q)}
 
 end QSL

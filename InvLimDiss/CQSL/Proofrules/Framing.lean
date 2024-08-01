@@ -1,4 +1,5 @@
 import InvLimDiss.CQSL.Step.Framing
+import Mathlib.SetTheory.Ordinal.FixedPointApproximants
 
 namespace CQSL
 
@@ -7,7 +8,7 @@ variable {Var : Type}
 open Syntax Semantics QSL unitInterval Action State HeapValue Classical OrdinalApprox
 
 theorem wrle_frame {c : Program Var} {P : StateRV Var}
-    (h : (writtenVarProgram c) ∩ (varStateRV F) = ∅) :
+    (h : (wrtProg c) ∩ (varRV F) = ∅) :
     `[qsl| wrle [c] ([[P]] | [[RI]]) ⋆ [[F]] ⊢ wrle [c] ([[P]] ⋆ [[F]] | [[RI]])] := by
   unfold wrle'
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
@@ -54,7 +55,7 @@ theorem wrle_frame {c : Program Var} {P : StateRV Var}
         · apply monotone_step_of_semantics_support
           intro s a _ c' s' h_semantics
           apply monotone_qslSepMul
-          · have : writtenVarProgram c' ∩ varStateRV F = ∅ := by {
+          · have : wrtProg c' ∩ varRV F = ∅ := by {
               apply Set.Subset.antisymm
               · apply Set.Subset.trans
                 · exact Set.inter_subset_inter (written_of_transition h_semantics) (Set.Subset.rfl)
@@ -64,7 +65,7 @@ theorem wrle_frame {c : Program Var} {P : StateRV Var}
             exact ih j h_j this
           · exact le_rfl
         · conv => right; intro s; left; intro c' s'; rw [← qslSepMul_assoc, qslSepMul_comm F RI, qslSepMul_assoc]
-          refine le_trans ?_ (step_framing _ h)
+          refine le_trans ?_ (step_framing _ (wrtStmt_inter_varRV_eq_emptyset_of_wrtProg h))
           rw [← qslSepMul_assoc ,qslSepMul_comm F RI, qslSepMul_assoc]
           refine monotone_qslSepMul ?_ le_rfl
           unfold Entailment.entail instEntailmentStateRV

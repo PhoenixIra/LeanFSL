@@ -9,27 +9,27 @@ open Syntax Semantics QSL State
 
 namespace QSL
 
-theorem varStateRV_of_qslTrue : varStateRV `[qsl Var| qTrue] = ∅ := by
-  rw [varStateRV]
+theorem varRV_of_qslTrue : varRV `[qsl Var| qTrue] = ∅ := by
+  rw [varRV]
   simp only [ne_eq, Set.ext_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_exists,
     Decidable.not_not]
   intro _ _ _; rfl
 
-theorem varStateRV_of_qslFalse : varStateRV `[qsl Var| qFalse] = ∅ := by
-  rw [varStateRV]
+theorem varRV_of_qslFalse : varRV `[qsl Var| qFalse] = ∅ := by
+  rw [varRV]
   simp only [ne_eq, Set.ext_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_exists,
     Decidable.not_not]
   intro _ _ _; rfl
 
-theorem varStateRV_of_qslEmp : varStateRV `[qsl Var| emp] = ∅ := by
-  rw [varStateRV]
+theorem varRV_of_qslEmp : varRV `[qsl Var| emp] = ∅ := by
+  rw [varRV]
   simp only [ne_eq, Set.ext_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_exists,
     Decidable.not_not]
   intro _ _ _; rfl
 
-theorem varStateRV_of_qslPointsTo :
-    varStateRV `[qsl Var| e ↦ e'] ⊆ (varsValue e) ∪ (varsValue e') := by
-  simp only [varStateRV, ne_eq, varsValue]
+theorem varRV_of_qslPointsTo :
+    varRV `[qsl Var| e ↦ e'] ⊆ (varsValue e) ∪ (varsValue e') := by
+  simp only [varRV, ne_eq, varsValue]
   intro x ⟨s,q,h⟩
   simp only [Set.mem_union, Set.mem_setOf_eq]
   simp only [qslPointsTo] at h
@@ -200,10 +200,10 @@ theorem qslSubst_of_qslSepDiv :
   intro s
   rfl
 
-theorem substituteStack_of_qslSepCon (e : ValueExp Var) (h : v ∉ varStateRV g) :
+theorem substituteStack_of_qslSepCon (e : ValueExp Var) (h : v ∉ varRV g) :
     `[qsl| ([[f]] ⋆ [[g]])(v ↦ e)] = `[qsl| [[f]](v ↦ e) ⋆ [[g]]] := by
   rw [qslSubst_of_qslSepMul]
-  rw [qslSubst_eq_of_not_varStateRV h e]
+  rw [qslSubst_eq_of_not_varRV h e]
 
 
 

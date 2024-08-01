@@ -20,6 +20,8 @@ variable {Var : Type}
 
 section Entailment
 
+theorem entailment_iff_pi_le {P Q : StateRV Var} : P ⊢ Q ↔ P ≤ Q := by rfl
+
 theorem entailment_iff_le {P Q : StateRV Var} : P ⊢ Q ↔ ∀ s, P s ≤ Q s := by
   unfold Entailment.entail instEntailmentStateRV
   simp only

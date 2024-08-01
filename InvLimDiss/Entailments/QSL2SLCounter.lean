@@ -16,7 +16,7 @@ theorem atLeast_qslSepDiv_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var}
 example : False := by
   let s : State String := ⟨fun _ => 0, ∅⟩
   let f₁ : StateRV String := fun _ => 0
-  let f₂ : StateRV String := fun ⟨s,h⟩ =>
+  let f₂ : StateRV String := fun ⟨_,h⟩ =>
     if let HeapValue.val x := h 1
       then if h : (0:ℝ) < x ∧ x ≤ (1:ℝ) then ⟨x,⟨le_of_lt h.left,h.right⟩⟩ else 1
       else 1
@@ -57,8 +57,7 @@ example : False := by
   split at h_j₂
   case h_1 _ =>
     split at h_j₂
-    case isTrue x h_x h_x' =>
-      norm_cast at h_x
+    case isTrue x _ h_x' =>
       let heap_small : Heap := fun l => if l = 1 then HeapValue.val (x/2) else HeapValue.undef
       specialize h heap_small
       obtain ⟨s_j₁, h_j₁⟩ := h_j₁
@@ -82,7 +81,7 @@ example : False := by
       norm_cast at h
       have : x / 2 < x := by rify; exact div_two_lt_of_pos h_x'.left
       exact h this
-    case isFalse x h_x =>
+    case isFalse h_x =>
       let heap_small : Heap := fun l => if l = 1 then HeapValue.val (1/2) else HeapValue.undef
       specialize h heap_small
       obtain ⟨s_j₁, h_j₁⟩ := h_j₁
