@@ -32,7 +32,7 @@ theorem wrtStmt_inter_varRV_eq_emptyset_of_wrtProg
     wrtStmt c ∩ varRV F = ∅ := by
   apply Set.subset_eq_empty ?_ h
   apply Set.inter_subset_inter
-  . exact wrtStmt_subset_wrtProg
+  · exact wrtStmt_subset_wrtProg
   · exact subset_rfl
 
 theorem substituteStack_eq_of_not_varRV {f : StateRV Var} {v : Var} (h : v ∉ varRV f) :

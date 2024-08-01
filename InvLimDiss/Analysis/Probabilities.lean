@@ -92,8 +92,8 @@ lemma div_le_one {a b : ℝ} (h_b_pos : 0 < b) (h_ab : a ≤ b): a/b ≤ 1 := by
 lemma div_mem_unit {a b : ℝ} (h_a_nonneg : 0 ≤ a) (h_ab : a < b): a/b ∈ I := by
   have h_b_pos: 0 < b := by apply lt_of_le_of_lt; exact h_a_nonneg; exact h_ab
   simp; apply And.intro;
-  . exact div_nonneg h_a_nonneg (le_of_lt h_b_pos)
-  . exact div_le_one h_b_pos (le_of_lt h_ab)
+  · exact div_nonneg h_a_nonneg (le_of_lt h_b_pos)
+  · exact div_le_one h_b_pos (le_of_lt h_ab)
 
 noncomputable instance unitDiv : Div I :=
     ⟨fun i j => if h : i < j then ⟨i/j, div_mem_unit nonneg' h⟩ else 1⟩
@@ -478,7 +478,7 @@ theorem truncatedAdd_assoc (i j k : I) :
   case isTrue h_ij =>
     rw [if_pos]
     pick_goal 2
-    . calc (1:ℝ)
+    · calc (1:ℝ)
       _ = 1 + 0 := Eq.symm (AddLeftCancelMonoid.add_zero 1)
       _ ≤ 1 + k := add_le_add le_rfl nonneg'
     · split
