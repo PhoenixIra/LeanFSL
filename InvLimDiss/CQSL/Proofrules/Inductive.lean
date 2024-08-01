@@ -57,8 +57,28 @@ theorem wrle_seq {P resource : StateRV Vars} {e : BoolExp Vars} :
             exists_exists_and_eq_and]
           use Order.succ k', Order.succ_lt_succ h_k'
           simp only [h_abort₂, wrle_step]
-          sorry
-        case isFalse => sorry
+          unfold gfpApprox
+          apply le_antisymm ?_ nonneg'
+          apply sInf_le
+          simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton,
+            Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp, Pi.top_apply,
+            exists_exists_and_eq_and]
+          use 0
+          apply And.intro ?_ (rfl)
+          apply Or.inr
+          use k', h_k'
+          apply funext
+          simp only [wrle_step, qslFalse, Pi.zero_apply, implies_true]
+        case isFalse h_ne_abort₂ =>
+          apply sInf_le_of_le
+          · simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists,
+              Order.lt_succ_iff, exists_prop, exists_exists_and_eq_and]
+            use k', le_of_lt h_k'
+          · rw [unit_le_div_iff_mul_le]
+            apply le_sSup_of_le
+            · use s.heap, heap'
+            · rw [← unit_le_div_iff_mul_le]
+              sorry
       | inr => sorry
 
 theorem wrle_concur {e : BoolExp Var}
