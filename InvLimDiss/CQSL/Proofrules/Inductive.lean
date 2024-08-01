@@ -16,7 +16,14 @@ theorem wrle_seq {P resource : StateRV Vars} {e : BoolExp Vars} :
     `[qsl| wrle [c₁] (wrle [c₂] ([[P]] | [[resource]]) | [[resource]])
       ⊢ wrle [[[c₁]] ; [[c₂]]] ([[P]] | [[resource]])] := by
   unfold wrle'
-  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp] -- I may need to add one ordinal on this for it to work.
+  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
+  rw [← OrdinalApprox.gfpApprox_eq_of_mem_fixedPoints]
+  case b => exact Order.succ (Order.succ (Cardinal.mk (Program Vars → StateRV Vars))).ord
+  case h_init => exact le_top
+  case h_ab => exact Order.le_succ _
+  case h =>
+    apply OrdinalApprox.gfpApprox_ord_mem_fixedPoint
+    exact le_top
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
   induction (Order.succ <| Cardinal.mk <| Program Vars → StateRV Vars).ord
     using Ordinal.induction generalizing c₁ with
@@ -48,7 +55,7 @@ theorem wrle_seq {P resource : StateRV Vars} {e : BoolExp Vars} :
           apply sInf_le
           simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
             exists_exists_and_eq_and]
-          use k', h_k'
+          use Order.succ k', Order.succ_lt_succ h_k'
           simp only [h_abort₂, wrle_step]
           sorry
         case isFalse => sorry

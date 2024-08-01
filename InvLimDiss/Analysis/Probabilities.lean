@@ -221,6 +221,18 @@ lemma unit_div_eq_one_iff {i j : I} : i / j = 1 ↔ j ≤ i := by
     rw [if_neg (not_lt.mpr h)]
     rfl
 
+lemma mul_div_cancel (i j : I) : j * i / i = j := by
+  rw [Subtype.mk_eq_mk, coe_div, coe_mul]
+  split
+  case isTrue h =>
+    have : i ≠ 0 := by intro h_i; rw[h_i] at h; simp only [mul_zero, lt_self_iff_false] at h
+    rw [← mul_div, div_self]
+    · simp only [mul_one]
+    · simp only [ne_eq, coe_eq_zero, this, not_false_eq_true]
+  case isFalse h =>
+    sorry
+
+
 end MulDiv
 
 /-!
