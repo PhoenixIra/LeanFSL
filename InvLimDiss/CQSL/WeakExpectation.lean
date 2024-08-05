@@ -6,7 +6,7 @@ import Mathlib.Order.FixedPoints
 
 /-! This file contains the concurrent bellman-fixpoint and lemmas about, especially
   * `wrle_step` the concurrent bellman-operator
-  * `wrle_monotone` the concurrent bellman-operator is monotone
+  * `wrle_step_mono` the concurrent bellman-operator is monotone
   * `wrle'` the fixpoint of the concurrent bellman-equation
   * `wrle_def` one unfolding of the bellman-solution
 
@@ -25,7 +25,7 @@ noncomputable def wrle_step (post : StateRV Var) (resource : StateRV Var) :
   | _, [Prog| ↯ ] => `[qsl| qFalse]
   | X, program => `[qsl| [[resource]] -⋆ [[step program (fun c => `[qsl| [[X c]] ⋆ [[resource]] ]) ]] ]
 
-theorem wrle_monotone (post : StateRV Var) (resource : StateRV Var) : Monotone (wrle_step post resource) := by
+theorem wrle_step_mono (post : StateRV Var) (resource : StateRV Var) : Monotone (wrle_step post resource) := by
   intro X X' h_X
   rw [Pi.le_def]
   intro c
@@ -34,20 +34,20 @@ theorem wrle_monotone (post : StateRV Var) (resource : StateRV Var) : Monotone (
   case h_1 => exact le_rfl
   case h_2 => exact le_rfl
   case h_3 =>
-    apply monotone_qslSepDiv le_rfl
-    apply monotone_step
+    apply qslSepDiv_mono le_rfl
+    apply step_mono
     rw [Pi.le_def]
     intro c
     rw [Pi.le_def]
     intro s
-    apply monotone_qslSepMul
+    apply qslSepMul_mono
     · rw [Pi.le_def] at h_X
       exact h_X c
     · exact le_rfl
 
 /-- The greatest solution to the concurrent bellman equation -/
 noncomputable def wrle' (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :=
-  gfp ⟨wrle_step post resource, wrle_monotone post resource⟩ program
+  gfp ⟨wrle_step post resource, wrle_step_mono post resource⟩ program
 
 syntax "wrle [" term "] (" qsl " | " qsl ")" : qsl
 macro_rules

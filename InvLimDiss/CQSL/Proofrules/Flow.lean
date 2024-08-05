@@ -21,7 +21,7 @@ theorem wrle_probabilisticBranching :
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.empty_inter]
-  · refine monotone_qslSepMul ?_ le_rfl
+  · refine qslSepMul_mono ?_ le_rfl
     intro s
     rw [step_probChoice]
     split_ifs
@@ -51,7 +51,7 @@ theorem wrle_conditionalBranching {e : BoolExp Var} :
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.empty_inter]
-  · refine monotone_qslSepMul ?_ le_rfl
+  · refine qslSepMul_mono ?_ le_rfl
     intro s
     by_cases e s.stack
     case pos h_e =>
@@ -87,7 +87,7 @@ theorem wrle_while {e : BoolExp Var}
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.empty_inter]
-  · refine monotone_qslSepMul ?_ le_rfl
+  · refine qslSepMul_mono ?_ le_rfl
     sorry
     -- here are ordinal induction and preferably also sequential required
 

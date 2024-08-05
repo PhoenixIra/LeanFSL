@@ -28,7 +28,7 @@ theorem wrle_frame {c : Program Var} {P : StateRV Var}
     | inl h_eq =>
       unfold wrle_step
       simp only [h_eq]
-      refine monotone_qslSepMul ?_ (le_rfl)
+      refine qslSepMul_mono ?_ (le_rfl)
       apply sInf_le
       simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
         exists_exists_and_eq_and, and_true]
@@ -52,9 +52,9 @@ theorem wrle_frame {c : Program Var} {P : StateRV Var}
         rw [le_qslSepDiv_iff_qslSepMul_le]
         apply le_trans
         pick_goal 2
-        · apply monotone_step_of_semantics_support
+        · apply step_mono_of_semantics_support
           intro s a _ c' s' h_semantics
-          apply monotone_qslSepMul
+          apply qslSepMul_mono
           · have : wrtProg c' ∩ varRV F = ∅ := by {
               apply Set.Subset.antisymm
               · apply Set.Subset.trans
@@ -67,7 +67,7 @@ theorem wrle_frame {c : Program Var} {P : StateRV Var}
         · conv => right; intro s; left; intro c' s'; rw [← qslSepMul_assoc, qslSepMul_comm F RI, qslSepMul_assoc]
           refine le_trans ?_ (step_framing _ (wrtStmt_inter_varRV_eq_emptyset_of_wrtProg h))
           rw [← qslSepMul_assoc ,qslSepMul_comm F RI, qslSepMul_assoc]
-          refine monotone_qslSepMul ?_ le_rfl
+          refine qslSepMul_mono ?_ le_rfl
           unfold Entailment.entail instEntailmentStateRV
           simp only [ge_iff_le]
           rw [← le_qslSepDiv_iff_qslSepMul_le]

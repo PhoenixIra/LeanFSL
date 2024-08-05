@@ -32,7 +32,7 @@ end Entailment
 /-! We have here lemmas about separating multipication and division. -/
 section Separating
 
-theorem monotone_qslSepMul {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₁ ⊢ P₂) (h_Q : Q₁ ⊢ Q₂) :
+theorem qslSepMul_mono {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₁ ⊢ P₂) (h_Q : Q₁ ⊢ Q₂) :
     `[qsl Var| [[P₁]] ⋆ [[Q₁]] ⊢ [[P₂]] ⋆ [[Q₂]]] := by
   intro ⟨s,heap⟩
   apply sSup_le
@@ -47,7 +47,7 @@ theorem monotone_qslSepMul {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₁ ⊢ P
   · exact h_P ⟨s,heap₁⟩
   · exact h_Q ⟨s,heap₂⟩
 
-theorem monotone_qslSepDiv {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₂ ⊢ P₁) (h_Q : Q₁ ⊢ Q₂) :
+theorem qslSepDiv_mono {P₁ P₂ Q₁ Q₂ : StateRV Var} (h_P : P₂ ⊢ P₁) (h_Q : Q₁ ⊢ Q₂) :
     `[qsl| [[P₁]] -⋆ [[Q₁]] ⊢ [[P₂]] -⋆ [[Q₂]]] := by
   intro ⟨s,heap⟩
   apply le_sInf

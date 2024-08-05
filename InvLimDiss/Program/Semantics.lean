@@ -1,6 +1,6 @@
 import InvLimDiss.Program.Syntax
 import InvLimDiss.Program.State
-import InvLimDiss.Analysis.Probabilities
+import InvLimDiss.Mathlib.Probabilities
 
 /-!
 This file contains the semantics of the programming language as a probability transition function.

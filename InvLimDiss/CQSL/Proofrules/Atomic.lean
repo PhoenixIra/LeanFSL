@@ -118,7 +118,7 @@ theorem wrle_mutate :
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.empty_inter]
-  · refine monotone_qslSepMul ?_ le_rfl
+  · refine qslSepMul_mono ?_ le_rfl
     intro s
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
@@ -177,7 +177,7 @@ theorem wrle_lookup (h : v ∉ varRV RI) :
   · apply step_framing
     simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
-  · refine monotone_qslSepMul ?_ le_rfl
+  · refine qslSepMul_mono ?_ le_rfl
     intro s
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
@@ -238,7 +238,7 @@ theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
   · apply step_framing
     simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
-  · refine monotone_qslSepMul ?_ le_rfl
+  · refine qslSepMul_mono ?_ le_rfl
     intro s
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
@@ -311,7 +311,7 @@ theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
   · apply step_framing
     simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
-  · refine monotone_qslSepMul ?_ le_rfl
+  · refine qslSepMul_mono ?_ le_rfl
     intro s
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
@@ -404,7 +404,7 @@ theorem wrle_allocate (h : v ∉ varRV RI) :
   · apply step_framing
     simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
-  · refine monotone_qslSepMul ?_ le_rfl
+  · refine qslSepMul_mono ?_ le_rfl
     intro s
     by_cases ∃ n : ℕ, e_len s.stack = n
     case pos h =>
@@ -449,7 +449,7 @@ theorem wrle_free :
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.empty_inter]
-  · refine monotone_qslSepMul ?_ le_rfl
+  · refine qslSepMul_mono ?_ le_rfl
     intro s
     by_cases (∃ l : ℕ+, l = e_loc s.stack ∧ ∃ n : ℕ, n = e_len s.stack ∧ isAlloc s.heap l n)
     case pos h =>

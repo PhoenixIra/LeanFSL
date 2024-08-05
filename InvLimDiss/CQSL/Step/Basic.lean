@@ -9,7 +9,7 @@ open Syntax Semantics QSL unitInterval
 
 variable {Var : Type}
 
-theorem monotone_step (c : Program Var) : Monotone (step c) := by
+theorem step_mono (c : Program Var) : Monotone (step c) := by
   intro X X' h_X
   intro s
   apply le_sInf
@@ -37,7 +37,7 @@ theorem monotone_step (c : Program Var) : Monotone (step c) := by
       apply Ne.symm
       exact h_ne
 
-theorem monotone_step_of_semantics_support {c : Program Var} {P Q : Program Var → StateRV Var}
+theorem step_mono_of_semantics_support {c : Program Var} {P Q : Program Var → StateRV Var}
     (h : ∀ s, ∀ a ∈ enabledAction c s, ∀ c' s',
       programSmallStepSemantics c s a c' s' ≠ 0 → P c' s' ≤ Q c' s') :
     step c P ≤ step c Q := by

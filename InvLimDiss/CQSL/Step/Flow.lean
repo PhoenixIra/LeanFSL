@@ -1,6 +1,6 @@
 import InvLimDiss.CQSL.Step.Basic
 import InvLimDiss.Program.Support
-import InvLimDiss.Analysis.Tsum
+import InvLimDiss.Mathlib.Tsum
 
 namespace CQSL
 

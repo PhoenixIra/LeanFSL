@@ -28,7 +28,7 @@ theorem bellman_monotone (post : StateRV Var) : Monotone (bellman_step post) := 
   case h_1 => exact le_rfl
   case h_2 => exact le_rfl
   case h_3 =>
-    apply monotone_step c
+    apply step_mono c
     rw [Pi.le_def] at h_X ⊢
     intro c'
     exact h_X c'
@@ -54,7 +54,7 @@ theorem wrle_step_of_emp_eq_bellman {post : StateRV Var} :
     conv => left; rw [qslEmp_qslSepDiv_eq]; intro s; left; intro c; rw [qslSepMul_qslEmp_eq]
 
 theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
-    gfp (⟨wrle_step post `[qsl|emp], wrle_monotone post `[qsl| emp]⟩)
+    gfp (⟨wrle_step post `[qsl|emp], wrle_step_mono post `[qsl| emp]⟩)
     = gfp (⟨bellman_step post, bellman_monotone post⟩) := by
   apply le_antisymm
   · apply le_gfp
@@ -72,7 +72,7 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
     apply le_trans h_X
     simp only [coe_mk]
     conv => left; intro c s; rw [← wrle_step_of_emp_eq_bellman]
-    apply wrle_monotone
+    apply wrle_step_mono
     apply le_gfp
     exact h_X
 

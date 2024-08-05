@@ -1,7 +1,7 @@
 import InvLimDiss.Program.State
 import InvLimDiss.Program.Expressions
 import InvLimDiss.SL.Entailment
-import InvLimDiss.Analysis.Probabilities
+import InvLimDiss.Mathlib.Probabilities
 import InvLimDiss.SL.Classical
 
 /-@
