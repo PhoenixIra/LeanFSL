@@ -2,9 +2,9 @@ import Mathlib.SetTheory.Ordinal.FixedPointApproximants
 
 variable [CompleteLattice α]
 
-theorem OrdinalApprox.gfpApprox_le_gfpApprox_of_le (f g : α →o α) (x : α) (h : f ≤ g) :
-    gfpApprox f x ≤ gfpApprox g x := by
-  intro i
+theorem OrdinalApprox.gfpApprox_le_gfpApprox_of_le (f g : α →o α) (h : f ≤ g) :
+    gfpApprox f ≤ gfpApprox g := by
+  intro x i
   induction i using Ordinal.induction with
   | h i ih =>
     unfold gfpApprox

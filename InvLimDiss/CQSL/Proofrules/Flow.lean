@@ -2,6 +2,8 @@ import InvLimDiss.CQSL.WeakExpectation
 import InvLimDiss.SL.Framing.Simps
 import InvLimDiss.SL.Classical
 import InvLimDiss.CQSL.Step.Framing
+import InvLimDiss.CQSL.Proofrules.Inductive
+import InvLimDiss.Mathlib.FixedPoints
 
 /-!
   Proofrules for wrle with flow programs that are not inductive (i.e. looping, choices) as one should use it for reasoning about concurrent probabilistic programs.
@@ -76,19 +78,73 @@ theorem wrle_conditionalBranching {e : BoolExp Var} :
           symm_zero, one_mul, ge_iff_le, zero_le, sup_of_le_right, le_refl]
 
 
-open SL in
+open SL OrdinalApprox in
 theorem wrle_while {e : BoolExp Var}
     (h_Q : Q ⊢ `[qsl| wrle [c] ([[inv]] | [[resource]])])
     (h_inv : inv ⊢ `[qsl| ⁅<e>⁆ ⬝ [[Q]] ⊔ ~⁅<e>⁆ ⬝ [[P]]]) :
      inv ⊢ `[qsl| wrle [while e begin [[c]] fi] ([[P]] | [[resource]])] := by
-  rw [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [entailment_iff_pi_le, le_qslSepDiv_iff_qslSepMul_le]
-  apply le_trans
-  pick_goal 2
-  · apply step_framing
-    simp only [wrtStmt, Set.empty_inter]
-  · refine qslSepMul_mono ?_ le_rfl
-    sorry
-    -- here are ordinal induction and preferably also sequential required
+  unfold wrle'
+  rw [← gfpApprox_ord_eq_gfp]
+  induction (Order.succ (Cardinal.mk _)).ord using Ordinal.induction with
+  | h i ih =>
+    intro s
+    unfold gfpApprox
+    apply le_sInf
+    simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton,
+      Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp, Pi.top_apply,
+      exists_exists_and_eq_and, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+    rintro _ (rfl | ⟨i', h_i', rfl⟩)
+    · exact le_one'
+    · simp only [wrle_step]
+      apply le_sInf
+      rintro _ ⟨heap', h_disjoint, rfl⟩
+      cases eq_or_ne (resource ⟨s.stack, heap'⟩) 0 with
+      | inl h_zero =>
+        simp only [h_zero, unit_div_zero]
+        exact le_one'
+      | inr h_nonzero =>
+        rw [unit_le_div_iff_mul_le]
+        apply le_trans
+        swap
+        · apply step_framing
+          simp only [wrtStmt, Set.empty_inter]
+        · apply le_sSup_of_le
+          · use s.heap, heap'
+          · rw [← unit_le_div_iff_mul_le]
+            rw [unitInterval.mul_div_cancel h_nonzero]
+            by_cases e s.stack
+            case neg h =>
+              rw [Bool.not_eq_true] at h
+              rw [step_loop_term _ _ h]
+              unfold gfpApprox
+              apply le_sInf
+              simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton,
+                Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp, Pi.top_apply,
+                exists_exists_and_eq_and, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+              rintro _ (rfl | ⟨_, _, rfl⟩)
+              · exact le_one'
+              · apply le_trans (h_inv s)
+                simp only [qslMax, Sup.sup, qslMul, qslIverson, slExp, h, Bool.false_eq_true,
+                  iteOneZero_false, zero_mul, qslNot, symm_zero, one_mul, zero_le, sup_of_le_right,
+                  wrle_step, le_refl]
+            case pos h =>
+              rw [step_loop_cont _ _ h]
+              apply le_trans ?_ (gfpApprox_wrle_step_seq s)
+              apply le_trans
+              swap
+              · apply gfpApprox_le_gfpApprox_of_le
+                  ⟨wrle_step inv resource, wrle_step_mono _ _⟩
+                apply mk_le_mk.mpr
+                apply wrle_step_mono_of_le_RV
+                exact ih i' h_i'
+              · apply le_trans (h_inv s)
+                simp only [qslMax, Sup.sup, qslMul, qslIverson, slExp, h, iteOneZero_true, one_mul,
+                  qslNot, symm_one, zero_mul, zero_le, sup_of_le_left]
+                apply le_trans (h_Q s)
+                unfold wrle'
+                apply (le_gfpApprox_of_mem_fixedPoints ⟨wrle_step _ _, wrle_step_mono _ _⟩ _)
+                · simp only [coe_mk, Function.mem_fixedPoints]
+                  exact isFixedPt_gfp ⟨wrle_step _ _, wrle_step_mono _ _⟩
+                · exact le_top
 
 end CQSL

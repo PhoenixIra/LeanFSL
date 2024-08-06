@@ -1,7 +1,6 @@
 import InvLimDiss.CQSL.WeakExpectation
-import InvLimDiss.CQSL.Proofrules.Monotone
+import InvLimDiss.CQSL.Proofrules.Auxiliary
 import InvLimDiss.SL.Framing.Simps
-import Mathlib.SetTheory.Ordinal.FixedPointApproximants
 import InvLimDiss.Mathlib.FixedPoints
 
 /-!
@@ -14,20 +13,11 @@ open QSL Syntax OrderHom unitInterval Atom Semantics OrdinalApprox
 
 variable {Vars : Type}
 
-theorem wrle_seq {P resource : StateRV Vars} :
-    `[qsl| wrle [c₁] (wrle [c₂] ([[P]] | [[resource]]) | [[resource]])
-      ⊢ wrle [[[c₁]] ; [[c₂]]] ([[P]] | [[resource]])] := by
-  unfold wrle'
-  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
-  rw [← OrdinalApprox.gfpApprox_eq_of_mem_fixedPoints]
-  case b => exact Order.succ (Order.succ (Cardinal.mk (Program Vars → StateRV Vars))).ord
-  case h_init => exact le_top
-  case h_ab => exact Order.le_succ _
-  case h =>
-    apply OrdinalApprox.gfpApprox_ord_mem_fixedPoint
-    exact le_top
-  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
-  induction (Order.succ <| Cardinal.mk <| Program Vars → StateRV Vars).ord
+lemma gfpApprox_wrle_step_seq :
+    gfpApprox ⟨wrle_step
+      (gfpApprox ⟨wrle_step P resource, wrle_step_mono _ _⟩ ⊤ k c₂) resource, wrle_step_mono _ _⟩ ⊤ (Order.succ k) c₁
+    ≤ gfpApprox ⟨wrle_step P resource, wrle_step_mono _ _⟩ ⊤ k [Prog| [[c₁]] ; [[c₂]]] := by
+  induction k
     using Ordinal.induction generalizing c₁ with
   | h k ih =>
     intro s
@@ -114,11 +104,24 @@ theorem wrle_seq {P resource : StateRV Vars} :
               apply le_trans ?_ (ih k' h_k')
               apply OrdinalApprox.gfpApprox_le_gfpApprox_of_le
                 ⟨wrle_step (gfpApprox ⟨wrle_step _ _, _⟩ _ _ _) _, _⟩
-                ⟨wrle_step (gfpApprox ⟨wrle_step _ _, _⟩ _ _ _) _, _⟩
-                _ ?_
               simp only [mk_le_mk]
               apply wrle_step_mono_of_le_RV
               apply OrdinalApprox.gfpApprox_antitone ⟨wrle_step P resource, _⟩ ⊤ (le_of_lt h_k')
+
+theorem wrle_seq {P resource : StateRV Vars} :
+    `[qsl| wrle [c₁] (wrle [c₂] ([[P]] | [[resource]]) | [[resource]])
+      ⊢ wrle [[[c₁]] ; [[c₂]]] ([[P]] | [[resource]])] := by
+  unfold wrle'
+  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
+  rw [← OrdinalApprox.gfpApprox_eq_of_mem_fixedPoints]
+  case b => exact Order.succ (Order.succ (Cardinal.mk (Program Vars → StateRV Vars))).ord
+  case h_init => exact le_top
+  case h_ab => exact Order.le_succ _
+  case h =>
+    apply OrdinalApprox.gfpApprox_ord_mem_fixedPoint
+    exact le_top
+  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
+  exact gfpApprox_wrle_step_seq
 
 theorem wrle_concur {e : BoolExp Var}
     (h_vars_res₁  : wrtProg c₁ ∩ varRV resource = ∅)
