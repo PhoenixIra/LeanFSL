@@ -1,5 +1,6 @@
 import InvLimDiss.CQSL.WeakExpectation
 import InvLimDiss.CQSL.Proofrules.Auxiliary
+import InvLimDiss.CQSL.Step.Framing
 import InvLimDiss.SL.Framing.Simps
 import InvLimDiss.Mathlib.FixedPoints
 
@@ -123,15 +124,309 @@ theorem wrle_seq {P resource : StateRV Vars} :
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
   exact gfpApprox_wrle_step_seq
 
+open State in
 theorem wrle_concur {e : BoolExp Var}
-    (h_vars_res₁  : wrtProg c₁ ∩ varRV resource = ∅)
-    (h_vars_prog₁ : wrtProg c₁ ∩ varRV P₂ = ∅)
-    (h_vars_res₂  : wrtProg c₂ ∩ varRV resource = ∅)
-    (h_vars_prog₂ : wrtProg c₂ ∩ varRV P₁ = ∅)
-    (h_vars_prog  : wrtProg c₁ ∩ wrtProg c₂ = ∅) :
+    (h_vars₁  : wrtProg c₁ ∩ (varProg c₂ ∪ varRV P₂) = ∅)
+    (h_vars₂  : wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁) = ∅)
+    (h_vars_resource₁ : varRV P₁ ∩ varRV resource = ∅)
+    (h_vars_resource₂ : varRV P₂ ∩ varRV resource = ∅) :
     `[qsl| wrle [c₁] ([[P₁]] | [[resource]]) ⋆
            wrle [c₂] ([[P₂]] | [[resource]])
       ⊢ wrle [[[c₁]] || [[c₂]]] ([[P₁]] ⋆ [[P₂]] | [[resource]])] := by
-  sorry
+  unfold wrle'
+  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
+  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
+  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
+  induction (Order.succ (Cardinal.mk _)).ord using Ordinal.induction generalizing c₁ c₂ with
+  | h i ih =>
+    intro s
+    nth_rw 3 [gfpApprox]
+    apply le_sInf
+    simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton,
+      Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp, Pi.top_apply,
+      exists_exists_and_eq_and, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+    rintro _ (rfl | ⟨i', h_i', rfl⟩)
+    · apply le_one'
+    · simp only [wrle_step]
+      apply le_sInf
+      rintro _ ⟨heap', h_disjoint', rfl⟩
+      cases eq_or_ne c₁ [Prog| ↯] with
+      | inl h_c₁_abort =>
+        rw [h_c₁_abort]
+        apply sSup_le
+        rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+        rw [← unit_le_div_iff_mul_le]
+        rw [gfpApprox]
+        apply sInf_le_of_le
+        · simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton,
+            Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp, Pi.top_apply,
+            exists_exists_and_eq_and]
+          use 0
+          apply And.intro
+          · apply Or.inr
+            use i', h_i'
+            simp only [wrle_step]
+            rfl
+          · rfl
+        · exact nonneg'
+      | inr h_c₁_neq_abort =>
+        cases eq_or_ne c₂ [Prog| ↯] with
+        | inl h_c₂_abort =>
+          rw [h_c₂_abort]
+          apply sSup_le
+          rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+          rw [mul_comm, ← unit_le_div_iff_mul_le]
+          rw [gfpApprox]
+          apply sInf_le_of_le
+          · simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton,
+              Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp, Pi.top_apply,
+              exists_exists_and_eq_and]
+            use 0
+            apply And.intro
+            · apply Or.inr
+              use i', h_i'
+              simp only [wrle_step]
+              rfl
+            · rfl
+          · exact nonneg'
+        | inr h_c₂_neq_abort =>
+          cases eq_or_ne c₁ [Prog| ↓] with
+          | inl h_c₁_term =>
+            rw [h_c₁_term]
+            apply sSup_le
+            rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+            rw [← unit_le_div_iff_mul_le]
+            rw [gfpApprox]
+            apply sInf_le_of_le
+            · simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton,
+                Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp, Pi.top_apply,
+                exists_exists_and_eq_and]
+              use P₁
+              apply And.intro
+              · apply Or.inr
+                use i', h_i'
+                simp only [wrle_step]
+              · rfl
+            · cases eq_or_ne c₂ [Prog| ↓] with
+              | inl h_c₂_term =>
+                rw [h_c₂_term]
+                rw [unit_le_div_iff_mul_le, mul_comm, ← unit_le_div_iff_mul_le]
+                rw [gfpApprox]
+                apply sInf_le_of_le
+                · simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop,
+                    Set.union_singleton, Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp,
+                    Pi.top_apply, exists_exists_and_eq_and]
+                  use P₂
+                  apply And.intro
+                  · apply Or.inr
+                    use i', h_i'
+                    simp only [wrle_step]
+                  · rfl
+                · rw [unit_le_div_iff_mul_le, unit_le_div_iff_mul_le]
+                  rw [step_concurrent_term]
+                  apply le_sSup_of_le
+                  · use s.heap, heap', h_disjoint', rfl
+                  · apply unit_mul_le_mul
+                    · rw [mul_comm]
+                      rw [gfpApprox]
+                      apply le_sInf
+                      simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop,
+                        Set.union_singleton, Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp,
+                        Pi.top_apply, exists_exists_and_eq_and, forall_exists_index, and_imp,
+                        forall_apply_eq_imp_iff₂]
+                      rintro _ (rfl | ⟨_, _, rfl⟩)
+                      · exact le_one'
+                      · simp only [wrle_step]
+                        apply le_sSup
+                        use heap₁, heap₂, h_disjoint, h_union
+                    · rfl
+              | inr h_c₂_neq_term =>
+                rw [step_concurrent_cont_only_right _ _ h_c₂_neq_term h_c₂_neq_abort]
+                rw [unit_le_div_iff_mul_le, mul_comm, ← unit_le_div_iff_mul_le]
+                rw [gfpApprox]
+                apply sInf_le_of_le
+                · simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop,
+                    Set.union_singleton, Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp,
+                    Pi.top_apply, exists_exists_and_eq_and]
+                  use ?_
+                  apply And.intro
+                  · apply Or.inr
+                    use i', h_i'
+                    exact rfl
+                  · rfl
+                · simp only [wrle_step]
+                  apply sInf_le_of_le
+                  · use heap'
+                    apply And.intro
+                    · simp only
+                      rw [← h_union, disjoint_comm _ _, disjoint_union_iff] at h_disjoint'
+                      rw [disjoint_comm _ _]
+                      exact h_disjoint'.right
+                    · rfl
+                  · rw [div_swap]
+                    apply unit_div_le_div ?_ le_rfl
+                    rw [unit_le_div_iff_mul_le]
+                    apply le_trans
+                    swap
+                    · apply step_mono_of_semantics_support
+                      intro s a h_a c' s' h_semantics
+                      apply qslSepMul_mono ?_ le_rfl
+                      swap
+                      apply ih i' h_i'
+                      · simp only [wrtProg, Set.empty_inter]
+                      · apply Set.Subset.antisymm
+                        · apply Set.Subset.trans
+                          · exact Set.inter_subset_inter
+                              (written_of_transition h_semantics)
+                              (Set.Subset.rfl)
+                          · rw [← h_c₁_term]
+                            exact subset_of_eq h_vars₂
+                        · exact Set.empty_subset _
+                    · apply le_trans
+                      swap
+                      · apply step_mono
+                        intro c' s'
+                        simp only
+                        apply qslSepMul_mono ?_ le_rfl
+                        swap
+                        apply qslSepMul_mono ?_ le_rfl
+                        swap
+                        unfold gfpApprox
+                        apply le_sInf
+                        simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop,
+                          Set.union_singleton, Set.mem_insert_iff, Set.mem_setOf_eq,
+                          exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
+                        rintro _ (rfl | ⟨_, _, rfl⟩)
+                        · simp only [le_top]
+                        · simp only [wrle_step]
+                          exact le_rfl
+                      · simp_rw [qslSepMul_comm P₁ _, ← qslSepMul_assoc, qslSepMul_comm P₁ _]
+                        simp_rw [qslSepMul_assoc]
+                        apply le_trans ?_ (step_framing _ ?_ ⟨s.stack, s.heap ∪ heap'⟩)
+                        swap
+                        · apply Set.Subset.antisymm ?_ (Set.empty_subset _)
+                          apply Set.Subset.trans ?_ (subset_of_eq h_vars₂)
+                          exact Set.inter_subset_inter
+                            wrtStmt_subset_wrtProg
+                            Set.subset_union_right
+                        · apply le_sSup
+                          use heap₂ ∪ heap', heap₁
+                          simp only [and_true]
+                          have : disjoint heap₁ heap' := by {
+                            rw [← h_union, disjoint_comm _ _, disjoint_union_iff] at h_disjoint'
+                            rw [disjoint_comm _ _]
+                            exact h_disjoint'.left
+                          }
+                          apply And.intro
+                          · rw [disjoint_comm _ _, disjoint_union_iff]
+                            use h_disjoint, this
+                          · rw [← h_union]
+                            rw [union_comm heap₁ heap₂ h_disjoint]
+                            nth_rw 2 [union_assoc]
+                            rw [union_comm heap₁ heap' this]
+                            rw [← union_assoc]
+          | inr h_c₁_neq_term =>
+            cases eq_or_ne c₂ [Prog| ↓] with
+            | inl h_c₂_term =>
+              rw [h_c₂_term]
+              apply sSup_le
+              rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+              rw [mul_comm, ← unit_le_div_iff_mul_le]
+              rw [gfpApprox]
+              apply sInf_le_of_le
+              · simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton,
+                  Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp, Pi.top_apply,
+                  exists_exists_and_eq_and]
+                use P₂
+                apply And.intro
+                · apply Or.inr
+                  use i', h_i'
+                  simp only [wrle_step]
+                · rfl
+              rw [step_concurrent_cont_only_left _ _ h_c₁_neq_term h_c₁_neq_abort]
+              rw [unit_le_div_iff_mul_le, mul_comm, ← unit_le_div_iff_mul_le]
+              rw [gfpApprox]
+              apply sInf_le_of_le
+              · simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop,
+                  Set.union_singleton, Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp,
+                  Pi.top_apply, exists_exists_and_eq_and]
+                use ?_
+                apply And.intro
+                · apply Or.inr
+                  use i', h_i'
+                  exact rfl
+                · rfl
+              · simp only [wrle_step]
+                apply sInf_le_of_le
+                · use heap'
+                  apply And.intro
+                  · simp only
+                    rw [← h_union, disjoint_comm _ _, disjoint_union_iff] at h_disjoint'
+                    rw [disjoint_comm _ _]
+                    exact h_disjoint'.left
+                  · rfl
+                · rw [div_swap]
+                  apply unit_div_le_div ?_ le_rfl
+                  rw [unit_le_div_iff_mul_le]
+                  apply le_trans
+                  swap
+                  · apply step_mono_of_semantics_support
+                    intro s a h_a c' s' h_semantics
+                    apply qslSepMul_mono ?_ le_rfl
+                    swap
+                    apply ih i' h_i'
+                    · apply Set.Subset.antisymm
+                      · apply Set.Subset.trans
+                        · exact Set.inter_subset_inter
+                            (written_of_transition h_semantics)
+                            (Set.Subset.rfl)
+                        · rw [← h_c₂_term]
+                          exact subset_of_eq h_vars₁
+                      · exact Set.empty_subset _
+                    · simp only [wrtProg, Set.empty_inter]
+                  · apply le_trans
+                    swap
+                    · apply step_mono
+                      intro c' s'
+                      simp only
+                      apply qslSepMul_mono ?_ le_rfl
+                      swap
+                      apply qslSepMul_mono le_rfl ?_
+                      swap
+                      unfold gfpApprox
+                      apply le_sInf
+                      simp only [coe_mk, Set.mem_range, Subtype.exists, exists_prop,
+                        Set.union_singleton, Set.mem_insert_iff, Set.mem_setOf_eq,
+                        exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
+                      rintro _ (rfl | ⟨_, _, rfl⟩)
+                      · simp only [le_top]
+                      · simp only [wrle_step]
+                        exact le_rfl
+                    · simp_rw [← qslSepMul_assoc, qslSepMul_comm P₂ _]
+                      simp_rw [qslSepMul_assoc]
+                      apply le_trans ?_ (step_framing _ ?_ ⟨s.stack, s.heap ∪ heap'⟩)
+                      swap
+                      · apply Set.Subset.antisymm ?_ (Set.empty_subset _)
+                        apply Set.Subset.trans ?_ (subset_of_eq h_vars₁)
+                        exact Set.inter_subset_inter
+                          wrtStmt_subset_wrtProg
+                          Set.subset_union_right
+                      · apply le_sSup
+                        use heap₁ ∪ heap', heap₂
+                        simp only [and_true]
+                        have : disjoint heap₂ heap' := by {
+                          rw [← h_union, disjoint_comm _ _, disjoint_union_iff] at h_disjoint'
+                          rw [disjoint_comm _ _]
+                          exact h_disjoint'.right
+                        }
+                        apply And.intro
+                        · rw [disjoint_comm _ _, disjoint_union_iff]
+                          rw [disjoint_comm heap₂ _]
+                          use h_disjoint, this
+                        · rw [← h_union]
+                          nth_rw 2 [union_assoc]
+                          rw [union_comm heap₂ heap' this]
+                          rw [← union_assoc]
+            | inr h_c₂_neq_term => sorry
 
 end CQSL

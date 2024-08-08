@@ -148,7 +148,7 @@ lemma unit_le_div_iff_mul_le {i j k : I} : i ≤ j / k ↔ i * k ≤ j := by
         apply (le_div_iff this).mp
         exact h_div
     case isFalse h_jk =>
-      simp at h_jk
+      simp only [not_lt] at h_jk
       exact le_trans mul_le_right h_jk
   · intro h_mul
     split
@@ -247,6 +247,13 @@ lemma mul_div_cancel {i j : I} (h_nonzero : i ≠ 0) : j * i / i = j := by
     simp only [ne_eq, Eq.comm, coe_eq_one, ne_one_iff_lt, ← coe_lt_one] at h
     exact Subtype.coe_lt_coe.mp <| by simpa using mul_lt_mul_of_pos_right h h_nonzero
 
+lemma div_swap {i j k : I} : i / j / k = i / k / j := by
+  apply le_antisymm
+  <;> {
+    rw [unit_le_div_iff_mul_le, unit_le_div_iff_mul_le]
+    rw [mul_assoc]; nth_rw 2 [mul_comm]; rw [← mul_assoc]
+    rw [← unit_le_div_iff_mul_le, ← unit_le_div_iff_mul_le]
+  }
 
 
 end MulDiv
