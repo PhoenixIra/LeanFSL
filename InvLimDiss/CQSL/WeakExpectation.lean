@@ -45,9 +45,14 @@ theorem wrle_step_mono (post : StateRV Var) (resource : StateRV Var) : Monotone 
       exact h_X c
     · exact le_rfl
 
+/-- wrle_step as a monotone function -/
+noncomputable def wrle_step_hom (post : StateRV Var) (resource : StateRV Var) :
+    (Program Var → StateRV Var) →o (Program Var → StateRV Var) :=
+  ⟨wrle_step post resource, wrle_step_mono post resource⟩
+
 /-- The greatest solution to the concurrent bellman equation -/
 noncomputable def wrle' (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :=
-  gfp ⟨wrle_step post resource, wrle_step_mono post resource⟩ program
+  gfp (wrle_step_hom post resource) program
 
 syntax "wrle [" term "] (" qsl " | " qsl ")" : qsl
 macro_rules
@@ -82,7 +87,7 @@ theorem wrle_def (program : Program Var) (post : StateRV Var) (resource : StateR
   | [Prog| ↯ ] => `[qsl| qFalse]
   | program => `[qsl| [[resource]] -⋆ [[step program
     (fun c => `[qsl| wrle [c] ([[post]] | [[resource]]) ⋆ [[resource]] ]) ]] ] := by
-  rw [wrle', ← map_gfp, coe_mk, wrle_step]
+  rw [wrle', wrle_step_hom, ← map_gfp, coe_mk, wrle_step]
   split
   case h_1 =>
     split

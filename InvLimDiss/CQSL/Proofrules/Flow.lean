@@ -95,7 +95,7 @@ theorem wrle_while {e : BoolExp Var}
       exists_exists_and_eq_and, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
     rintro _ (rfl | ⟨i', h_i', rfl⟩)
     · exact le_one'
-    · simp only [wrle_step]
+    · simp only [wrle_step_hom, wrle_step]
       apply le_sInf
       rintro _ ⟨heap', h_disjoint, rfl⟩
       cases eq_or_ne (resource ⟨s.stack, heap'⟩) 0 with
@@ -132,8 +132,7 @@ theorem wrle_while {e : BoolExp Var}
               apply le_trans ?_ (gfpApprox_wrle_step_seq s)
               apply le_trans
               swap
-              · apply gfpApprox_le_gfpApprox_of_le
-                  ⟨wrle_step inv resource, wrle_step_mono _ _⟩
+              · apply gfpApprox_le_gfpApprox_of_le (wrle_step_hom inv resource)
                 apply mk_le_mk.mpr
                 apply wrle_step_mono_of_le_RV
                 exact ih i' h_i'
@@ -142,9 +141,9 @@ theorem wrle_while {e : BoolExp Var}
                   qslNot, symm_one, zero_mul, zero_le, sup_of_le_left]
                 apply le_trans (h_Q s)
                 unfold wrle'
-                apply (le_gfpApprox_of_mem_fixedPoints ⟨wrle_step _ _, wrle_step_mono _ _⟩ _)
+                apply le_gfpApprox_of_mem_fixedPoints (wrle_step_hom _ _)
                 · simp only [coe_mk, Function.mem_fixedPoints]
-                  exact isFixedPt_gfp ⟨wrle_step _ _, wrle_step_mono _ _⟩
+                  exact isFixedPt_gfp (wrle_step_hom _ _)
                 · exact le_top
 
 end CQSL

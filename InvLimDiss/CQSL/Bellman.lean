@@ -33,9 +33,13 @@ theorem bellman_monotone (post : StateRV Var) : Monotone (bellman_step post) := 
     intro c'
     exact h_X c'
 
+noncomputable def bellman_step_hom (post : StateRV Var) :
+    (Program Var → StateRV Var) →o (Program Var → StateRV Var) :=
+  ⟨bellman_step post, bellman_monotone post⟩
+
 /-- greatest solution of the bellman equation -/
 noncomputable def bellman_solution (post : StateRV Var) : (Program Var → StateRV Var) :=
-    gfp (⟨bellman_step post, bellman_monotone post⟩)
+    gfp (bellman_step_hom post)
 
 open OrderHom
 
@@ -54,14 +58,14 @@ theorem wrle_step_of_emp_eq_bellman {post : StateRV Var} :
     conv => left; rw [qslEmp_qslSepDiv_eq]; intro s; left; intro c; rw [qslSepMul_qslEmp_eq]
 
 theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
-    gfp (⟨wrle_step post `[qsl|emp], wrle_step_mono post `[qsl| emp]⟩)
-    = gfp (⟨bellman_step post, bellman_monotone post⟩) := by
+    gfp (wrle_step_hom post `[qsl|emp])
+    = gfp (bellman_step_hom post) := by
   apply le_antisymm
   · apply le_gfp
     apply gfp_le
     intro X h_X
     apply le_trans h_X
-    simp only [coe_mk]
+    simp only [wrle_step_hom, bellman_step_hom, coe_mk]
     conv => left; intro c s; rw [wrle_step_of_emp_eq_bellman]
     apply bellman_monotone
     apply le_gfp
@@ -70,7 +74,7 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
     apply gfp_le
     intro X h_X
     apply le_trans h_X
-    simp only [coe_mk]
+    simp only [bellman_step_hom, wrle_step_hom, coe_mk]
     conv => left; intro c s; rw [← wrle_step_of_emp_eq_bellman]
     apply wrle_step_mono
     apply le_gfp

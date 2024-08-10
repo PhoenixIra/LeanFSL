@@ -29,8 +29,8 @@ theorem wrle_mono (h : P ≤ Q) :
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
   apply OrdinalApprox.gfpApprox_le_gfpApprox_of_le
-    ⟨wrle_step P resource, _⟩ _ ?_ ⊤ (Order.succ (Cardinal.mk _)).ord _ _
-  simp only [OrderHom.mk_le_mk]
+    (wrle_step_hom P resource) _ ?_ ⊤ (Order.succ (Cardinal.mk _)).ord _ _
+  simp only [wrle_step_hom, OrderHom.mk_le_mk]
   exact wrle_step_mono_of_le_RV h
 
 

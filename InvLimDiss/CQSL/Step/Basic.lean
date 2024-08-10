@@ -37,11 +37,11 @@ theorem step_mono (c : Program Var) : Monotone (step c) := by
       apply Ne.symm
       exact h_ne
 
-theorem step_mono_of_semantics_support {c : Program Var} {P Q : Program Var → StateRV Var}
-    (h : ∀ s, ∀ a ∈ enabledAction c s, ∀ c' s',
+theorem step_mono_of_state_of_semantics_support {c : Program Var} {s : State Var}
+    {P Q : Program Var → StateRV Var}
+    (h : ∀ a ∈ enabledAction c s, ∀ c' s',
       programSmallStepSemantics c s a c' s' ≠ 0 → P c' s' ≤ Q c' s') :
-    step c P ≤ step c Q := by
-  intro s
+    step c P s ≤ step c Q s := by
   apply le_sInf
   rintro _ ⟨a, h_a, rfl⟩
   have : ∑' cs : reachState Var, (semantics c s a cs.prog cs.state) * P cs.prog cs.state
@@ -63,7 +63,15 @@ theorem step_mono_of_semantics_support {c : Program Var} {P Q : Program Var → 
     simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, reachState.prog, reachState.state]
     simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq] at h_semantics
     refine mul_le_mul le_rfl ?_ (nonneg') (nonneg')
-    exact h s a h_a c' s' h_semantics
+    exact h a h_a c' s' h_semantics
+
+theorem step_mono_of_semantics_support {c : Program Var} {P Q : Program Var → StateRV Var}
+    (h : ∀ s, ∀ a ∈ enabledAction c s, ∀ c' s',
+      programSmallStepSemantics c s a c' s' ≠ 0 → P c' s' ≤ Q c' s') :
+    step c P ≤ step c Q := by
+  intro s
+  exact step_mono_of_state_of_semantics_support (h s)
+
 
 
 
