@@ -1,67 +1,13 @@
 import InvLimDiss.SL.QuantitativeProofrules
-import InvLimDiss.Program.Semantics
+import InvLimDiss.Program.Expressions
 import InvLimDiss.SL.Framing.Basic
 
-/-! Simplication lemmas (not necessary with the simp attribute) for variables occuring
-in programs and qsl objects and substitution of variables. -/
+/-! Simplication lemmas for substitution. -/
 
-open Syntax Semantics QSL State
 
 namespace QSL
 
-theorem varRV_of_qslTrue : varRV `[qsl Var| qTrue] = ∅ := by
-  rw [varRV]
-  simp only [ne_eq, Set.ext_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_exists,
-    Decidable.not_not]
-  intro _ _ _; rfl
-
-theorem varRV_of_qslFalse : varRV `[qsl Var| qFalse] = ∅ := by
-  rw [varRV]
-  simp only [ne_eq, Set.ext_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_exists,
-    Decidable.not_not]
-  intro _ _ _; rfl
-
-theorem varRV_of_qslEmp : varRV `[qsl Var| emp] = ∅ := by
-  rw [varRV]
-  simp only [ne_eq, Set.ext_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_exists,
-    Decidable.not_not]
-  intro _ _ _; rfl
-
-theorem varRV_of_qslPointsTo :
-    varRV `[qsl Var| e ↦ e'] ⊆ (varsValue e) ∪ (varsValue e') := by
-  simp only [varRV, ne_eq, varsValue]
-  intro x ⟨s,q,h⟩
-  simp only [Set.mem_union, Set.mem_setOf_eq]
-  simp only [qslPointsTo] at h
-  by_cases h' : ∃ s q, ¬e (substituteVar s x q) = e s
-  case pos => exact Or.inl h'
-  case neg =>
-    apply Or.inr
-    use s.stack, q
-    simp only [not_exists, Decidable.not_not] at h'
-    specialize h' s.stack q
-    by_cases h_n : ∃ n : PNat, n = e s.stack ∧ s.heap = State.singleton n (e' s.stack)
-    case pos =>
-      rw [Eq.comm, unitInterval.iteOneZero_eq_iteOneZero_iff, not_iff] at h
-      obtain h := h.mpr h_n
-      simp only [substituteStack, not_exists, not_and] at h
-      obtain ⟨n, h_n, h_heap⟩ := h_n
-      rw [← h'] at h_n
-      specialize h n h_n
-      rw [h_heap] at h
-      intro h_e
-      rw [h_e] at h
-      simp only [not_true_eq_false] at h
-    case neg =>
-      rw [unitInterval.iteOneZero_eq_iteOneZero_iff, not_iff] at h
-      obtain ⟨n, h_n', h⟩ := h.mp h_n
-      rw [substituteStack, h'] at h_n'
-      rw [substituteStack] at h
-      simp only [not_exists, not_and] at h_n
-      have := h_n n h_n'
-      intro h_e
-      rw [h, h_e] at this
-      simp only [not_true_eq_false] at this
+open Syntax QSL State
 
 @[simp]
 theorem qslSubst_of_qslTrue : `[qsl| qTrue(v ↦ e)] = `[qsl| qTrue] := by
@@ -204,7 +150,5 @@ theorem substituteStack_of_qslSepCon (e : ValueExp Var) (h : v ∉ varRV g) :
     `[qsl| ([[f]] ⋆ [[g]])(v ↦ e)] = `[qsl| [[f]](v ↦ e) ⋆ [[g]]] := by
   rw [qslSubst_of_qslSepMul]
   rw [qslSubst_eq_of_not_varRV h e]
-
-
 
 end QSL

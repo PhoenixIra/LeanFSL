@@ -1,4 +1,5 @@
 import InvLimDiss.SL.QuantitativeProofrules
+import InvLimDiss.SL.Classical
 import InvLimDiss.Program.Semantics
 
 /-! Framing is the act of removing a part of the separation logic objects out of the entailment.
@@ -92,5 +93,8 @@ namespace QSL
 /-- Variables occuring in an expression, semantically defined. I.e. variables that never change
   the outcome of `f`. -/
 def varRV (f : StateRV Var) : Set Var := { v | ∃ s q, f s ≠ f (s.substituteStack v q)}
+
+open SL in
+def varProp (P : StateProp Var) : Set Var := {v | ∃ s q, P s ≠ P (s.substituteStack v q)}
 
 end QSL

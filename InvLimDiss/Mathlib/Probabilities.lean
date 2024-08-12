@@ -291,7 +291,8 @@ theorem le_symm_if_le_symm (i j : I) : i ≤ σ j → j ≤ σ i := by
   apply add_le_of_le_sub_left
   exact h
 
-theorem le_symm_iff_le_symm (i j : I) : i ≤ σ j ↔ j ≤ σ i := ⟨le_symm_if_le_symm i j, le_symm_if_le_symm j i⟩
+theorem le_symm_iff_le_symm (i j : I) : i ≤ σ j ↔ j ≤ σ i :=
+  ⟨le_symm_if_le_symm i j, le_symm_if_le_symm j i⟩
 
 theorem symm_le_if_symm_le (i j : I) : σ i ≤ j → σ j ≤ i := by
   intro h
@@ -299,7 +300,8 @@ theorem symm_le_if_symm_le (i j : I) : σ i ≤ j → σ j ≤ i := by
   rw [sub_le_iff_le_add, add_comm, ← sub_le_iff_le_add]
   exact h
 
-theorem symm_le_iff_symm_le (i j : I) : σ i ≤ j ↔ σ j ≤ i := ⟨symm_le_if_symm_le i j, symm_le_if_symm_le j i⟩
+theorem symm_le_iff_symm_le (i j : I) : σ i ≤ j ↔ σ j ≤ i :=
+  ⟨symm_le_if_symm_le i j, symm_le_if_symm_le j i⟩
 
 theorem lt_symm_if_lt_symm (i j : I) : i < σ j → j < σ i := by
   intro h
@@ -309,7 +311,8 @@ theorem lt_symm_if_lt_symm (i j : I) : i < σ j → j < σ i := by
   apply add_lt_of_lt_sub_left
   exact h
 
-theorem lt_symm_iff_lt_symm (i j : I) : i < σ j ↔ j < σ i := ⟨lt_symm_if_lt_symm i j, lt_symm_if_lt_symm j i⟩
+theorem lt_symm_iff_lt_symm (i j : I) : i < σ j ↔ j < σ i :=
+  ⟨lt_symm_if_lt_symm i j, lt_symm_if_lt_symm j i⟩
 
 theorem symm_lt_if_symm_lt (i j : I) : σ i < j → σ j < i := by
   intro h
@@ -317,7 +320,19 @@ theorem symm_lt_if_symm_lt (i j : I) : σ i < j → σ j < i := by
   rw [sub_lt_iff_lt_add, add_comm, ← sub_lt_iff_lt_add]
   exact h
 
-theorem symm_lt_iff_symm_lt (i j : I) : σ i < j ↔ σ j < i := ⟨symm_lt_if_symm_lt i j, symm_lt_if_symm_lt j i⟩
+theorem symm_lt_iff_symm_lt (i j : I) : σ i < j ↔ σ j < i :=
+  ⟨symm_lt_if_symm_lt i j, symm_lt_if_symm_lt j i⟩
+
+@[simp]
+theorem symm_eq_symm_iff_eq (i j : I) : σ i = σ j ↔ i = j := by
+  apply Iff.intro
+  · intro h
+    rw [Subtype.mk_eq_mk, coe_symm_eq, coe_symm_eq] at h
+    simp only [sub_right_inj] at h
+    exact Subtype.mk_eq_mk.mpr h
+  · intro h
+    rw [h]
+
 
 end Symm
 

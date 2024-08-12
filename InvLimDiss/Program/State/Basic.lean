@@ -5,6 +5,37 @@ namespace State
 
 open Rat Classical HeapValue
 
+section substituteVar
+
+theorem substituteVar_substituteVar_of_eq {stack : Stack Var} (h : v = v') :
+    substituteVar (substituteVar stack v q) v' q' = substituteVar stack v' q' := by
+  apply funext
+  intro v''
+  simp only [substituteVar]
+  split_ifs
+  case pos => rfl
+  case pos h_neq h_eq =>
+    exfalso
+    apply h_neq
+    rw [← h, h_eq]
+  case neg => rfl
+
+theorem substituteVar_substituteVar_of_neq {stack : Stack Var} (h : v ≠ v') :
+    substituteVar (substituteVar stack v q) v' q' = substituteVar (substituteVar stack v' q') v q := by
+  apply funext
+  intro v''
+  simp only [substituteVar]
+  split_ifs
+  case pos h_v' h_v'' =>
+    exfalso
+    apply h
+    rw [h_v', h_v'']
+  case neg => rfl
+  case pos => rfl
+  case neg => rfl
+
+end substituteVar
+
 section disjoint
 
 theorem disjoint.symm {h₁ h₂ : Heap} (h : disjoint h₁ h₂) : disjoint h₂ h₁ := fun n => Or.symm (h n)
