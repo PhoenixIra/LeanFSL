@@ -397,7 +397,7 @@ theorem tsum_free_of_deterministic_of_error (s : State Var) (inner : Program Var
   · simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
       tsum_empty]
 
-theorem step_free_of_error (s : State Var) (inner : Program Var → StateRV Var)
+theorem step_free_of_abort (s : State Var) (inner : Program Var → StateRV Var)
     (h : ∀ (x : ℕ+), ↑↑x = e_loc s.stack → ∀ (x_1 : ℕ), ↑x_1 = e_val s.stack → ¬isAlloc s.heap x x_1) :
     step [Prog| free(e_loc, e_val)] inner s = 0 := by
   unfold step

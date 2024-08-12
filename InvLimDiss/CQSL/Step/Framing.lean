@@ -218,7 +218,7 @@ theorem step_framing_of_free (inner : Program Var → StateRV Var) :
     use union_freeLoc h_alloc h_disjoint
   case neg =>
     simp only [not_exists, not_and] at h_alloc
-    rw [step_free_of_error ⟨s.stack, heap₁⟩ _ h_alloc]
+    rw [step_free_of_abort ⟨s.stack, heap₁⟩ _ h_alloc]
     simp only [zero_mul, zero_le]
 
 theorem step_framing_of_probBranching (inner : Program Var → StateRV Var) :
