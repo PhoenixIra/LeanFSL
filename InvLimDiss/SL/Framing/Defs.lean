@@ -10,7 +10,7 @@ import InvLimDiss.Program.Semantics
   * `wrtProg` are the program variables on the left side of assignments
   * `varRV` are the program variables occuring in a random variable-/
 
-open Syntax Semantics QSL State
+open Semantics QSL State
 
 namespace Syntax
 
