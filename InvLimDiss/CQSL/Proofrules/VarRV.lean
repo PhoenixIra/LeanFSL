@@ -44,42 +44,39 @@ private theorem gfpApprox_of_term_qslSepMul_resource_eq
     rw [h_resource _ q]
   }
 
-private theorem step_of_term_eq_of_not_mem_vars  {P resource : StateRV Vars} (s : State Vars)
-    (h : v ∉ varRV P ∪ varRV resource) :
-    step [Prog| skip]
-        (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]) s
-    = step [Prog| skip]
-       (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ])
-      ⟨substituteVar s.stack v q, s.heap⟩ := by
+private theorem step_of_skip_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varRV P ∪ varRV resource)
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step [Prog| skip] X s = step [Prog| skip] X ⟨substituteVar s.stack v q, s.heap⟩ := by
   rw [step_skip, step_skip]
-  rw [gfpApprox_of_term_qslSepMul_resource_eq h q]
+  apply h_ind
+  simp only [varProg, Set.empty_union, Set.mem_union, not_or]
+  simp only [Set.mem_union, not_or] at h
+  exact h
 
-private theorem step_of_assign_eq_of_not_mem_vars  {P resource : StateRV Vars} (s : State Vars)
-    (h : v' ∉ varProg [Prog| v ≔ e] ∪ varRV P ∪ varRV resource) :
-    step [Prog| v ≔ e]
-        (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]) s
-    = step [Prog| v ≔ e]
-       (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ])
-      ⟨substituteVar s.stack v' q, s.heap⟩ := by
+private theorem step_of_assign_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| v' ≔ e] ∪ varRV P ∪ varRV resource)
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step [Prog| v' ≔ e] X s = step [Prog| v' ≔ e] X ⟨substituteVar s.stack v q, s.heap⟩ := by
   rw [step_assign, step_assign]
   simp only [substituteStack]
   simp only [varProg, varValueExp, ne_eq, Set.singleton_union, Set.mem_union, Set.mem_insert_iff,
     Set.mem_setOf_eq, not_or, not_exists, Decidable.not_not] at h
   obtain ⟨⟨⟨h_neq, h_expr⟩, h_P⟩, h_resource⟩ := h
-  rw [gfpApprox_of_term_qslSepMul_resource_eq ?_ q]
+  rw [h_ind]
   · rw [h_expr s.stack q]
     simp only
-    rw [substituteVar_substituteVar_of_neq h_neq]
-  · simp only [Set.mem_union, not_or]
+    rw [substituteVar_substituteVar_of_neq (Ne.symm h_neq)]
+  · simp only [varProg, Set.empty_union, Set.mem_union, not_or]
     exact ⟨h_P, h_resource⟩
 
-private theorem step_of_mutate_eq_of_not_mem_vars  {P resource : StateRV Vars} (s : State Vars)
-    (h : v ∉ varProg [Prog| e *≔ e'] ∪ varRV P ∪ varRV resource) :
-    step [Prog|e *≔ e']
-        (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]) s
-    = step [Prog| e *≔ e']
-       (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ])
-      ⟨substituteVar s.stack v q, s.heap⟩ := by
+private theorem step_of_mutate_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| e *≔ e'] ∪ varRV P ∪ varRV resource)
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step [Prog| e *≔ e'] X s = step [Prog| e *≔ e'] X ⟨substituteVar s.stack v q, s.heap⟩ := by
   simp only [varProg, varValueExp, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or, not_exists,
     Decidable.not_not] at h
   obtain ⟨⟨⟨h_e, h_e'⟩, h_P⟩, h_resource⟩ := h
@@ -92,8 +89,8 @@ private theorem step_of_mutate_eq_of_not_mem_vars  {P resource : StateRV Vars} (
     rw [step_mutate _ _ h_l h_alloc]
     simp only [substituteHeap]
     rw [h_e' s.stack q]
-    rw [gfpApprox_of_term_qslSepMul_resource_eq ?_ q]
-    simp only [Set.mem_union, not_or]
+    rw [h_ind]
+    simp only [varProg, Set.empty_union, Set.mem_union, not_or]
     exact ⟨h_P, h_resource⟩
   case neg h_neq_alloc =>
     simp only [ne_eq, not_exists, not_and, not_not] at h_neq_alloc
@@ -103,13 +100,11 @@ private theorem step_of_mutate_eq_of_not_mem_vars  {P resource : StateRV Vars} (
       (⟨substituteVar s.stack v q, s.heap⟩ : State Vars).heap l = HeapValue.undef at h_neq_alloc
     rw [step_mutate_of_abort _ _ h_neq_alloc]
 
-private theorem step_of_lookup_eq_of_not_mem_vars  {P resource : StateRV Vars} (s : State Vars)
-    (h : v' ∉ varProg [Prog| v ≔* e] ∪ varRV P ∪ varRV resource) :
-    step [Prog| v ≔* e]
-        (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]) s
-    = step [Prog| v ≔* e]
-       (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ])
-      ⟨substituteVar s.stack v' q, s.heap⟩ := by
+private theorem step_of_lookup_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| v' ≔* e] ∪ varRV P ∪ varRV resource)
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step [Prog| v' ≔* e] X s = step [Prog| v' ≔* e] X ⟨substituteVar s.stack v q, s.heap⟩ := by
   simp only [varProg, varValueExp, ne_eq, Set.singleton_union, Set.mem_union, Set.mem_insert_iff,
     Set.mem_setOf_eq, not_or, not_exists, Decidable.not_not] at h
   obtain ⟨⟨⟨h_v', h_e⟩, h_P⟩, h_resource⟩ := h
@@ -120,28 +115,27 @@ private theorem step_of_lookup_eq_of_not_mem_vars  {P resource : StateRV Vars} (
     obtain ⟨q', h_alloc⟩ := h_alloc
     rw [step_lookup _ _ h_l h_alloc]
     rw [h_e s.stack q] at h_l
-    change (⟨substituteVar s.stack v' q, s.heap⟩ : State Vars).heap l = q' at h_alloc
+    change (⟨substituteVar s.stack v q, s.heap⟩ : State Vars).heap l = q' at h_alloc
     rw [step_lookup _ _ h_l h_alloc]
     simp only [substituteStack]
     rw [substituteVar_substituteVar_of_neq h_v']
-    rw [gfpApprox_of_term_qslSepMul_resource_eq ?_ q]
-    simp only [Set.mem_union, not_or]
+    rw [h_ind]
+    simp only [varProg, Set.empty_union, Set.mem_union, not_or]
     exact ⟨h_P, h_resource⟩
   case neg h_neq_alloc =>
     simp only [ne_eq, not_exists, not_and, not_not] at h_neq_alloc
     rw [step_lookup_of_abort _ _ h_neq_alloc]
     rw [h_e s.stack q] at h_neq_alloc
-    change ∀ (x : ℕ+), e (substituteVar s.stack v' q) = ↑↑x →
-      (⟨substituteVar s.stack v' q, s.heap⟩ : State Vars).heap x = HeapValue.undef at h_neq_alloc
+    change ∀ (x : ℕ+), e (substituteVar s.stack v q) = ↑↑x →
+      (⟨substituteVar s.stack v q, s.heap⟩ : State Vars).heap x = HeapValue.undef at h_neq_alloc
     rw [step_lookup_of_abort _ _ h_neq_alloc]
 
-private theorem step_of_compareAndSet_eq_of_not_mem_vars  {P resource : StateRV Vars} (s : State Vars)
-    (h : v' ∉ varProg [Prog| v ≔ cas(e_l, e_c, e_s)] ∪ varRV P ∪ varRV resource) :
-    step [Prog| v ≔ cas(e_l, e_c, e_s)]
-        (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]) s
-    = step [Prog| v ≔ cas(e_l, e_c, e_s)]
-       (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ])
-      ⟨substituteVar s.stack v' q, s.heap⟩ := by
+private theorem step_of_compareAndSet_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| v' ≔ cas(e_l, e_c, e_s)] ∪ varRV P ∪ varRV resource)
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step [Prog| v' ≔ cas(e_l, e_c, e_s)] X s
+    = step [Prog| v' ≔ cas(e_l, e_c, e_s)] X ⟨substituteVar s.stack v q, s.heap⟩ := by
   simp only [varProg, varValueExp, ne_eq, Set.singleton_union, Set.mem_union, Set.mem_insert_iff,
     Set.mem_setOf_eq, not_or, not_exists, Decidable.not_not] at h
   obtain ⟨⟨⟨⟨⟨h_v', h_el⟩, h_ec⟩, h_es⟩, h_P⟩, h_resource⟩ := h
@@ -153,42 +147,41 @@ private theorem step_of_compareAndSet_eq_of_not_mem_vars  {P resource : StateRV 
       rw [step_cas_of_eq _ _ h_l h_eq]
       rw [h_el _ q] at h_l
       rw [h_ec _ q] at h_eq
-      change (⟨substituteVar s.stack v' q, s.heap⟩ : State Vars).heap l
-        = HeapValue.val (e_c (substituteVar s.stack v' q)) at h_eq
+      change (⟨substituteVar s.stack v q, s.heap⟩ : State Vars).heap l
+        = HeapValue.val (e_c (substituteVar s.stack v q)) at h_eq
       rw [step_cas_of_eq _ _ h_l h_eq]
       simp only [substituteStack, substituteHeap]
       rw [h_es _ q]
       rw [substituteVar_substituteVar_of_neq h_v']
-      rw [gfpApprox_of_term_qslSepMul_resource_eq ?_ q]
-      simp only [Set.mem_union, not_or]
+      rw [h_ind]
+      simp only [varProg, Set.empty_union, Set.mem_union, not_or]
       exact ⟨h_P, h_resource⟩
     | inr h_neq =>
       rw [step_cas_of_neq _ _ h_l h_alloc h_neq]
       rw [h_el _ q] at h_l
-      change (⟨substituteVar s.stack v' q, s.heap⟩ : State Vars).heap l ≠ HeapValue.undef at h_alloc
-      change (⟨substituteVar s.stack v' q, s.heap⟩ : State Vars).heap l ≠ (e_c s.stack) at h_neq
+      change (⟨substituteVar s.stack v q, s.heap⟩ : State Vars).heap l ≠ HeapValue.undef at h_alloc
+      change (⟨substituteVar s.stack v q, s.heap⟩ : State Vars).heap l ≠ (e_c s.stack) at h_neq
       rw [h_ec _ q] at h_neq
       rw [step_cas_of_neq _ _ h_l h_alloc h_neq]
       simp only [substituteStack]
       rw [substituteVar_substituteVar_of_neq h_v']
-      rw [gfpApprox_of_term_qslSepMul_resource_eq ?_ q]
-      simp only [Set.mem_union, not_or]
+      rw [h_ind]
+      simp only [varProg, Set.empty_union, Set.mem_union, not_or]
       exact ⟨h_P, h_resource⟩
   case neg h_ne_alloc =>
     simp only [ne_eq, not_exists, not_and, not_not] at h_ne_alloc
     rw [step_cas_of_abort _ _ h_ne_alloc]
     change ∀ (x : ℕ+), e_l s.stack = ↑↑x
-      → (⟨substituteVar s.stack v' q, s.heap⟩ : State Vars).heap x = HeapValue.undef at h_ne_alloc
+      → (⟨substituteVar s.stack v q, s.heap⟩ : State Vars).heap x = HeapValue.undef at h_ne_alloc
     rw [h_el _ q] at h_ne_alloc
     rw [step_cas_of_abort _ _ h_ne_alloc]
 
-private theorem step_of_allocate_eq_of_not_mem_vars  {P resource : StateRV Vars} (s : State Vars)
-    (h : v' ∉ varProg [Prog| v ≔ alloc(e)] ∪ varRV P ∪ varRV resource) :
-    step [Prog| v ≔ alloc(e)]
-        (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]) s
-    = step [Prog| v ≔ alloc(e)]
-       (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ])
-      ⟨substituteVar s.stack v' q, s.heap⟩ := by
+private theorem step_of_allocate_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| v' ≔ alloc(e)] ∪ varRV P ∪ varRV resource)
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step [Prog| v' ≔ alloc(e)] X s
+    = step [Prog| v' ≔ alloc(e)] X ⟨substituteVar s.stack v q, s.heap⟩ := by
   simp only [varProg, varValueExp, ne_eq, Set.singleton_union, Set.mem_union, Set.mem_insert_iff,
     Set.mem_setOf_eq, not_or, not_exists, Decidable.not_not] at h
   obtain ⟨⟨⟨h_v', h_e⟩, h_P⟩, h_resource⟩ := h
@@ -203,10 +196,13 @@ private theorem step_of_allocate_eq_of_not_mem_vars  {P resource : StateRV Vars}
       right; right; intro i; left; intro i; right; intro l; right
       rw [substituteVar_substituteVar_of_neq h_v']
     }
-    have : v' ∉ varRV P ∪ varRV resource := by {simp only [Set.mem_union, not_or]; exact ⟨h_P, h_resource⟩}
+    have : v ∉ varProg [Prog| ↓] ∪ varRV P ∪ varRV resource := by {
+      simp only [varProg, Set.empty_union, Set.mem_union, not_or]
+      exact ⟨h_P, h_resource⟩
+    }
     conv => {
       left; right; intro i; left; intro i; right; intro l; right
-      rw [gfpApprox_of_term_qslSepMul_resource_eq this q]
+      rw [h_ind this]
     }
   case neg h_n =>
     simp only [not_exists] at h_n
@@ -214,13 +210,12 @@ private theorem step_of_allocate_eq_of_not_mem_vars  {P resource : StateRV Vars}
     rw [h_e _ q] at h_n
     rw [step_alloc_of_abort _ _ h_n]
 
-private theorem step_of_free_eq_of_not_mem_vars  {P resource : StateRV Vars} (s : State Vars)
-    (h : v ∉ varProg [Prog| free(e_l, e_n)] ∪ varRV P ∪ varRV resource) :
-    step [Prog| free(e_l, e_n)]
-        (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]) s
-    = step [Prog| free(e_l, e_n)]
-       (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ])
-      ⟨substituteVar s.stack v q, s.heap⟩ := by
+private theorem step_of_free_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| free(e_l, e_n)] ∪ varRV P ∪ varRV resource)
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step [Prog| free(e_l, e_n)] X s
+    = step [Prog| free(e_l, e_n)] X ⟨substituteVar s.stack v q, s.heap⟩ := by
   simp only [varProg, varValueExp, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or, not_exists,
     Decidable.not_not] at h
   obtain ⟨⟨⟨h_el, h_en⟩, h_P⟩, h_resource⟩ := h
@@ -233,8 +228,8 @@ private theorem step_of_free_eq_of_not_mem_vars  {P resource : StateRV Vars} (s 
     change isAlloc (⟨substituteVar s.stack v q, s.heap⟩ : State Vars).heap l n at h_alloc
     rw [step_free _ _ h_l h_n h_alloc]
     simp only [freeHeap]
-    rw [gfpApprox_of_term_qslSepMul_resource_eq ?_ q]
-    simp only [Set.mem_union, not_or]
+    rw [h_ind]
+    simp only [varProg, Set.empty_union, Set.mem_union, not_or]
     exact ⟨h_P, h_resource⟩
   case neg h_abort =>
     simp only [not_exists, not_and] at h_abort
@@ -246,35 +241,83 @@ private theorem step_of_free_eq_of_not_mem_vars  {P resource : StateRV Vars} (s 
     }
     rw [step_free_of_abort _ _ h_abort]
 
+private theorem step_of_probBranching_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| pif e then [[c₁]] else [[c₂]] fi] ∪ varRV P ∪ varRV resource)
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step [Prog| pif e then [[c₁]] else [[c₂]] fi] X s
+    = step [Prog| pif e then [[c₁]] else [[c₂]] fi] X ⟨substituteVar s.stack v q, s.heap⟩ := by
+  sorry
 
+private theorem step_of_condBranching_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| if e then [[c₁]] else [[c₂]] fi] ∪ varRV P ∪ varRV resource)
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step [Prog| if e then [[c₁]] else [[c₂]] fi] X s
+    = step [Prog| if e then [[c₁]] else [[c₂]] fi] X ⟨substituteVar s.stack v q, s.heap⟩ := by
+  sorry
 
-private theorem step_eq_of_not_mem_vars {c : Program Vars} {P resource : StateRV Vars} (s : State Vars)
+private theorem step_of_loop_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| while e begin [[c]] fi] ∪ varRV P ∪ varRV resource)
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step [Prog| while e begin [[c]] fi] X s
+    = step [Prog| while e begin [[c]] fi] X ⟨substituteVar s.stack v q, s.heap⟩ := by
+  sorry
+
+private theorem step_of_sequential_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| [[c₁]] ; [[c₂]]] ∪ varRV P ∪ varRV resource)
+    (h_ind_X : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩)
+    (h_ind₁ : ∀ {X : Program Vars → StateRV Vars}, v ∉ varProg c₁ ∪ varRV P ∪ varRV resource →
+      (∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource →
+          X c' s' = X c' { stack := substituteVar s'.stack v q, heap := s'.heap }) →
+      step c₁ X s = step c₁ X { stack := substituteVar s.stack v q, heap := s.heap }) :
+    step [Prog| [[c₁]] ; [[c₂]]] X s
+    = step [Prog| [[c₁]] ; [[c₂]]] X ⟨substituteVar s.stack v q, s.heap⟩ := by
+  sorry
+
+private theorem step_of_concurrent_eq_of_not_mem_vars {P resource : StateRV Vars} (s : State Vars)
+    (h : v ∉ varProg [Prog| [[c₁]] || [[c₂]]] ∪ varRV P ∪ varRV resource)
+    (h_ind_X : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩)
+    (h_ind₁ : ∀ {X : Program Vars → StateRV Vars}, v ∉ varProg c₁ ∪ varRV P ∪ varRV resource →
+      (∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource →
+          X c' s' = X c' { stack := substituteVar s'.stack v q, heap := s'.heap }) →
+      step c₁ X s = step c₁ X { stack := substituteVar s.stack v q, heap := s.heap })
+    (h_ind₂ : ∀ {X : Program Vars → StateRV Vars}, v ∉ varProg c₂ ∪ varRV P ∪ varRV resource →
+      (∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource →
+          X c' s' = X c' { stack := substituteVar s'.stack v q, heap := s'.heap }) →
+      step c₂ X s = step c₂ X { stack := substituteVar s.stack v q, heap := s.heap }) :
+    step [Prog| [[c₁]] || [[c₂]]] X s
+    = step [Prog| [[c₁]] || [[c₂]]] X ⟨substituteVar s.stack v q, s.heap⟩ := by
+  sorry
+
+private theorem step_eq_of_not_mem_vars {c : Program Vars} {P resource : StateRV Vars}
+    {X : Program Vars → StateRV Vars} (s : State Vars)
     (h : v ∉ varProg c ∪ varRV P ∪ varRV resource)
-    (h_ind : ∀ {c : Program Vars} {s : State Vars}, v ∉ varProg c ∪ varRV P ∪ varRV resource →
-      gfpApprox (wrle_step_hom P resource) ⊤ i' c s
-      = gfpApprox (wrle_step_hom P resource) ⊤ i' c ⟨substituteVar s.stack v q, s.heap⟩) :
-    step c (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]) s
-    = step c (fun c ↦ `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ])
-      ⟨substituteVar s.stack v q, s.heap⟩ := by
-  induction c with
+    (h_ind : ∀ {c' : Program Vars} {s' : State Vars}, v ∉ varProg c' ∪ varRV P ∪ varRV resource
+      → X c' s' = X c' ⟨substituteVar s'.stack v q, s'.heap⟩) :
+    step c X s = step c X ⟨substituteVar s.stack v q, s.heap⟩ := by
+  induction c generalizing X with
   | terminated => simp [step]
   | abort => simp [step]
   | skip' =>
     simp only [varProg, Set.empty_union] at h
-    exact step_of_term_eq_of_not_mem_vars s h
-  | assign v' e => exact step_of_assign_eq_of_not_mem_vars s h
-  | mutate e e' => exact step_of_mutate_eq_of_not_mem_vars s h
-  | lookup v' e => exact step_of_lookup_eq_of_not_mem_vars s h
-  | compareAndSet v' e_l e_c _s => exact step_of_compareAndSet_eq_of_not_mem_vars s h
-  | allocate v' e => exact step_of_allocate_eq_of_not_mem_vars s h
-  | free' e_l e_n => exact step_of_free_eq_of_not_mem_vars s h
-  | probabilisticBranching e c₁ c₂ => sorry
-  | conditionalBranching e c₁ c₂ => sorry
-  | loop e c => sorry
-  | sequential c₁ c₂ ih₁ => sorry
-  | concurrent c₁ c₂ ih₁ ih₂ => sorry
+    exact step_of_skip_eq_of_not_mem_vars s h h_ind
+  | assign v' e => exact step_of_assign_eq_of_not_mem_vars s h h_ind
+  | mutate e e' => exact step_of_mutate_eq_of_not_mem_vars s h h_ind
+  | lookup v' e => exact step_of_lookup_eq_of_not_mem_vars s hstep_of_probBranching_eq_of_not_mem_vars h_ind
+  | compareAndSet v' e_l e_c _s => exact step_of_compareAndSet_eq_of_not_mem_vars s h h_ind
+  | allocate v' e => exact step_of_allocate_eq_of_not_mem_vars s h h_ind
+  | free' e_l e_n => exact step_of_free_eq_of_not_mem_vars s h h_ind
+  | probabilisticBranching e c₁ c₂ => exact step_of_probBranching_eq_of_not_mem_vars s h h_ind
+  | conditionalBranching e c₁ c₂ => exact step_of_condBranching_eq_of_not_mem_vars s h h_ind
+  | loop e c => exact step_of_loop_eq_of_not_mem_vars s h h_ind
+  | sequential c₁ c₂ ih₁ => exact step_of_sequential_eq_of_not_mem_vars s h h_ind ih₁
+  | concurrent c₁ c₂ ih₁ ih₂ => exact step_of_concurrent_eq_of_not_mem_vars s h h_ind ih₁ ih₂
 
-private theorem gfpApprox_eq_of_not_mem_vars
+private theorem gfpApprox_eq_of_not_mem_vars {c : Program Vars} {P resource : StateRV Vars}
     (h : v ∉ varProg c ∪ varRV P ∪ varRV resource) :
     gfpApprox (wrle_step_hom P resource) ⊤ i c s
     = gfpApprox (wrle_step_hom P resource) ⊤ i c ⟨substituteVar s.stack v q, s.heap⟩ := by
@@ -316,9 +359,29 @@ private theorem gfpApprox_eq_of_not_mem_vars
             right; right; left; left; intro c
             change `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]
           }
+          have : ∀ k < i, ∀ {c : Program Vars} {s : State Vars},
+            v ∉ varProg c ∪ varRV P ∪ varRV resource →
+            (`[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ k c]] ⋆ [[resource]] ]) s =
+            (`[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ k c]] ⋆ [[resource]] ])
+              ⟨substituteVar s.stack v q, s.heap⟩ := by {
+            intro i' h_i' c s h_vars
+            simp only [qslSepMul]
+            conv => {
+              left; right; intro a; left; intro a; right; intro h₁
+              rw [ih i' h_i' h_vars]
+            }
+            simp only
+            simp only [varRV, substituteStack, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or,
+              not_exists, Decidable.not_not] at h_vars
+            obtain ⟨_, h_resource⟩ := h_vars
+            conv => {
+              left; right; intro a; left; intro a; right; intro h₁; right; intro h₂
+              rw [h_resource _ q]
+            }
+          }
           conv => {
             left; right; intro i; left; intro i; right; intro h'
-            rw [step_eq_of_not_mem_vars _ h_vars (ih i' h_i')]
+            rw [step_eq_of_not_mem_vars _ h_vars (this i' h_i')]
           }
           rfl
 
