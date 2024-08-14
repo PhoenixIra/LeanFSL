@@ -1,5 +1,5 @@
 import InvLimDiss.CQSL.WeakExpectation
-import InvLimDiss.SL.Framing.Simps
+import InvLimDiss.SL.QuantitativeSubstSimp
 import InvLimDiss.CQSL.Step.Framing
 import InvLimDiss.SL.Conservativity
 import InvLimDiss.SL.ClassicalProofrules

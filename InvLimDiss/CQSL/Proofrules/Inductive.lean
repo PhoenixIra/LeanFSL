@@ -1,7 +1,8 @@
 import InvLimDiss.CQSL.WeakExpectation
 import InvLimDiss.CQSL.Proofrules.Auxiliary
+import InvLimDiss.CQSL.Proofrules.VarRV
 import InvLimDiss.CQSL.Step.Framing
-import InvLimDiss.SL.Framing.Simps
+import InvLimDiss.SL.QuantitativeSubstSimp
 import InvLimDiss.Mathlib.FixedPoints
 
 /-!
@@ -602,7 +603,7 @@ private lemma wrle_concur_cont_of_left
       apply le_trans
       swap
       · apply step_mono_of_state_of_semantics_support
-        intro a h_a c' s' h_semantics
+        intro a _ c' s' h_semantics
         apply qslSepMul_mono ?_ le_rfl
         swap
         apply h_ind i' h_i'
@@ -623,7 +624,7 @@ private lemma wrle_concur_cont_of_left
         · apply Set.Subset.antisymm ?_ (Set.empty_subset _)
           apply Set.Subset.trans ?_ (subset_of_eq h_vars₁)
           apply Set.inter_subset_inter wrtStmt_subset_wrtProg
-          sorry
+          exact varRV_of_gfpApprox_wrle_step
         · apply le_sSup_of_le
           · use (heap₁ ∪ heap'), heap₂
             apply And.intro
