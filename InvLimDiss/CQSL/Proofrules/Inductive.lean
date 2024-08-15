@@ -557,7 +557,6 @@ private lemma wrle_concur_cont_of_left
     (h_c₂_neq_abort : c₂ ≠ [Prog| ↯]) (h_c₂_neq_term : c₂ ≠ [Prog| ↓])
     (h_vars₁  : wrtProg c₁ ∩ (varProg c₂ ∪ varRV P₂ ∪ varRV resource) = ∅)
     (h_vars₂  : wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁ ∪ varRV resource) = ∅)
-    (h_vars_resource₁ : varRV P₁ ∩ varRV resource = ∅)
     (h_ind : ∀ k < i, ∀ {c₁ c₂ : Program Var},
       wrtProg c₁ ∩ (varProg c₂ ∪ varRV P₂ ∪ varRV resource) = ∅ →
       wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁ ∪ varRV resource) = ∅ →
@@ -649,8 +648,6 @@ private lemma wrle_concur_cont
     (h_c₂_neq_abort : c₂ ≠ [Prog| ↯]) (h_c₂_neq_term : c₂ ≠ [Prog| ↓])
     (h_vars₁  : wrtProg c₁ ∩ (varProg c₂ ∪ varRV P₂ ∪ varRV resource) = ∅)
     (h_vars₂  : wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁ ∪ varRV resource) = ∅)
-    (h_vars_resource₁ : varRV P₁ ∩ varRV resource = ∅)
-    (h_vars_resource₂ : varRV P₂ ∩ varRV resource = ∅)
     (h_ind : ∀ k < i, ∀ {c₁ c₂ : Program Var},
       wrtProg c₁ ∩ (varProg c₂ ∪ varRV P₂ ∪ varRV resource) = ∅ →
       wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁ ∪ varRV resource) = ∅ →
@@ -680,7 +677,7 @@ private lemma wrle_concur_cont
     apply le_min
     · apply wrle_concur_cont_of_left h_i' h_disjoint h_union h_disjoint'
         h_c₁_neq_abort h_c₁_neq_term h_c₂_neq_abort h_c₂_neq_term
-        h_vars₁ h_vars₂ h_vars_resource₁ h_ind
+        h_vars₁ h_vars₂ h_ind
     · nth_rw 2 [mul_comm]
       rw [qslSepMul_comm]
       conv => right; left; intro c'; rw [gfpApprox_wrle_step_concur_symmetric]
@@ -688,7 +685,7 @@ private lemma wrle_concur_cont
       rw [disjoint_comm _ _] at h_disjoint
       apply wrle_concur_cont_of_left h_i' h_disjoint h_union h_disjoint'
         h_c₂_neq_abort h_c₂_neq_term h_c₁_neq_abort h_c₁_neq_term
-        h_vars₂ h_vars₁ h_vars_resource₂
+        h_vars₂ h_vars₁
       intro i'' h_i'' c₁' c₂' h_vars₁' h_vars₂'
       rw [gfpApprox_wrle_step_concur_symmetric]
       rw [qslSepMul_comm]
@@ -699,9 +696,7 @@ open State in
 theorem wrle_concur
     {c₁ c₂ : Program Vars} {P₁ P₂ resource : StateRV Vars}
     (h_vars₁  : wrtProg c₁ ∩ (varProg c₂ ∪ varRV P₂ ∪ varRV resource) = ∅)
-    (h_vars₂  : wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁ ∪ varRV resource) = ∅)
-    (h_vars_resource₁ : varRV P₁ ∩ varRV resource = ∅)
-    (h_vars_resource₂ : varRV P₂ ∩ varRV resource = ∅) :
+    (h_vars₂  : wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁ ∪ varRV resource) = ∅) :
     `[qsl| wrle [c₁] ([[P₁]] | [[resource]]) ⋆
            wrle [c₂] ([[P₂]] | [[resource]])
       ⊢ wrle [[[c₁]] || [[c₂]]] ([[P₁]] ⋆ [[P₂]] | [[resource]])] := by
@@ -759,6 +754,6 @@ theorem wrle_concur
           | inr h_c₂_neq_term =>
             apply wrle_concur_cont
               h_c₁_neq_abort h_c₁_neq_term h_c₂_neq_abort h_c₂_neq_term
-              h_vars₁ h_vars₂ h_vars_resource₁ h_vars_resource₂ ih
+              h_vars₁ h_vars₂ ih
 
 end CQSL
