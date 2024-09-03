@@ -199,9 +199,9 @@ lemma unit_div_of_le {i j : I} (h : j ≤ i) : i / j = 1 := by
   exact h' h
 
 lemma unit_div_eq_one_iff {i j : I} : i / j = 1 ↔ j ≤ i := by
-  rw [Subtype.mk_eq_mk, coe_div]
   apply Iff.intro
-  · intro h
+  · rw [Subtype.mk_eq_mk, coe_div]
+    intro h
     simp only [coe_one, ite_eq_right_iff] at h
     cases eq_or_ne j 0 with
     | inl h_zero => rw [h_zero]; exact nonneg'
@@ -215,8 +215,7 @@ lemma unit_div_eq_one_iff {i j : I} : i / j = 1 ↔ j ≤ i := by
         exact (not_le.mpr h_lt) h
       | inr h_le => exact h_le
   · intro h
-    rw [if_neg (not_lt.mpr h)]
-    rfl
+    exact unit_div_of_le h
 
 @[norm_cast]
 lemma coe_pos {x : I} : (0 : ℝ) < x ↔ 0 < x := Iff.rfl
