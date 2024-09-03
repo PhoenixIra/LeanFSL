@@ -80,14 +80,13 @@ instance : MulOneClass I where
   one_mul i := by rw[Subtype.mk_eq_mk, coe_mul]; exact one_mul (i:ℝ)
   mul_one i := by rw [unit_mul_comm]; exact one_mul i
 
-instance : CancelMonoidWithZero I := by infer_instance
+-- instance : CancelMonoidWithZero I := by infer_instance
 
 lemma div_le_one {a b : ℝ} (h_b_pos : 0 < b) (h_ab : a ≤ b): a/b ≤ 1 := by
   have h_b_nonneg : 0 ≤ b := by apply le_iff_lt_or_eq.mpr; left; exact h_b_pos
   have : b ≤ b := by apply le_iff_lt_or_eq.mpr; right; rfl
   calc a / b ≤ b / b    := by exact (div_le_div h_b_nonneg h_ab h_b_pos this)
-           _ = b * b⁻¹  := by rewrite[div_eq_mul_inv]; rfl
-           _ = 1        := by refine mul_inv_cancel (ne_of_gt h_b_pos)
+           _ = 1        := (div_eq_one_iff_eq (ne_of_gt h_b_pos)).mpr rfl
 
 lemma div_mem_unit {a b : ℝ} (h_a_nonneg : 0 ≤ a) (h_ab : a < b): a/b ∈ I := by
   have h_b_pos: 0 < b := by apply lt_of_le_of_lt; exact h_a_nonneg; exact h_ab
@@ -145,8 +144,7 @@ lemma unit_le_div_iff_mul_le {i j k : I} : i ≤ j / k ↔ i * k ≤ j := by
       | inr h_ne =>
         have : (0:ℝ) < k := by
           {apply lt_of_le_of_ne nonneg'; apply Ne.symm; simp only [ne_eq, h_ne, not_false_eq_true]}
-        apply (le_div_iff this).mp
-        exact h_div
+        exact (le_div_iff₀ this).mp h_div
     case isFalse h_jk =>
       simp only [not_lt] at h_jk
       exact le_trans mul_le_right h_jk
@@ -161,8 +159,7 @@ lemma unit_le_div_iff_mul_le {i j k : I} : i ≤ j / k ↔ i * k ≤ j := by
       | inr h_ne =>
         have : (0:ℝ) < k := by
           {apply lt_of_le_of_ne nonneg'; apply Ne.symm; simp only [ne_eq, h_ne, not_false_eq_true]}
-        apply (le_div_iff this).mpr
-        exact h_mul
+        exact (le_div_iff₀ this).mpr h_mul
     case isFalse => exact le_one'
 
 @[simp]
@@ -214,7 +211,7 @@ lemma unit_div_eq_one_iff {i j : I} : i / j = 1 ↔ j ≤ i := by
         exfalso
         obtain h := le_of_eq (h h_lt).symm
         have : 0 < j := by {apply lt_of_le_of_ne nonneg' (Ne.symm h_n_zero)}
-        rw [le_div_iff this, one_mul, Subtype.coe_le_coe] at h
+        rw [le_div_iff₀ this, one_mul, Subtype.coe_le_coe] at h
         exact (not_le.mpr h_lt) h
       | inr h_le => exact h_le
   · intro h
