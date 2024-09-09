@@ -179,4 +179,7 @@ open PNat
 def bigSingleton (l : ℕ+) (n : ℕ) (qs : ℕ → ℚ) : Heap :=
   fun l' => if l ≤ l' ∧ l' < l+n then qs (l'-l) else undef
 
+def Subset (heap' heap : Heap) : Prop :=
+  ∃ heap'', disjoint heap' heap'' ∧ heap = heap' ∪ heap''
+
 end State

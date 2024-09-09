@@ -216,6 +216,25 @@ theorem union_undef_iff_undef {heap₁ heap₂ : Heap} {l : PNat} :
     case h_1 h_l => rw [h_l] at h; simp only [false_and] at h
     case h_2 _ => exact h.right
 
+theorem eq_of_union_of_union {heap₁ heap₂ heap₁₂ heap₂₁ : Heap}
+    (h₁₂ : heap₁ = heap₂ ∪ heap₁₂) (h₂₁ : heap₂ = heap₁ ∪ heap₂₁) :
+    heap₁ = heap₂ := by
+  apply funext
+  intro l
+  have h₁₂_l := congrFun h₁₂ l
+  have h₂₁_l := congrFun h₂₁ l
+  simp only [union] at h₁₂_l h₂₁_l
+  split at h₁₂_l
+  case h_1 q h =>
+    rw [h₁₂_l, h]
+  case h_2 q h =>
+    simp only [h₁₂_l] at h₂₁_l ⊢
+    split at h₂₁_l
+    case h_1 q h' =>
+      rw [h', h₂₁_l]
+    case h_2 q h' =>
+      rw [h', h]
+
 theorem disjoint_union_iff (heap₁ heap₂ heap₃ : Heap) :
     disjoint heap₁ (heap₂ ∪ heap₃) ↔ disjoint heap₁ heap₂ ∧ disjoint heap₁ heap₃ := by
   apply Iff.intro
@@ -787,5 +806,34 @@ lemma union_bigSingleton_eq_allocateLoc {heap : Heap} (h : isNotAlloc heap l n) 
 
 
 end singleton
+
+section subset
+
+instance : HasSubset Heap where
+  Subset := Subset
+
+instance : PartialOrder Heap where
+  le := Subset
+  le_refl heap := by use ∅, disjoint_emptyHeap', union_emptyHeap'.symm
+  le_trans heap₁ heap₂ heap₃ := by {
+    intro h₁₂ h₂₃
+    obtain ⟨heap₁₂, h_disjoint₁₂, h_union₁₂⟩ := h₁₂
+    obtain ⟨heap₂₃, h_disjoint₂₃, h_union₂₃⟩ := h₂₃
+    use (heap₁₂ ∪ heap₂₃)
+    constructor
+    · rw [disjoint_union_iff]
+      use h_disjoint₁₂
+      rw [h_union₁₂, disjoint_comm, disjoint_union_iff, disjoint_comm] at h_disjoint₂₃
+      exact h_disjoint₂₃.left
+    · rw [h_union₂₃, h_union₁₂, union_assoc]
+  }
+  le_antisymm heap₁ heap₂ := by {
+    intro h₁₂ h₂₁
+    obtain ⟨heap₁₂, _, h_union₁₂⟩ := h₁₂
+    obtain ⟨heap₂₁, _, h_union₂₁⟩ := h₂₁
+    apply eq_of_union_of_union h_union₂₁ h_union₁₂
+  }
+
+end subset
 
 end State

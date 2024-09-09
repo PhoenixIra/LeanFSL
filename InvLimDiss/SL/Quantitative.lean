@@ -327,15 +327,11 @@ def unexpandQslSepDiv : Unexpander
   | `($_ $l $r) => do `(`[qsl| $(← bracketsSepDiv_left l) -⋆ $(← bracketsSepDiv r)])
   | _ => throw ()
 
--- @[app_unexpander LE.le]
--- def unexpandSlEntail : Unexpander
---   | `($_ `[qsl|$l:qsl] `[qsl|$r:qsl]) => do `(`[qsl| $l ⊢ $r])
---   | _ => throw ()
 
+def precise (P : StateRV Var) : Prop :=
+  ∀ stack, ∀ heap, ∃ heap',
+    heap' ⊆ heap ∧ ∀ heap'', heap'' ⊆ heap → heap' ≠ heap''
+    → P ⟨stack, heap''⟩ = 0
 
--- example : `[qsl Var| emp ⊔ I (x:ℚ). ~ (emp ⊔ (emp ⊔ emp) ⋆ emp) ⊢ (S (x:ℚ). emp -⋆ emp + emp -⋆ emp) ⊓ emp] := sorry
-
-
--- example : `[qsl Var| qFalse ⊢ (emp ⋆ emp)(x ↦ e) ] := sorry
 
 end QSL

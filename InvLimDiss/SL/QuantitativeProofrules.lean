@@ -215,6 +215,27 @@ theorem qslSepMul_qslFalse_eq (f : StateRV Var) : `[qsl| [[f]] ⋆ qFalse] = `[q
     simp only [qslFalse, mul_zero, le_refl]
   · simp only [qslFalse, zero_le]
 
+theorem qslSepMul_qslMul_subdistr (P Q R : StateRV Var) :
+    `[qsl| [[P]] ⋆ ([[Q]] ⊓ [[R]])] ≤ `[qsl| ([[P]] ⋆ [[Q]]) ⊓ ([[P]] ⋆ [[R]])] := by
+  intro s
+  apply sSup_le
+  rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+  apply le_inf
+  · apply le_sSup_of_le
+    · use heap₁, heap₂, h_disjoint, h_union
+    · apply mul_le_mul le_rfl ?_ nonneg' nonneg'
+      simp only [qslMin, Inf.inf]
+      rw [inf_le_iff]
+      left
+      rfl
+  · apply le_sSup_of_le
+    · use heap₁, heap₂, h_disjoint, h_union
+    · apply mul_le_mul le_rfl ?_ nonneg' nonneg'
+      simp only [qslMin, Inf.inf]
+      rw [inf_le_iff]
+      right
+      rfl
+
 end Separating
 
 /-! This features elimination rules for quantifiers in qsl. -/
@@ -278,5 +299,14 @@ theorem qslBigSepMul_of_qslPointsTo_of_bigSingleton_eq_one {l : ℕ+} {stack : S
     · simp only [ih, mul_one]
 
 end PointsTo
+
+section precise
+
+theorem qslSepMul_qslMul_distr_of_precise (P Q R : StateRV Var) (h : precise P) :
+    `[qsl| [[P]] ⋆ ([[Q]] ⊓ [[R]])] = `[qsl| ([[P]] ⋆ [[Q]]) ⊓ ([[P]] ⋆ [[R]])] := by
+  apply le_antisymm (qslSepMul_qslMul_subdistr P Q R)
+  sorry
+
+end precise
 
 end QSL
