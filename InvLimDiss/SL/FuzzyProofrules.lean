@@ -216,7 +216,7 @@ theorem fslSepMul_fslFalse_eq (f : StateRV Var) : `[fsl| [[f]] ⋆ qFalse] = `[f
     simp only [fslFalse, mul_zero, le_refl]
   · simp only [fslFalse, zero_le]
 
-theorem fslSepMul_fslMin_supdistr (P Q R : StateRV Var) :
+theorem fslSepMul_fslMin_subdistr (P Q R : StateRV Var) :
     `[fsl| [[P]] ⋆ ([[Q]] ⊓ [[R]])] ≤ `[fsl| ([[P]] ⋆ [[Q]]) ⊓ ([[P]] ⋆ [[R]])] := by
   intro s
   apply sSup_le
@@ -270,7 +270,7 @@ theorem fslSepMul_fslMax_distr (P Q R : StateRV Var) :
       · apply unit_mul_le_mul le_rfl ?_
         simp only [fslMax, Sup.sup, le_sup_right]
 
-theorem fslSepDiv_fslMax_subdistr (P Q R : StateRV Var) :
+theorem fslSepDiv_fslMax_supdistr (P Q R : StateRV Var) :
     `[fsl| ([[P]] -⋆ [[Q]]) ⊔ ([[P]] -⋆ [[R]])] ⊢ `[fsl| [[P]] -⋆ ([[Q]] ⊔ [[R]])] := by
   intro s
   apply le_sInf
@@ -324,7 +324,7 @@ section Precise
 
 theorem fslSepMul_fslMin_distr_of_precise (P Q R : StateRV Var) (h : precise P) :
     `[fsl| [[P]] ⋆ ([[Q]] ⊓ [[R]])] = `[fsl| ([[P]] ⋆ [[Q]]) ⊓ ([[P]] ⋆ [[R]])] := by
-  apply le_antisymm (fslSepMul_fslMin_supdistr P Q R)
+  apply le_antisymm (fslSepMul_fslMin_subdistr P Q R)
   intro s
   obtain ⟨heap₁, h_subset, h⟩ := h s
   obtain ⟨heap₂, h_disjoint, h_union⟩ := union_of_subset h_subset

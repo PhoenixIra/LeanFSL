@@ -45,14 +45,14 @@ theorem fslSubst_of_fslReal : `[fsl| <r>(v ↦ e)] = `[fsl| <substProb r v e>] :
   intro s
   rfl
 
-noncomputable def substProp (P : State Var → Prop) (v : Var) (e : ValueExp Var) : State Var → Prop :=
-  fun s => P (s.substituteStack v (e s.stack))
+-- noncomputable def substProp (P : State Var → Prop) (v : Var) (e : ValueExp Var) : State Var → Prop :=
+--   fun s => P (s.substituteStack v (e s.stack))
 
-@[simp]
-theorem fslSubst_of_fslIverson : `[fsl| ⁅b⁆(v ↦ e)] = `[fsl| ⁅substProp b v e⁆] := by
-  apply funext
-  intro s
-  rfl
+-- @[simp]
+-- theorem fslSubst_of_fslIverson : `[fsl| ⁅b⁆(v ↦ e)] = `[fsl| ⁅substProp b v e⁆] := by
+--   apply funext
+--   intro s
+--   rfl
 
 @[simp]
 theorem fslSubst_of_fslNot : `[fsl| (~[[f]])(v ↦ e)] = `[fsl| ~([[f]](v ↦ e))] := by
@@ -145,6 +145,15 @@ theorem fslSubst_of_fslSepDiv :
   apply funext
   intro s
   rfl
+
+theorem fslSubst_of_fslBigSepMul {f : ℕ → StateRV Var} :
+    `[fsl| ([⋆] i ∈ { ... n}. [[f i]])(v ↦ e) ]
+    = `[fsl| [⋆] i ∈ { ... n}. [[f i]](v ↦ e) ] := by
+  induction n with
+  | zero => apply funext; intro s; rfl
+  | succ n ih =>
+    unfold fslBigSepMul
+    rw [fslSubst_of_fslSepMul, ih]
 
 theorem substituteStack_of_fslSepCon (e : ValueExp Var) (h : v ∉ varRV g) :
     `[fsl| ([[f]] ⋆ [[g]])(v ↦ e)] = `[fsl| [[f]](v ↦ e) ⋆ [[g]]] := by
