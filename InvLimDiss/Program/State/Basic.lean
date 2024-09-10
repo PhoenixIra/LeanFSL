@@ -235,6 +235,23 @@ theorem eq_of_union_of_union {heap₁ heap₂ heap₁₂ heap₂₁ : Heap}
     case h_2 q h' =>
       rw [h', h]
 
+theorem eq_of_union_of_union_left {heap heap₁ heap₂ heap₂' : Heap}
+    (h_disjoint : disjoint heap₁ heap₂) (h_union : heap = heap₁ ∪ heap₂)
+    (h_disjoint' : disjoint heap₁ heap₂') (h_union' : heap = heap₁ ∪ heap₂') :
+    heap₂ = heap₂' := by
+  apply funext
+  intro l
+  cases eq_or_ne (heap₁ l) undef
+  case inl h₁_undef =>
+    have h_union := congrFun h_union l
+    have h_union' := congrFun h_union' l
+    rw [union_eq_of_left_undef h₁_undef] at h_union h_union'
+    rw [← h_union, ← h_union']
+  case inr h₁_def =>
+    have h₂_undef := undef_of_disjoint_of_ne_undef h_disjoint h₁_def
+    have h₂'_undef := undef_of_disjoint_of_ne_undef h_disjoint' h₁_def
+    rw [h₂_undef, h₂'_undef]
+
 theorem disjoint_union_iff (heap₁ heap₂ heap₃ : Heap) :
     disjoint heap₁ (heap₂ ∪ heap₃) ↔ disjoint heap₁ heap₂ ∧ disjoint heap₁ heap₃ := by
   apply Iff.intro
@@ -263,7 +280,6 @@ theorem disjoint_union_iff (heap₁ heap₂ heap₃ : Heap) :
         apply Or.inr
         rw [union_undef_iff_undef]
         exact ⟨h₂, h₃⟩
-
 
 theorem isNotAlloc_union (heap₁ heap₂ : Heap) (l : ℕ+) (n : ℕ):
     isNotAlloc (heap₁ ∪ heap₂) l n ↔ isNotAlloc heap₁ l n ∧ isNotAlloc heap₂ l n := by
@@ -810,10 +826,10 @@ end singleton
 section subset
 
 instance : HasSubset Heap where
-  Subset := Subset
+  Subset := subset
 
 instance : PartialOrder Heap where
-  le := Subset
+  le := subset
   le_refl heap := by use ∅, disjoint_emptyHeap', union_emptyHeap'.symm
   le_trans heap₁ heap₂ heap₃ := by {
     intro h₁₂ h₂₃
@@ -833,6 +849,50 @@ instance : PartialOrder Heap where
     obtain ⟨heap₂₁, _, h_union₂₁⟩ := h₂₁
     apply eq_of_union_of_union h_union₂₁ h_union₁₂
   }
+
+theorem subset_of_union {heap heap₁ heap₂ : Heap}
+    (h_disjoint : disjoint heap₁ heap₂) (h_union : heap = heap₁ ∪ heap₂) :
+    heap₁ ⊆ heap := by
+  use heap₂
+
+theorem heap_def_of_subset {heap heap' : Heap} (h_subset : heap' ⊆ heap)
+    {l : ℕ+} {q : ℚ} (h : heap' l = q) : heap l = q := by
+  obtain ⟨heap'', _, h_union⟩ := h_subset
+  rw [h_union]
+  exact union_val_of_val h
+
+theorem disjoint_heapminus (heap heap' : Heap) :
+    disjoint heap' (heapminus heap heap') := by
+  intro l
+  simp only [heapminus]
+  split_ifs
+  case pos h => left; rw [h]
+  case neg h => right; rfl
+
+theorem union_heapminus {heap heap' : Heap} (h_subset : heap' ⊆ heap) :
+    heap = heap' ∪ heapminus heap heap' := by
+  apply funext
+  intro l
+  rw [union_comm _ _ (disjoint_heapminus _ _)]
+  simp only [Union.union, heapminus]
+  split
+  case h_1 q h =>
+    split_ifs at h
+    rw [h]
+  case h_2 q h =>
+    split_ifs at h
+    case pos h' => rw [h, h']
+    case neg h' =>
+      rw [← ne_eq, neq_undef_iff_exists_val] at h'
+      obtain ⟨q, h'⟩ := h'
+      rw [h']
+      exact heap_def_of_subset h_subset h'
+
+theorem union_of_subset {heap heap' : Heap} (h_subset : heap' ⊆ heap) :
+    ∃ heap'', disjoint heap' heap'' ∧ heap = heap' ∪ heap'' := by
+  use heapminus heap heap', disjoint_heapminus _ _, union_heapminus h_subset
+
+
 
 end subset
 

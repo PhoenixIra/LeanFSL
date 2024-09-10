@@ -215,7 +215,7 @@ theorem qslSepMul_qslFalse_eq (f : StateRV Var) : `[qsl| [[f]] ⋆ qFalse] = `[q
     simp only [qslFalse, mul_zero, le_refl]
   · simp only [qslFalse, zero_le]
 
-theorem qslSepMul_qslMul_subdistr (P Q R : StateRV Var) :
+theorem qslSepMul_qslMin_supdistr (P Q R : StateRV Var) :
     `[qsl| [[P]] ⋆ ([[Q]] ⊓ [[R]])] ≤ `[qsl| ([[P]] ⋆ [[Q]]) ⊓ ([[P]] ⋆ [[R]])] := by
   intro s
   apply sSup_le
@@ -223,20 +223,146 @@ theorem qslSepMul_qslMul_subdistr (P Q R : StateRV Var) :
   apply le_inf
   · apply le_sSup_of_le
     · use heap₁, heap₂, h_disjoint, h_union
-    · apply mul_le_mul le_rfl ?_ nonneg' nonneg'
+    · apply unit_mul_le_mul le_rfl ?_
       simp only [qslMin, Inf.inf]
       rw [inf_le_iff]
       left
       rfl
   · apply le_sSup_of_le
     · use heap₁, heap₂, h_disjoint, h_union
-    · apply mul_le_mul le_rfl ?_ nonneg' nonneg'
+    · apply unit_mul_le_mul le_rfl ?_
       simp only [qslMin, Inf.inf]
       rw [inf_le_iff]
       right
       rfl
 
+theorem qslSepMul_qslMax_distr (P Q R : StateRV Var) :
+    `[qsl| [[P]] ⋆ ([[Q]] ⊔ [[R]])] = `[qsl| ([[P]] ⋆ [[Q]]) ⊔ ([[P]] ⋆ [[R]])] := by
+  apply le_antisymm
+  · intro s
+    apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    rw [mul_comm, ← unit_le_div_iff_mul_le]
+    apply sup_le
+    · rw [unit_le_div_iff_mul_le, mul_comm]
+      simp only [qslMax, Sup.sup, le_sup_iff]
+      left
+      apply le_sSup
+      use heap₁, heap₂, h_disjoint, h_union
+    · rw [unit_le_div_iff_mul_le, mul_comm]
+      simp only [qslMax, Sup.sup, le_sup_iff]
+      right
+      apply le_sSup
+      use heap₁, heap₂, h_disjoint, h_union
+  · intro s
+    apply sup_le
+    · apply sSup_le
+      rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+      apply le_sSup_of_le
+      · use heap₁, heap₂, h_disjoint, h_union
+      · apply unit_mul_le_mul le_rfl ?_
+        simp only [qslMax, Sup.sup, le_sup_left]
+    · apply sSup_le
+      rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+      apply le_sSup_of_le
+      · use heap₁, heap₂, h_disjoint, h_union
+      · apply unit_mul_le_mul le_rfl ?_
+        simp only [qslMax, Sup.sup, le_sup_right]
+
+theorem qslSepDiv_qslMax_subdistr (P Q R : StateRV Var) :
+    `[qsl| ([[P]] -⋆ [[Q]]) ⊔ ([[P]] -⋆ [[R]])] ⊢ `[qsl| [[P]] -⋆ ([[Q]] ⊔ [[R]])] := by
+  intro s
+  apply le_sInf
+  rintro _ ⟨heap, h_disjoint, rfl⟩
+  apply sup_le
+  · apply sInf_le_of_le
+    · use heap, h_disjoint
+    · apply unit_div_le_div ?_ le_rfl
+      simp only [qslMax, Sup.sup, le_sup_left]
+  · apply sInf_le_of_le
+    · use heap, h_disjoint
+    · apply unit_div_le_div ?_ le_rfl
+      simp only [qslMax, Sup.sup, le_sup_right]
+
+theorem qslSepDiv_qslMin_distr (P Q R : StateRV Var) :
+    `[qsl| ([[P]] -⋆ [[Q]]) ⊓ ([[P]] -⋆ [[R]])] = `[qsl| [[P]] -⋆ ([[Q]] ⊓ [[R]])] := by
+  apply le_antisymm
+  · intro s
+    apply le_sInf
+    rintro _ ⟨heap, h_disjoint, rfl⟩
+    rw [unit_le_div_iff_mul_le]
+    apply le_inf
+    · rw [← unit_le_div_iff_mul_le]
+      simp only [qslMin, Inf.inf, inf_le_iff]
+      left
+      apply sInf_le
+      use heap, h_disjoint
+    · rw [← unit_le_div_iff_mul_le]
+      simp only [qslMin, Inf.inf, inf_le_iff]
+      right
+      apply sInf_le
+      use heap, h_disjoint
+  · intro s
+    apply le_inf
+    · apply le_sInf
+      rintro _ ⟨heap, h_disjoint, rfl⟩
+      apply sInf_le_of_le
+      · use heap, h_disjoint
+      · apply unit_div_le_div ?_ le_rfl
+        simp only [qslMin, Inf.inf, inf_le_left]
+    · apply le_sInf
+      rintro _ ⟨heap, h_disjoint, rfl⟩
+      apply sInf_le_of_le
+      · use heap, h_disjoint
+      · apply unit_div_le_div ?_ le_rfl
+        simp only [qslMin, Inf.inf, inf_le_right]
+
 end Separating
+
+section Precise
+
+theorem qslSepMul_qslMin_distr_of_precise (P Q R : StateRV Var) (h : precise P) :
+    `[qsl| [[P]] ⋆ ([[Q]] ⊓ [[R]])] = `[qsl| ([[P]] ⋆ [[Q]]) ⊓ ([[P]] ⋆ [[R]])] := by
+  apply le_antisymm (qslSepMul_qslMin_supdistr P Q R)
+  intro s
+  obtain ⟨heap₁, h_subset, h⟩ := h s
+  obtain ⟨heap₂, h_disjoint, h_union⟩ := union_of_subset h_subset
+  apply le_sSup_of_le
+  · use heap₁, heap₂, h_disjoint, h_union.symm
+  · simp only [qslMin, Inf.inf]
+    cases le_total (Q ⟨s.stack, heap₂⟩) (R ⟨s.stack, heap₂⟩)
+    case inl h_le =>
+      rw [inf_of_le_left h_le, inf_le_iff]
+      left
+      apply sSup_le
+      rintro _ ⟨heap₁', heap₂', h_disjoint', h_union', rfl⟩
+      cases eq_or_ne heap₁ heap₁'
+      case inl h_eq =>
+        rw [h_eq] at h_union h_disjoint ⊢
+        apply unit_mul_le_mul le_rfl ?_
+        have := eq_of_union_of_union_left h_disjoint h_union h_disjoint' h_union'.symm
+        rw [this]
+      case inr h_neq =>
+        specialize h heap₁' (subset_of_union h_disjoint' h_union'.symm) h_neq
+        rw [h]
+        simp only [zero_mul, zero_le]
+    case inr h_le =>
+      rw [inf_of_le_right h_le, inf_le_iff]
+      right
+      apply sSup_le
+      rintro _ ⟨heap₁', heap₂', h_disjoint', h_union', rfl⟩
+      cases eq_or_ne heap₁ heap₁'
+      case inl h_eq =>
+        rw [h_eq] at h_union h_disjoint ⊢
+        apply unit_mul_le_mul le_rfl ?_
+        have := eq_of_union_of_union_left h_disjoint h_union h_disjoint' h_union'.symm
+        rw [this]
+      case inr h_neq =>
+        specialize h heap₁' (subset_of_union h_disjoint' h_union'.symm) h_neq
+        rw [h]
+        simp only [zero_mul, zero_le]
+
+end Precise
 
 /-! This features elimination rules for quantifiers in qsl. -/
 section Quantifiers
@@ -299,14 +425,5 @@ theorem qslBigSepMul_of_qslPointsTo_of_bigSingleton_eq_one {l : ℕ+} {stack : S
     · simp only [ih, mul_one]
 
 end PointsTo
-
-section precise
-
-theorem qslSepMul_qslMul_distr_of_precise (P Q R : StateRV Var) (h : precise P) :
-    `[qsl| [[P]] ⋆ ([[Q]] ⊓ [[R]])] = `[qsl| ([[P]] ⋆ [[Q]]) ⊓ ([[P]] ⋆ [[R]])] := by
-  apply le_antisymm (qslSepMul_qslMul_subdistr P Q R)
-  sorry
-
-end precise
 
 end QSL

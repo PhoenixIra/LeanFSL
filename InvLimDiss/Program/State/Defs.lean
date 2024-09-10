@@ -82,8 +82,8 @@ theorem undef_iff_forall_neq_val {heap : Heap} {l : PNat} :
 
 /-- The state, a stack heap pair. -/
 structure State (Variable : Type) where
-stack : Stack Variable
-heap : Heap
+  stack : Stack Variable
+  heap : Heap
 
 variable {Var : Type}
 
@@ -179,7 +179,10 @@ open PNat
 def bigSingleton (l : ℕ+) (n : ℕ) (qs : ℕ → ℚ) : Heap :=
   fun l' => if l ≤ l' ∧ l' < l+n then qs (l'-l) else undef
 
-def Subset (heap' heap : Heap) : Prop :=
+def subset (heap' heap : Heap) : Prop :=
   ∃ heap'', disjoint heap' heap'' ∧ heap = heap' ∪ heap''
+
+noncomputable def heapminus (heap heap' : Heap) : Heap :=
+  λ l => if heap' l = undef then heap l else undef
 
 end State

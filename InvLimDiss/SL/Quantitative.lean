@@ -329,9 +329,9 @@ def unexpandQslSepDiv : Unexpander
 
 
 def precise (P : StateRV Var) : Prop :=
-  ∀ stack, ∀ heap, ∃ heap',
-    heap' ⊆ heap ∧ ∀ heap'', heap'' ⊆ heap → heap' ≠ heap''
-    → P ⟨stack, heap''⟩ = 0
+  ∀ s : State Var, ∃ heap',
+    heap' ⊆ s.heap ∧ ∀ heap'', heap'' ⊆ s.heap → heap' ≠ heap''
+    → P ⟨s.stack, heap''⟩ = 0
 
 
 end QSL
