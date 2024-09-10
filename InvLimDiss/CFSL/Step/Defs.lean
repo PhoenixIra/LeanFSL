@@ -1,11 +1,11 @@
 import InvLimDiss.Program.Semantics
 import InvLimDiss.Program.Enabled
-import InvLimDiss.SL.Quantitative
-import InvLimDiss.CQSL.Step.ReachState
+import InvLimDiss.SL.Fuzzy
+import InvLimDiss.CFSL.Step.ReachState
 
-namespace CQSL
+namespace CFSL
 
-open Syntax Semantics QSL
+open Syntax Semantics FSL
 
 variable {Var : Type}
 
@@ -17,4 +17,4 @@ noncomputable def step (c : Program Var) (inner : Program Var → StateRV Var) :
     fun s => sInf { x | ∃ a ∈ enabledAction c s,
       ∑' cs : reachState Var, (semantics c s a cs.prog cs.state) * inner cs.prog cs.state = x}
 
-end CQSL
+end CFSL

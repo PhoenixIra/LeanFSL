@@ -1,4 +1,4 @@
-import InvLimDiss.SL.QuantitativeProofrules
+import InvLimDiss.SL.FuzzyProofrules
 import InvLimDiss.SL.Classical
 import InvLimDiss.Program.Semantics
 
@@ -10,7 +10,7 @@ import InvLimDiss.Program.Semantics
   * `wrtProg` are the program variables on the left side of assignments
   * `varRV` are the program variables occuring in a random variable-/
 
-open Semantics QSL State
+open Semantics FSL State
 
 namespace Syntax
 
@@ -88,7 +88,7 @@ def varProg : Program Var → Set Var
 
 end Syntax
 
-namespace QSL
+namespace FSL
 
 /-- Variables occuring in an expression, semantically defined. I.e. variables that never change
   the outcome of `f`. -/
@@ -97,4 +97,4 @@ def varRV (f : StateRV Var) : Set Var := { v | ∃ s q, f s ≠ f (s.substituteS
 open SL in
 def varProp (P : StateProp Var) : Set Var := {v | ∃ s q, P s ≠ P (s.substituteStack v q)}
 
-end QSL
+end FSL

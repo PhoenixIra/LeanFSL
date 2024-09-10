@@ -1,10 +1,10 @@
-import InvLimDiss.CQSL.WeakExpectation
+import InvLimDiss.CFSL.WeakExpectation
 import InvLimDiss.Mathlib.FixedPoints
 
 
-namespace CQSL
+namespace CFSL
 
-open Syntax QSL
+open Syntax FSL
 
 variable {Var : Type} {P Q : StateRV Var}
 
@@ -23,7 +23,7 @@ theorem wrle_step_mono_of_le_RV (h_le : P ≤ Q) :
   exact h_le s
 
 theorem wrle_mono (h : P ≤ Q) :
-    `[qsl| wrle [c] ([[P]]|[[resource]]) ⊢ wrle [c] ([[Q]]|[[resource]])] := by
+    `[fsl| wrle [c] ([[P]]|[[resource]]) ⊢ wrle [c] ([[Q]]|[[resource]])] := by
   intro s
   simp only [wrle']
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
@@ -35,4 +35,4 @@ theorem wrle_mono (h : P ≤ Q) :
 
 
 
-end CQSL
+end CFSL

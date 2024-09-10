@@ -1,9 +1,9 @@
 import InvLimDiss.SL.Framing.Defs
 
 
-open Syntax Semantics QSL State
+open Syntax Semantics FSL State
 
-namespace QSL
+namespace FSL
 
 theorem wrtStmt_subset_wrtProg :
     wrtStmt c ⊆ wrtProg c := by
@@ -48,12 +48,12 @@ theorem substituteVar_eq_of_not_varRV {f : StateRV Var} {v : Var} (h : v ∉ var
   simp only [substituteStack] at this
   rw [this]
 
-theorem qslSubst_eq_of_not_varRV {f : StateRV Var} {v : Var} (h : v ∉ varRV f) :
-    ∀ e, `[qsl| [[f]](v ↦ e)] = f := by
+theorem fslSubst_eq_of_not_varRV {f : StateRV Var} {v : Var} (h : v ∉ varRV f) :
+    ∀ e, `[fsl| [[f]](v ↦ e)] = f := by
   intro e
   apply funext
   intro s
-  rw [qslSubst]
+  rw [fslSubst]
   exact substituteStack_eq_of_not_varRV h (e s.stack) s
 
 theorem written_of_transition
@@ -402,4 +402,4 @@ theorem vars_of_transition
 
 
 
-end QSL
+end FSL

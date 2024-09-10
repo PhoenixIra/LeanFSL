@@ -1,55 +1,55 @@
 import InvLimDiss.SL.ClassicalProofrules
-import InvLimDiss.SL.QuantitativeProofrules
+import InvLimDiss.SL.FuzzyProofrules
 
 
-namespace QSL
+namespace FSL
 
 variable {Var : Type}
 
 open SL unitInterval
 
-theorem conservative_true : `[qsl Var| qTrue] = `[qsl Var| ⁅`[sl Var| sTrue]⁆] := by
+theorem conservative_true : `[fsl Var| qTrue] = `[fsl Var| ⁅`[sl Var| sTrue]⁆] := by
   apply funext
   intro _
-  simp only [qslTrue, qslIverson, slTrue, unitInterval.iteOneZero_true]
+  simp only [fslTrue, fslIverson, slTrue, unitInterval.iteOneZero_true]
 
-theorem conservative_false : `[qsl Var| qFalse] = `[qsl Var| ⁅`[sl Var| sFalse]⁆] := by
+theorem conservative_false : `[fsl Var| qFalse] = `[fsl Var| ⁅`[sl Var| sFalse]⁆] := by
   apply funext
   intro _
-  simp only [qslFalse, qslIverson, slFalse, unitInterval.iteOneZero_false]
+  simp only [fslFalse, fslIverson, slFalse, unitInterval.iteOneZero_false]
 
-theorem conservative_emp : `[qsl Var| emp] = `[qsl Var| ⁅`[sl Var| emp]⁆] := by
+theorem conservative_emp : `[fsl Var| emp] = `[fsl Var| ⁅`[sl Var| emp]⁆] := by
   apply funext
   intro _
-  simp only [qslEmp, qslIverson, slEmp]
+  simp only [fslEmp, fslIverson, slEmp]
 
-theorem conservative_pointsTo : `[qsl Var| e ↦ e'] = `[qsl Var| ⁅`[sl Var| e ↦ e']⁆] := by
+theorem conservative_pointsTo : `[fsl Var| e ↦ e'] = `[fsl Var| ⁅`[sl Var| e ↦ e']⁆] := by
   apply funext
   intro _
-  simp only [qslPointsTo, qslIverson, slPointsTo]
+  simp only [fslPointsTo, fslIverson, slPointsTo]
 
-theorem conservative_equals : `[qsl Var| e = e'] = `[qsl Var| ⁅`[sl Var| e = e']⁆] := by
+theorem conservative_equals : `[fsl Var| e = e'] = `[fsl Var| ⁅`[sl Var| e = e']⁆] := by
   apply funext
   intro _
-  simp only [qslEquals, qslIverson, slEquals]
+  simp only [fslEquals, fslIverson, slEquals]
 
 theorem conservative_subst (P : StateProp Var) :
-    `[qsl Var| ⁅P⁆(v ↦ e)] = `[qsl Var| ⁅`[sl Var| [[P]](v ↦ e)]⁆] := by
+    `[fsl Var| ⁅P⁆(v ↦ e)] = `[fsl Var| ⁅`[sl Var| [[P]](v ↦ e)]⁆] := by
   apply funext
   intro _
-  simp only [qslSubst, qslIverson, slSubst]
+  simp only [fslSubst, fslIverson, slSubst]
 
 theorem conservative_not (P : StateProp Var) :
-    `[qsl Var| ~⁅P⁆] = `[qsl Var| ⁅`[sl Var| ¬ [[P]]]⁆] := by
+    `[fsl Var| ~⁅P⁆] = `[fsl Var| ⁅`[sl Var| ¬ [[P]]]⁆] := by
   apply funext
   intro _
-  simp only [qslNot, qslIverson, sym_iteOneZero_eq, slNot]
+  simp only [fslNot, fslIverson, sym_iteOneZero_eq, slNot]
 
 theorem conservative_min (P Q : StateProp Var) :
-    `[qsl Var| ⁅P⁆ ⊓ ⁅Q⁆] = `[qsl Var| ⁅`[sl Var| [[P]] ∧ [[Q]]]⁆] := by
+    `[fsl Var| ⁅P⁆ ⊓ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var| [[P]] ∧ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [qslMin, Inf.inf, qslIverson, iteOneZero_eq_iff, slAnd]
+  simp only [fslMin, Inf.inf, fslIverson, iteOneZero_eq_iff, slAnd]
   split
   case isTrue h_p =>
     split
@@ -66,10 +66,10 @@ theorem conservative_min (P Q : StateProp Var) :
     simp only [h_q, false_and, not_false_eq_true]
 
 theorem conservative_max (P Q : StateProp Var) :
-    `[qsl Var| ⁅P⁆ ⊔ ⁅Q⁆] = `[qsl Var| ⁅`[sl Var| [[P]] ∨ [[Q]]]⁆] := by
+    `[fsl Var| ⁅P⁆ ⊔ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var| [[P]] ∨ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [qslMax, Sup.sup, qslIverson, iteOneZero_eq_iff, slOr]
+  simp only [fslMax, Sup.sup, fslIverson, iteOneZero_eq_iff, slOr]
   split
   case isTrue h_p =>
     rw [sup_of_le_left le_one', if_pos (Or.inl h_p)]
@@ -84,10 +84,10 @@ theorem conservative_max (P Q : StateProp Var) :
       simp only [h_p, h_q, or_self, not_false_eq_true]
 
 theorem conservative_add (P Q : StateProp Var) :
-    `[qsl Var| ⁅P⁆ + ⁅Q⁆] = `[qsl Var| ⁅`[sl Var| [[P]] ∨ [[Q]]]⁆] := by
+    `[fsl Var| ⁅P⁆ + ⁅Q⁆] = `[fsl Var| ⁅`[sl Var| [[P]] ∨ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [qslAdd, Sup.sup, qslIverson, iteOneZero_eq_iff, slOr]
+  simp only [fslAdd, Sup.sup, fslIverson, iteOneZero_eq_iff, slOr]
   split
   case isTrue h_p =>
     rw [one_truncatedAdd, if_pos]
@@ -103,10 +103,10 @@ theorem conservative_add (P Q : StateProp Var) :
       simp only [h_p, h_q, or_self, not_false_eq_true]
 
 theorem conservative_mul (P Q : StateProp Var) :
-    `[qsl Var| ⁅P⁆ ⬝ ⁅Q⁆] = `[qsl Var| ⁅`[sl Var| [[P]] ∧ [[Q]]]⁆] := by
+    `[fsl Var| ⁅P⁆ ⬝ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var| [[P]] ∧ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [qslMul, qslIverson, iteOneZero_eq_iff, mul_ite, mul_one, mul_zero, slAnd, Inf.inf]
+  simp only [fslMul, fslIverson, iteOneZero_eq_iff, mul_ite, mul_one, mul_zero, slAnd, Inf.inf]
   split
   case isTrue h_q =>
     split
@@ -120,10 +120,10 @@ theorem conservative_mul (P Q : StateProp Var) :
     simp only [h_q, and_false, not_false_eq_true]
 
 theorem conservative_sup (P : α → StateProp Var) :
-    `[qsl Var|S (x : α). ⁅P x⁆] = `[qsl Var| ⁅`[sl Var|∃ (x : α). [[P x]]]⁆] := by
+    `[fsl Var|S (x : α). ⁅P x⁆] = `[fsl Var| ⁅`[sl Var|∃ (x : α). [[P x]]]⁆] := by
   apply funext
   intro _
-  simp only [qslSup, qslIverson, slExists, sSup, iSup_Prop_eq, Subtype.exists, exists_prop,
+  simp only [fslSup, fslIverson, slExists, sSup, iSup_Prop_eq, Subtype.exists, exists_prop,
     iteOneZero_eq_iff]
   split
   case isTrue h =>
@@ -133,7 +133,7 @@ theorem conservative_sup (P : α → StateProp Var) :
     · exact le_one'
     · rw [iSup_apply]
       apply le_trans ?_ (le_iSup _ a)
-      simp only [qslIverson, h, iteOneZero_true, le_refl]
+      simp only [fslIverson, h, iteOneZero_true, le_refl]
   case isFalse h =>
     rw [iSup_apply] at h
     simp only [iSup_Prop_eq, not_exists] at h
@@ -141,37 +141,37 @@ theorem conservative_sup (P : α → StateProp Var) :
     · rw [iSup_apply]
       apply iSup_le
       intro a
-      simp only [qslIverson, h a, iteOneZero_false, le_refl]
+      simp only [fslIverson, h a, iteOneZero_false, le_refl]
     · exact nonneg'
 
 theorem conservative_inf (P : α → StateProp Var) :
-    `[qsl Var|I (x : α). ⁅P x⁆] = `[qsl Var| ⁅`[sl Var|∀ (x : α). [[P x]]]⁆] := by
+    `[fsl Var|I (x : α). ⁅P x⁆] = `[fsl Var| ⁅`[sl Var|∀ (x : α). [[P x]]]⁆] := by
   apply funext
   intro _
-  simp only [qslIverson, iteOneZero_eq_iff]
+  simp only [fslIverson, iteOneZero_eq_iff]
   split
   case isTrue h =>
     apply le_antisymm
     · exact le_one'
-    · rw [qslInf_apply]
+    · rw [fslInf_apply]
       rw [slAll_apply] at h
       apply le_iInf
       intro a
-      simp only [qslIverson, h a, iteOneZero_true, le_refl]
+      simp only [fslIverson, h a, iteOneZero_true, le_refl]
   case isFalse h =>
     apply le_antisymm
     · rw [slAll_apply, not_forall] at h
       obtain ⟨a, h⟩ := h
-      rw [qslInf_apply]
+      rw [fslInf_apply]
       apply le_trans (iInf_le _ a)
-      simp only [qslIverson, h, iteOneZero_false, le_refl]
+      simp only [fslIverson, h, iteOneZero_false, le_refl]
     · exact nonneg'
 
 theorem conservative_sepMul (P Q : StateProp Var) :
-    `[qsl Var|⁅P⁆ ⋆ ⁅Q⁆] = `[qsl Var| ⁅`[sl Var|[[P]] ∗ [[Q]]]⁆] := by
+    `[fsl Var|⁅P⁆ ⋆ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var|[[P]] ∗ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [qslSepMul, qslIverson, iteOneZero_eq_iff, mul_ite, mul_one, mul_zero, slSepCon]
+  simp only [fslSepMul, fslIverson, iteOneZero_eq_iff, mul_ite, mul_one, mul_zero, slSepCon]
   split
   case isTrue h =>
     obtain ⟨heap₁, heap₂, h_p, h_q, h_disjoint, h_union⟩ := h
@@ -194,16 +194,16 @@ theorem conservative_sepMul (P Q : StateProp Var) :
     · exact nonneg'
 
 theorem conservative_bigSepMul (P : ℕ → StateProp Var) :
-    `[qsl Var|[⋆] i ∈ { ... n}. ⁅P i⁆] = `[qsl Var| ⁅`[sl Var|[∗] i ∈ { ... n}. [[P i]]]⁆] := by
+    `[fsl Var|[⋆] i ∈ { ... n}. ⁅P i⁆] = `[fsl Var| ⁅`[sl Var|[∗] i ∈ { ... n}. [[P i]]]⁆] := by
   induction n with
-  | zero => simp only [qslBigSepMul, conservative_emp, slBigSepCon]
-  | succ n ih => rw [qslBigSepMul, slBigSepCon, ih, conservative_sepMul]
+  | zero => simp only [fslBigSepMul, conservative_emp, slBigSepCon]
+  | succ n ih => rw [fslBigSepMul, slBigSepCon, ih, conservative_sepMul]
 
 theorem conservative_sepDiv (P Q : StateProp Var) :
-    `[qsl Var|⁅P⁆ -⋆ ⁅Q⁆] = `[qsl Var| ⁅`[sl Var|[[P]] -∗ [[Q]]]⁆] := by
+    `[fsl Var|⁅P⁆ -⋆ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var|[[P]] -∗ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [qslSepDiv, qslIverson, iteOneZero_eq_iff, slSepImp]
+  simp only [fslSepDiv, fslIverson, iteOneZero_eq_iff, slSepImp]
   split
   case isTrue h =>
     apply le_antisymm
@@ -226,8 +226,8 @@ theorem conservative_sepDiv (P Q : StateProp Var) :
       simp only [unit_div_one]
     · exact nonneg'
 
-theorem qslIverson_eq_one (P : StateProp Var) :
-    `[qsl Var| ⁅P⁆] s = 1 ↔ P s := by
-  simp only [qslIverson, iteOneZero_eq_one_def]
+theorem fslIverson_eq_one (P : StateProp Var) :
+    `[fsl Var| ⁅P⁆] s = 1 ↔ P s := by
+  simp only [fslIverson, iteOneZero_eq_one_def]
 
-end QSL
+end FSL

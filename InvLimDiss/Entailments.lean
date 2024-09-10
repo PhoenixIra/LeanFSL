@@ -1,1 +1,1 @@
-import InvLimDiss.Entailments.QSL2SL
+import InvLimDiss.Entailments.FSL2SL

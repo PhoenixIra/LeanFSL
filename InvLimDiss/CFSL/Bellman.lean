@@ -1,5 +1,5 @@
-import InvLimDiss.CQSL.Step
-import InvLimDiss.CQSL.WeakExpectation
+import InvLimDiss.CFSL.Step
+import InvLimDiss.CFSL.WeakExpectation
 
 /-! This file contains the equviality theorem for the bellman-solution and the concurrent
 bellman-solution.
@@ -8,7 +8,7 @@ bellman-solution.
 
 namespace Bellman
 
-open QSL Syntax OrderHom unitInterval Atom Semantics CQSL
+open FSL Syntax OrderHom unitInterval Atom Semantics CFSL
 
 variable {Var : Type}
 
@@ -16,8 +16,8 @@ variable {Var : Type}
 noncomputable def bellman_step (post : StateRV Var) :
     (Program Var → StateRV Var) → (Program Var → StateRV Var)
   | _, [Prog| ↓ ] => post
-  | _, [Prog| ↯ ] => `[qsl| qFalse]
-  | X, program => `[qsl| [[step program (fun c => `[qsl| [[X c]]]) ]] ]
+  | _, [Prog| ↯ ] => `[fsl| qFalse]
+  | X, program => `[fsl| [[step program (fun c => `[fsl| [[X c]]]) ]] ]
 
 theorem bellman_monotone (post : StateRV Var) : Monotone (bellman_step post) := by
   intro X X' h_X
@@ -44,7 +44,7 @@ noncomputable def bellman_solution (post : StateRV Var) : (Program Var → State
 open OrderHom
 
 theorem wrle_step_of_emp_eq_bellman {post : StateRV Var} :
-    wrle_step post `[qsl| emp] = bellman_step post := by
+    wrle_step post `[fsl| emp] = bellman_step post := by
   apply funext
   intro X
   apply funext
@@ -55,10 +55,10 @@ theorem wrle_step_of_emp_eq_bellman {post : StateRV Var} :
   case h_2 => simp only
   case h_3 =>
     simp only
-    conv => left; rw [qslEmp_qslSepDiv_eq]; intro s; left; intro c; rw [qslSepMul_qslEmp_eq]
+    conv => left; rw [fslEmp_fslSepDiv_eq]; intro s; left; intro c; rw [fslSepMul_fslEmp_eq]
 
 theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
-    gfp (wrle_step_hom post `[qsl|emp])
+    gfp (wrle_step_hom post `[fsl|emp])
     = gfp (bellman_step_hom post) := by
   apply le_antisymm
   · apply le_gfp
@@ -81,7 +81,7 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
     exact h_X
 
 theorem wrle_of_emp_eq_bellman {c : Program Var} {post : StateRV Var} :
-    `[qsl| wrle [c] ([[post]] | emp)] = bellman_solution post c := by
+    `[fsl| wrle [c] ([[post]] | emp)] = bellman_solution post c := by
   unfold wrle' bellman_solution
   apply congrFun
   exact gfp_wrle_eq_gfp_bellman

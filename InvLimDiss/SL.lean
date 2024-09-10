@@ -4,6 +4,6 @@ import InvLimDiss.SL.Framing.VarApprox
 import InvLimDiss.SL.Classical
 import InvLimDiss.SL.ClassicalProofrules
 import InvLimDiss.SL.Entailment
-import InvLimDiss.SL.Quantitative
-import InvLimDiss.SL.QuantitativeProofrules
-import InvLimDiss.SL.QuantitativeSubstSimp
+import InvLimDiss.SL.Fuzzy
+import InvLimDiss.SL.FuzzyProofrules
+import InvLimDiss.SL.FuzzySubstSimp

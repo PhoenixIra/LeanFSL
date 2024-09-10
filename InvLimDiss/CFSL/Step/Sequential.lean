@@ -1,12 +1,12 @@
-import InvLimDiss.CQSL.Step.Basic
+import InvLimDiss.CFSL.Step.Basic
 import InvLimDiss.Program.Support
 
 
-namespace CQSL
+namespace CFSL
 
 variable {Var : Type}
 
-open Syntax Semantics QSL unitInterval Action State HeapValue Classical Function
+open Syntax Semantics FSL unitInterval Action State HeapValue Classical Function
 
 theorem tsum_sequential_term_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : reachState Var,
@@ -136,4 +136,4 @@ theorem step_sequential_cont (s : State Var) (inner : Program Var → StateRV Va
     simp only
     rw [tsum_sequential_cont s inner h_term h_abort]
 
-end CQSL
+end CFSL

@@ -1,11 +1,11 @@
 import InvLimDiss.SL.Framing.Basic
-import InvLimDiss.SL.Quantitative
-import InvLimDiss.CQSL.WeakExpectation
+import InvLimDiss.SL.Fuzzy
+import InvLimDiss.CFSL.WeakExpectation
 import InvLimDiss.Mathlib.FixedPoints
 
-namespace CQSL
+namespace CFSL
 
-open Syntax OrdinalApprox QSL State unitInterval
+open Syntax OrdinalApprox FSL State unitInterval
 
 variable {Vars : Type}
 
@@ -26,14 +26,14 @@ private theorem gfpApprox_of_term_eq
   simp only [varRV, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not] at h
   exact h s q
 
-private theorem gfpApprox_of_term_qslSepMul_resource_eq
+private theorem gfpApprox_of_term_fslSepMul_resource_eq
     (h : v ∉ varRV P ∪ varRV resource) (q : ℚ):
-    `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i [Prog| ↓] ]] ⋆ [[resource]]] s
-    = `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i [Prog| ↓] ]] ⋆ [[resource]]]
+    `[fsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i [Prog| ↓] ]] ⋆ [[resource]]] s
+    = `[fsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i [Prog| ↓] ]] ⋆ [[resource]]]
       ⟨substituteVar s.stack v q, s.heap⟩ := by
   simp only [Set.mem_union, not_or] at h
   obtain ⟨h_P, h_resource⟩ := h
-  simp only [qslSepMul]
+  simp only [fslSepMul]
   conv => {
     left; right; intro i; left; intro i; right; intro h₁
     rw [gfpApprox_of_term_eq h_P q]
@@ -486,7 +486,7 @@ private theorem gfpApprox_eq_of_not_mem_vars {c : Program Vars} {P resource : St
           rw [h_abort]
           rfl
         | inr h_neq_abort =>
-          simp only [qslSepDiv]
+          simp only [fslSepDiv]
           conv => {
             left; right; intro i; left; intro i; right; intro h'
             rw [h_resource _ q]
@@ -494,15 +494,15 @@ private theorem gfpApprox_eq_of_not_mem_vars {c : Program Vars} {P resource : St
           conv => {
             left; right; intro i; left; intro i; right; intro h'
             right; right; left; left; intro c
-            change `[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]
+            change `[fsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]
           }
           have : ∀ k < i, ∀ {c : Program Vars} {s : State Vars},
             v ∉ varProg c ∪ varRV P ∪ varRV resource →
-            (`[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ k c]] ⋆ [[resource]] ]) s =
-            (`[qsl| [[gfpApprox (wrle_step_hom P resource) ⊤ k c]] ⋆ [[resource]] ])
+            (`[fsl| [[gfpApprox (wrle_step_hom P resource) ⊤ k c]] ⋆ [[resource]] ]) s =
+            (`[fsl| [[gfpApprox (wrle_step_hom P resource) ⊤ k c]] ⋆ [[resource]] ])
               ⟨substituteVar s.stack v q, s.heap⟩ := by {
             intro i' h_i' c s h_vars
-            simp only [qslSepMul]
+            simp only [fslSepMul]
             conv => {
               left; right; intro a; left; intro a; right; intro h₁
               rw [ih i' h_i' h_vars]
@@ -532,7 +532,7 @@ theorem varRV_of_gfpApprox_wrle_step {P resource : StateRV Var} :
   exact gfpApprox_eq_of_not_mem_vars h_v
 
 theorem varRV_of_wrle :
-    varRV `[qsl Var| wrle [c] ([[P]]|[[resource]])]
+    varRV `[fsl Var| wrle [c] ([[P]]|[[resource]])]
     ⊆ varProg c ∪ varRV P ∪ varRV resource := by
   intro v h_v
   contrapose h_v
@@ -543,4 +543,4 @@ theorem varRV_of_wrle :
   exact gfpApprox_eq_of_not_mem_vars h_v
 
 
-end CQSL
+end CFSL

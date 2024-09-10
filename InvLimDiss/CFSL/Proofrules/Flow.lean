@@ -1,59 +1,59 @@
-import InvLimDiss.CQSL.WeakExpectation
-import InvLimDiss.SL.QuantitativeSubstSimp
+import InvLimDiss.CFSL.WeakExpectation
+import InvLimDiss.SL.FuzzySubstSimp
 import InvLimDiss.SL.Classical
-import InvLimDiss.CQSL.Step.Framing
-import InvLimDiss.CQSL.Proofrules.Inductive
+import InvLimDiss.CFSL.Step.Framing
+import InvLimDiss.CFSL.Proofrules.Inductive
 import InvLimDiss.Mathlib.FixedPoints
 
 /-!
   Proofrules for wrle with flow programs that are not inductive (i.e. looping, choices) as one should use it for reasoning about concurrent probabilistic programs.
 -/
 
-namespace CQSL
+namespace CFSL
 
-open QSL Syntax OrderHom unitInterval Atom Semantics
+open FSL Syntax OrderHom unitInterval Atom Semantics
 
 theorem wrle_probabilisticBranching :
-    `[qsl| <e> ⬝ wrle [c₁] ([[P]] | [[resource]])
+    `[fsl| <e> ⬝ wrle [c₁] ([[P]] | [[resource]])
         + ~<e> ⬝ wrle [c₂] ([[P]] | [[resource]])
         ⊢ wrle [pif e then [[c₁]] else [[c₂]] fi] ([[P]] | [[resource]])] := by
   nth_rw 3 [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [le_qslSepDiv_iff_qslSepMul_le]
+  rw [le_fslSepDiv_iff_fslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.empty_inter]
-  · refine qslSepMul_mono ?_ le_rfl
+  · refine fslSepMul_mono ?_ le_rfl
     intro s
     rw [step_probChoice]
     split_ifs
     case pos h_abort₁ h_abort₂ =>
       rw [h_abort₁, h_abort₂, wrle_eq_of_abort]
-      simp only [qslAdd, qslMul, qslReal, qslFalse, mul_zero, qslNot, truncatedAdd_zero, add_zero,
+      simp only [fslAdd, fslMul, fslReal, fslFalse, mul_zero, fslNot, truncatedAdd_zero, add_zero,
         le_refl]
     case neg h_abort₁ _ =>
       rw [h_abort₁, wrle_eq_of_abort]
-      simp only [qslAdd, qslMul, qslReal, qslFalse, mul_zero, qslNot, zero_truncatedAdd, zero_add,
+      simp only [fslAdd, fslMul, fslReal, fslFalse, mul_zero, fslNot, zero_truncatedAdd, zero_add,
         le_refl]
     case pos h_abort₂ =>
       rw [h_abort₂, wrle_eq_of_abort]
-      simp only [qslAdd, qslMul, qslReal, qslFalse, mul_zero, truncatedAdd_zero, add_zero, le_refl]
+      simp only [fslAdd, fslMul, fslReal, fslFalse, mul_zero, truncatedAdd_zero, add_zero, le_refl]
     case neg =>
-      simp only [qslAdd, qslMul, qslReal, qslNot]
+      simp only [fslAdd, fslMul, fslReal, fslNot]
       rfl
 
 open SL in
 theorem wrle_conditionalBranching {e : BoolExp Var} :
-    `[qsl| ⁅<e>⁆ ⬝ wrle [c₁] ([[P]] | [[resource]])
+    `[fsl| ⁅<e>⁆ ⬝ wrle [c₁] ([[P]] | [[resource]])
         ⊔ ~⁅<e>⁆ ⬝ wrle [c₂] ([[P]] | [[resource]])
         ⊢ wrle [if e then [[c₁]] else [[c₂]] fi] ([[P]] | [[resource]])] := by
   nth_rw 3 [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [le_qslSepDiv_iff_qslSepMul_le]
+  rw [le_fslSepDiv_iff_fslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.empty_inter]
-  · refine qslSepMul_mono ?_ le_rfl
+  · refine fslSepMul_mono ?_ le_rfl
     intro s
     by_cases e s.stack
     case pos h_e =>
@@ -61,28 +61,28 @@ theorem wrle_conditionalBranching {e : BoolExp Var} :
       split
       case isTrue h_abort₁ =>
         rw [h_abort₁, wrle_eq_of_abort]
-        simp only [qslMax, Sup.sup, qslMul, qslIverson, slExp, iteOneZero_pos h_e, qslFalse,
-          mul_zero, qslNot, symm_one, zero_mul, ge_iff_le, le_refl, sup_of_le_left]
+        simp only [fslMax, Sup.sup, fslMul, fslIverson, slExp, iteOneZero_pos h_e, fslFalse,
+          mul_zero, fslNot, symm_one, zero_mul, ge_iff_le, le_refl, sup_of_le_left]
       case isFalse =>
-        simp only [qslMax, Sup.sup, qslMul, qslIverson, slExp, iteOneZero_pos h_e, one_mul, qslNot,
+        simp only [fslMax, Sup.sup, fslMul, fslIverson, slExp, iteOneZero_pos h_e, one_mul, fslNot,
           symm_one, zero_mul, ge_iff_le, zero_le, sup_of_le_left, le_refl]
     case neg h_e =>
       rw [step_condChoice_right _ _ (by simp only [h_e])]
       split
       case isTrue h_abort₂ =>
         rw [h_abort₂, wrle_eq_of_abort]
-        simp only [qslMax, Sup.sup, qslMul, qslIverson, slExp, iteOneZero_neg h_e, qslFalse,
-          mul_zero, qslNot, symm_one, zero_mul, ge_iff_le, le_refl, sup_of_le_left]
+        simp only [fslMax, Sup.sup, fslMul, fslIverson, slExp, iteOneZero_neg h_e, fslFalse,
+          mul_zero, fslNot, symm_one, zero_mul, ge_iff_le, le_refl, sup_of_le_left]
       case isFalse =>
-        simp only [qslMax, Sup.sup, qslMul, qslIverson, slExp, iteOneZero_neg h_e, zero_mul, qslNot,
+        simp only [fslMax, Sup.sup, fslMul, fslIverson, slExp, iteOneZero_neg h_e, zero_mul, fslNot,
           symm_zero, one_mul, ge_iff_le, zero_le, sup_of_le_right, le_refl]
 
 
 open SL OrdinalApprox in
 theorem wrle_while {e : BoolExp Var}
-    (h_Q : Q ⊢ `[qsl| wrle [c] ([[inv]] | [[resource]])])
-    (h_inv : inv ⊢ `[qsl| ⁅<e>⁆ ⬝ [[Q]] ⊔ ~⁅<e>⁆ ⬝ [[P]]]) :
-     inv ⊢ `[qsl| wrle [while e begin [[c]] fi] ([[P]] | [[resource]])] := by
+    (h_Q : Q ⊢ `[fsl| wrle [c] ([[inv]] | [[resource]])])
+    (h_inv : inv ⊢ `[fsl| ⁅<e>⁆ ⬝ [[Q]] ⊔ ~⁅<e>⁆ ⬝ [[P]]]) :
+     inv ⊢ `[fsl| wrle [while e begin [[c]] fi] ([[P]] | [[resource]])] := by
   unfold wrle'
   rw [← gfpApprox_ord_eq_gfp]
   induction (Order.succ (Cardinal.mk _)).ord using Ordinal.induction with
@@ -124,8 +124,8 @@ theorem wrle_while {e : BoolExp Var}
               rintro _ (rfl | ⟨_, _, rfl⟩)
               · exact le_one'
               · apply le_trans (h_inv s)
-                simp only [qslMax, Sup.sup, qslMul, qslIverson, slExp, h, Bool.false_eq_true,
-                  iteOneZero_false, zero_mul, qslNot, symm_zero, one_mul, zero_le, sup_of_le_right,
+                simp only [fslMax, Sup.sup, fslMul, fslIverson, slExp, h, Bool.false_eq_true,
+                  iteOneZero_false, zero_mul, fslNot, symm_zero, one_mul, zero_le, sup_of_le_right,
                   wrle_step, le_refl]
             case pos h =>
               rw [step_loop_cont _ _ h]
@@ -137,8 +137,8 @@ theorem wrle_while {e : BoolExp Var}
                 apply wrle_step_mono_of_le_RV
                 exact ih i' h_i'
               · apply le_trans (h_inv s)
-                simp only [qslMax, Sup.sup, qslMul, qslIverson, slExp, h, iteOneZero_true, one_mul,
-                  qslNot, symm_one, zero_mul, zero_le, sup_of_le_left]
+                simp only [fslMax, Sup.sup, fslMul, fslIverson, slExp, h, iteOneZero_true, one_mul,
+                  fslNot, symm_one, zero_mul, zero_le, sup_of_le_left]
                 apply le_trans (h_Q s)
                 unfold wrle'
                 apply le_gfpApprox_of_mem_fixedPoints (wrle_step_hom _ _)
@@ -146,4 +146,4 @@ theorem wrle_while {e : BoolExp Var}
                   exact isFixedPt_gfp (wrle_step_hom _ _)
                 · exact le_top
 
-end CQSL
+end CFSL

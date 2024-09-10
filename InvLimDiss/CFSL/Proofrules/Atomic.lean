@@ -1,6 +1,6 @@
-import InvLimDiss.CQSL.WeakExpectation
-import InvLimDiss.SL.QuantitativeSubstSimp
-import InvLimDiss.CQSL.Step.Framing
+import InvLimDiss.CFSL.WeakExpectation
+import InvLimDiss.SL.FuzzySubstSimp
+import InvLimDiss.CFSL.Step.Framing
 import InvLimDiss.SL.Conservativity
 import InvLimDiss.SL.ClassicalProofrules
 
@@ -8,26 +8,26 @@ import InvLimDiss.SL.ClassicalProofrules
   Proofrules for wrle with atomic programs as one should use it for reasoning about concurrent probabilistic programs.
 -/
 
-namespace CQSL
+namespace CFSL
 
-open QSL Syntax OrderHom unitInterval Atom Semantics
+open FSL Syntax OrderHom unitInterval Atom Semantics
 
 private theorem support_wrle_of_atom {c : Program Var} (h_atom : atomicProgram c)
     (s : State Var) (P resource : StateRV Var) :
     Function.support (fun cs : reachState Var =>
       programSmallStepSemantics c s a cs.prog cs.state
-      * (`[qsl| (wrle [cs.prog] ([[P]] ⋆ [[resource]] | emp )) ⋆ emp ] cs.state))
+      * (`[fsl| (wrle [cs.prog] ([[P]] ⋆ [[resource]] | emp )) ⋆ emp ] cs.state))
     ⊆ { cs : reachState Var | cs.prog = [Prog| ↓]} := by
   intro cs h_cs
   simp only [Function.support_mul, Set.mem_inter_iff, Function.mem_support, ne_eq] at h_cs
-  obtain ⟨h_sem, h_qsl⟩ := h_cs
+  obtain ⟨h_sem, h_fsl⟩ := h_cs
   by_cases h_fin_cs : finalProgram cs.prog
   · rw [finalPrograms_iff_or] at h_fin_cs
     cases h_fin_cs with
     | inl h => exact h
     | inr h =>
-      rw [h, wrle_eq_of_abort, qslSepMul_qslEmp_eq, qslFalse] at h_qsl
-      simp only [not_true_eq_false] at h_qsl
+      rw [h, wrle_eq_of_abort, fslSepMul_fslEmp_eq, fslFalse] at h_fsl
+      simp only [not_true_eq_false] at h_fsl
   · exfalso
     exact h_sem <| semantics_eq_zero_of_atomProgram h_atom h_fin_cs s a cs.state
 
@@ -35,28 +35,28 @@ private theorem support_wrle'_of_atom {c : Program Var} (h_atom : atomicProgram 
     (s : State Var) (P resource : StateRV Var) :
     Function.support (fun cs : reachState Var =>
       programSmallStepSemantics c s a cs.prog cs.state
-      * (`[qsl| (wrle [cs.prog] ([[P]] | [[resource]] )) ⋆ [[resource]] ] cs.state))
+      * (`[fsl| (wrle [cs.prog] ([[P]] | [[resource]] )) ⋆ [[resource]] ] cs.state))
     ⊆ { cs : reachState Var | cs.prog = [Prog| ↓]} := by
   intro cs h_cs
   simp only [Function.support_mul, Set.mem_inter_iff, Function.mem_support, ne_eq] at h_cs
-  obtain ⟨h_sem, h_qsl⟩ := h_cs
+  obtain ⟨h_sem, h_fsl⟩ := h_cs
   by_cases h_fin_cs : finalProgram cs.prog
   · rw [finalPrograms_iff_or] at h_fin_cs
     cases h_fin_cs with
     | inl h => exact h
     | inr h =>
-      rw [h, wrle_eq_of_abort, qslSepMul_comm, qslSepMul_qslFalse_eq, qslFalse] at h_qsl
-      simp only [not_true_eq_false] at h_qsl
+      rw [h, wrle_eq_of_abort, fslSepMul_comm, fslSepMul_fslFalse_eq, fslFalse] at h_fsl
+      simp only [not_true_eq_false] at h_fsl
   · exfalso
     exact h_sem <| semantics_eq_zero_of_atomProgram h_atom h_fin_cs s a cs.state
 
-theorem wrle_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrle [c] ([[P]] ⋆ [[resource]] | emp)])
+theorem wrle_atom (h : `[fsl| [[P]] ⋆ [[resource]] ⊢ wrle [c] ([[P]] ⋆ [[resource]] | emp)])
     (h_atom : atomicProgram c) :
-    `[qsl| [[P]] ⊢ wrle [c] ([[P]] | [[resource]])] := by
+    `[fsl| [[P]] ⊢ wrle [c] ([[P]] | [[resource]])] := by
   have := atomic_not_final h_atom
-  rw [wrle_eq_of_not_final this, le_qslSepDiv_iff_qslSepMul_le]
+  rw [wrle_eq_of_not_final this, le_fslSepDiv_iff_fslSepMul_le]
   apply le_trans h
-  rw [wrle_eq_of_not_final this, qslEmp_qslSepDiv_eq, Pi.le_def]
+  rw [wrle_eq_of_not_final this, fslEmp_fslSepDiv_eq, Pi.le_def]
   intro s
   simp only [step, le_sInf_iff, Set.mem_setOf_eq, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂]
@@ -77,7 +77,7 @@ theorem wrle_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrle [c] ([[P]] ⋆ [[r
       apply unit_mul_le_mul le_rfl
       have := cs.prop
       simp only [Set.mem_setOf_eq] at this
-      rw [this, wrle_eq_of_term, wrle_eq_of_term, qslSepMul_qslEmp_eq]
+      rw [this, wrle_eq_of_term, wrle_eq_of_term, fslSepMul_fslEmp_eq]
   · apply tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]
     intro cs
@@ -89,36 +89,36 @@ theorem wrle_atom (h : `[qsl| [[P]] ⋆ [[resource]] ⊢ wrle [c] ([[P]] ⋆ [[r
       apply unit_mul_le_mul le_rfl
       have := cs.prop
       simp only [Set.mem_setOf_eq] at this
-      rw [this, wrle_eq_of_term, wrle_eq_of_term, qslSepMul_qslEmp_eq]
+      rw [this, wrle_eq_of_term, wrle_eq_of_term, fslSepMul_fslEmp_eq]
 
-theorem wrle_skip : `[qsl| [[P]] ⊢ wrle [skip] ([[P]] | [[RI]])] := by
+theorem wrle_skip : `[fsl| [[P]] ⊢ wrle [skip] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [le_qslSepDiv_iff_qslSepMul_le, Pi.le_def]
+  rw [le_fslSepDiv_iff_fslSepMul_le, Pi.le_def]
   intro s
   rw [step_skip, wrle_eq_of_term]
 
 theorem wrle_assign (h : x ∉ varRV RI) :
-    `[qsl| [[P]](x ↦ e) ⊢ wrle [x ≔ e] ([[P]] | [[RI]])] := by
+    `[fsl| [[P]](x ↦ e) ⊢ wrle [x ≔ e] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [le_qslSepDiv_iff_qslSepMul_le, Pi.le_def]
+  rw [le_fslSepDiv_iff_fslSepMul_le, Pi.le_def]
   intro s
   rw [step_assign, wrle_eq_of_term]
-  have : `[qsl| [[P]] ⋆ [[RI]]]  (s.substituteStack x (e s.stack))
-    = `[qsl| ([[P]] ⋆ [[RI]])(x ↦ e)] s := rfl
-  rw [this, substituteStack_of_qslSepCon e h]
+  have : `[fsl| [[P]] ⋆ [[RI]]]  (s.substituteStack x (e s.stack))
+    = `[fsl| ([[P]] ⋆ [[RI]])(x ↦ e)] s := rfl
+  rw [this, substituteStack_of_fslSepCon e h]
 
 open HeapValue State
 
 theorem wrle_mutate :
-    `[qsl| (S (q : ℚ). e_loc ↦ q) ⋆ (e_loc ↦ e_val -⋆ [[P]])
+    `[fsl| (S (q : ℚ). e_loc ↦ q) ⋆ (e_loc ↦ e_val -⋆ [[P]])
           ⊢ wrle [e_loc *≔ e_val] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [le_qslSepDiv_iff_qslSepMul_le]
+  rw [le_fslSepDiv_iff_fslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.empty_inter]
-  · refine qslSepMul_mono ?_ le_rfl
+  · refine fslSepMul_mono ?_ le_rfl
     intro s
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
@@ -127,9 +127,9 @@ theorem wrle_mutate :
       simp only [State.substituteHeap]
       apply sSup_le
       rintro _ ⟨heap_remove, heap_remain, h_disjoint, h_union, rfl⟩
-      rw [← unit_le_div_iff_mul_le, qslSup_apply, iSup_le_iff]
+      rw [← unit_le_div_iff_mul_le, fslSup_apply, iSup_le_iff]
       intro q
-      simp only [qslPointsTo, iteOneZero_le, forall_exists_index, and_imp]
+      simp only [fslPointsTo, iteOneZero_le, forall_exists_index, and_imp]
       intro l' h_loc' h_val'
       simp only [h_loc, Nat.cast_inj, PNat.coe_inj] at h_loc'
       rw [unit_le_div_iff_mul_le]
@@ -143,7 +143,7 @@ theorem wrle_mutate :
           apply disjoint_singleton_of_disjoint_alloc h_disjoint
           simp only [h_val', State.singleton, ↓reduceIte, ne_eq, not_false_eq_true]
         · rfl
-      · simp only [qslPointsTo]
+      · simp only [fslPointsTo]
         rw [iteOneZero_pos]
         · rw [unit_div_one, ← h_union, h_val', ← substituteLoc_union, h_loc',
             substituteLoc_singleton_eq, union_comm]
@@ -155,9 +155,9 @@ theorem wrle_mutate :
       apply sSup_le
       rintro _ ⟨heap_remove, heap_remain, _, h_union, rfl⟩
       rw [← unit_le_div_iff_mul_le]
-      rw [qslSup_apply, iSup_le_iff]
+      rw [fslSup_apply, iSup_le_iff]
       intro q
-      simp only [qslPointsTo, iteOneZero_le, forall_exists_index, and_imp]
+      simp only [fslPointsTo, iteOneZero_le, forall_exists_index, and_imp]
       intro l h_loc h_val
       exfalso
       apply h_ne_alloc
@@ -168,16 +168,16 @@ theorem wrle_mutate :
 
 
 theorem wrle_lookup (h : v ∉ varRV RI) :
-    `[qsl| S (q : ℚ). e_loc ↦ q ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ q))
+    `[fsl| S (q : ℚ). e_loc ↦ q ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ q))
           ⊢ wrle [v ≔* e_loc] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [le_qslSepDiv_iff_qslSepMul_le]
+  rw [le_fslSepDiv_iff_fslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
-  · refine qslSepMul_mono ?_ le_rfl
+  · refine fslSepMul_mono ?_ le_rfl
     intro s
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
@@ -186,11 +186,11 @@ theorem wrle_lookup (h : v ∉ varRV RI) :
       obtain ⟨q, h_q⟩ := h_alloc
       rw [step_lookup s _ h_loc h_q, wrle_eq_of_term]
       simp only [substituteStack]
-      rw [qslSup_apply, iSup_le_iff]
+      rw [fslSup_apply, iSup_le_iff]
       intro q
       apply sSup_le
       rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
-      simp only [qslPointsTo, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+      simp only [fslPointsTo, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
       split
       case isTrue h_l' =>
         obtain ⟨l', h_l', h_singleton⟩ := h_l'
@@ -206,20 +206,20 @@ theorem wrle_lookup (h : v ∉ varRV RI) :
         use (State.singleton l' q)
         apply And.intro
         · simp only [← h_singleton, State.disjoint_comm, h_disjoint]
-        · simp only [qslPointsTo]
+        · simp only [fslPointsTo]
           rw [iteOneZero_pos]
-          · simp only [← h_union, qslSubst, substituteStack, ← h_singleton, unit_div_one]
+          · simp only [← h_union, fslSubst, substituteStack, ← h_singleton, unit_div_one]
             rw [union_comm _ _ h_disjoint]
           · use l', h_loc.symm
       case isFalse h_l' =>
         simp only [zero_le]
     case neg h_nalloc =>
       simp only [ne_eq, not_exists, not_and, not_not] at h_nalloc
-      rw [qslSup_apply, iSup_le_iff]
+      rw [fslSup_apply, iSup_le_iff]
       intro q
       apply sSup_le
       rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
-      simp only [qslPointsTo]
+      simp only [fslPointsTo]
       rw [iteOneZero_neg]
       · simp only [zero_mul, zero_le]
       · simp only [not_exists, not_and]
@@ -229,16 +229,16 @@ theorem wrle_lookup (h : v ∉ varRV RI) :
         simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
 
 theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
-    `[qsl| e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ)))
+    `[fsl| e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ)))
           ⊢ wrle [v ≔ cas(e_loc, e_val, e_set)] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [le_qslSepDiv_iff_qslSepMul_le]
+  rw [le_fslSepDiv_iff_fslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
-  · refine qslSepMul_mono ?_ le_rfl
+  · refine fslSepMul_mono ?_ le_rfl
     intro s
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
@@ -251,7 +251,7 @@ theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
         rw [step_cas_of_eq s _ h_loc h_q, wrle_eq_of_term]
         apply sSup_le
         rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
-        simp only [qslPointsTo, substituteStack, substituteHeap]
+        simp only [fslPointsTo, substituteStack, substituteHeap]
         rw [← unit_le_div_iff_mul_le, iteOneZero_le, unit_le_div_iff_mul_le]
         rintro ⟨l', h_l', h_singleton⟩
         simp only [h_loc, Nat.cast_inj, PNat.coe_inj] at h_l'
@@ -264,11 +264,11 @@ theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
             rw [h_singleton, State.disjoint_comm] at h_disjoint
             exact disjoint_singleton_of_disjoint_singleton h_disjoint
           · rfl
-        · simp only [qslPointsTo]
+        · simp only [fslPointsTo]
           rw [iteOneZero_pos]
           pick_goal 2
           · use l', h_loc.symm
-          · simp only [qslSubst, substituteStack, unit_div_one]
+          · simp only [fslSubst, substituteStack, unit_div_one]
             rw [← h_union, ← substituteLoc_union, h_singleton, substituteLoc_singleton_eq, union_comm]
             rw [h_singleton, State.disjoint_comm] at h_disjoint
             apply disjoint_singleton_of_disjoint_singleton
@@ -276,7 +276,7 @@ theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
       case inr h_ne =>
         apply sSup_le
         rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
-        simp only [qslPointsTo]
+        simp only [fslPointsTo]
         rw [iteOneZero_neg]
         · simp only [zero_mul, zero_le]
         · simp only [not_exists, not_and]
@@ -291,7 +291,7 @@ theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
     case neg h_nalloc =>
       apply sSup_le
       rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
-      simp only [qslPointsTo]
+      simp only [fslPointsTo]
       rw [iteOneZero_neg]
       · simp only [zero_mul, zero_le]
       · simp only [not_exists, not_and]
@@ -302,16 +302,16 @@ theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
         simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
 
 theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
-    `[qsl| S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))
+    `[fsl| S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))
           ⊢ wrle [v ≔ cas(e_loc, e_val, e_set)] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [le_qslSepDiv_iff_qslSepMul_le]
+  rw [le_fslSepDiv_iff_fslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
-  · refine qslSepMul_mono ?_ le_rfl
+  · refine fslSepMul_mono ?_ le_rfl
     intro s
     by_cases ∃ l : ℕ+, e_loc s.stack = l ∧ s.heap l ≠ undef
     case pos h_alloc =>
@@ -320,11 +320,11 @@ theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
       obtain ⟨q, h_q⟩ := h_alloc
       cases eq_or_ne q (e_val s.stack)
       case inl h_eq =>
-        rw [qslSup_apply, iSup_le_iff]
+        rw [fslSup_apply, iSup_le_iff]
         intro q
         apply sSup_le
         rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
-        simp only [qslMul, qslPointsTo, qslNot, qslEquals, sym_iteOneZero_eq,
+        simp only [fslMul, fslPointsTo, fslNot, fslEquals, sym_iteOneZero_eq,
           iteOneZero_mul_iteOneZero_eq]
         rw [iteOneZero_neg]
         · simp only [zero_mul, zero_le]
@@ -340,11 +340,11 @@ theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
       case inr h_ne =>
         rw [step_cas_of_neq s _ h_loc (neq_undef_iff_exists_val.mpr ⟨q, h_q⟩) (by simp [h_q, h_ne])]
         rw [wrle_eq_of_term]
-        rw [qslSup_apply, iSup_le_iff]
+        rw [fslSup_apply, iSup_le_iff]
         intro q
         apply sSup_le
         rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
-        simp only [qslMul, qslPointsTo, qslNot, qslEquals, sym_iteOneZero_eq,
+        simp only [fslMul, fslPointsTo, fslNot, fslEquals, sym_iteOneZero_eq,
           iteOneZero_mul_iteOneZero_eq]
         rw [iteOneZero_eq_iff]
         split_ifs
@@ -362,18 +362,18 @@ theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
           · simp only
             rw [← h_singleton, State.disjoint_comm]
             exact h_disjoint
-          · simp only [qslPointsTo]
+          · simp only [fslPointsTo]
             rw [iteOneZero_pos]
-            · rw [qslSubst, ← h_singleton, ← h_union, union_comm _ _ h_disjoint]
+            · rw [fslSubst, ← h_singleton, ← h_union, union_comm _ _ h_disjoint]
               simp only [substituteStack, unit_div_one]
             · use l', h_loc.symm
         case neg => simp only [zero_mul, substituteStack, zero_le]
     case neg h_nalloc =>
-      rw [qslSup_apply, iSup_le_iff]
+      rw [fslSup_apply, iSup_le_iff]
       intro q
       apply sSup_le
       rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
-      simp only [qslMul, qslPointsTo, qslNot, qslEquals, sym_iteOneZero_eq,
+      simp only [fslMul, fslPointsTo, fslNot, fslEquals, sym_iteOneZero_eq,
           iteOneZero_mul_iteOneZero_eq]
       rw [iteOneZero_neg]
       · simp only [zero_mul, zero_le]
@@ -385,26 +385,26 @@ theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
         simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
 
 theorem wrle_compareAndSet (h : v ∉ varRV RI) :
-    `[qsl| (e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ))))
+    `[fsl| (e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ))))
       ⊔ (S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ))))
           ⊢ wrle [v ≔ cas(e_loc, e_val, e_set)] ([[P]] | [[RI]])] := by
-  rw [qslMax_entailment_iff]
+  rw [fslMax_entailment_iff]
   apply And.intro
   · exact wrle_compareAndSet_true h
   · exact wrle_compareAndSet_false h
 
 theorem wrle_allocate (h : v ∉ varRV RI) :
-    `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ I (l : ℕ+).
+    `[fsl| S (n : ℕ). e_len = (n : ℚ) ⬝ I (l : ℕ+).
           ([⋆] i ∈ { ... n}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))
           ⊢ wrle [ [Prog| v ≔ alloc(e_len)] ] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [le_qslSepDiv_iff_qslSepMul_le]
+  rw [le_fslSepDiv_iff_fslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.singleton_inter_eq_empty]
     exact h
-  · refine qslSepMul_mono ?_ le_rfl
+  · refine fslSepMul_mono ?_ le_rfl
     intro s
     by_cases ∃ n : ℕ, e_len s.stack = n
     case pos h =>
@@ -413,9 +413,9 @@ theorem wrle_allocate (h : v ∉ varRV RI) :
       apply le_sInf
       rintro _ ⟨l, h_nalloc, rfl⟩
       rw [wrle_eq_of_term]
-      rw [qslSup_apply, iSup_le_iff]
+      rw [fslSup_apply, iSup_le_iff]
       intro n'
-      simp only [qslMul, qslEquals, substituteStack, allocateHeap, iteOneZero_eq_iff]
+      simp only [fslMul, fslEquals, substituteStack, allocateHeap, iteOneZero_eq_iff]
       split
       case isFalse h_n' =>
         simp only [zero_mul, zero_le]
@@ -423,42 +423,42 @@ theorem wrle_allocate (h : v ∉ varRV RI) :
         simp only [h_n, Nat.cast_inj] at h_n'
         obtain rfl := h_n'
         simp only [one_mul]
-        rw [qslInf_apply]
+        rw [fslInf_apply]
         apply le_trans (iInf_le _ l)
         apply sInf_le
         use (bigSingleton l n 0), disjoint_bigSingleton_of_isNotAlloc h_nalloc
-        rw [qslBigSepMul_of_qslPointsTo_of_bigSingleton_eq_one]
-        simp only [unit_div_one, qslSubst, substituteStack]
+        rw [fslBigSepMul_of_fslPointsTo_of_bigSingleton_eq_one]
+        simp only [unit_div_one, fslSubst, substituteStack]
         rw [union_bigSingleton_eq_allocateLoc h_nalloc]
     case neg h =>
       simp only [not_exists] at h
       rw [step_alloc_of_abort s _ h]
       apply iSup_le
       rintro ⟨_, n, rfl⟩
-      simp only [qslMul, nonpos_iff_eq_zero, mul_eq_zero]
+      simp only [fslMul, nonpos_iff_eq_zero, mul_eq_zero]
       apply Or.inl
-      simp only [qslEquals, h n, iteOneZero_false]
+      simp only [fslEquals, h n, iteOneZero_false]
 
 theorem wrle_free :
-    `[qsl| S (n : ℕ). e_len = (n : ℚ) ⬝ S (l : ℕ+). e_loc = (l : ℚ) ⬝
+    `[fsl| S (n : ℕ). e_len = (n : ℚ) ⬝ S (l : ℕ+). e_loc = (l : ℚ) ⬝
           ([⋆] i ∈ { ... n}. S (q:ℚ). (l+i : ℚ) ↦ q) ⋆ [[P]]
           ⊢ wrle [free(e_loc, e_len)] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
-  rw [le_qslSepDiv_iff_qslSepMul_le]
+  rw [le_fslSepDiv_iff_fslSepMul_le]
   apply le_trans
   pick_goal 2
   · apply step_framing
     simp only [wrtStmt, Set.empty_inter]
-  · refine qslSepMul_mono ?_ le_rfl
+  · refine fslSepMul_mono ?_ le_rfl
     intro s
     by_cases (∃ l : ℕ+, l = e_loc s.stack ∧ ∃ n : ℕ, n = e_len s.stack ∧ isAlloc s.heap l n)
     case pos h =>
       obtain ⟨l, h_l, n, h_n, h_alloc⟩ := h
       rw [step_free s _ h_l h_n h_alloc, wrle_eq_of_term]
-      rw [qslSup_apply]
+      rw [fslSup_apply]
       apply iSup_le
       intro n'
-      simp only [qslMul, qslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+      simp only [fslMul, fslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
       split_ifs
       case neg => exact nonneg'
       case pos h_n' =>
@@ -467,14 +467,14 @@ theorem wrle_free :
         apply iSup_le
         simp only [Subtype.forall, Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
         intro l'
-        simp only [qslMul, qslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+        simp only [fslMul, fslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
         split_ifs
         case neg => exact nonneg'
         case pos h_l' =>
           apply sSup_le
           rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
           simp_rw [conservative_pointsTo, conservative_sup, conservative_bigSepMul]
-          simp only [qslIverson, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+          simp only [fslIverson, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
           split_ifs
           case pos h =>
             rw [SL.slBigSepCon_eq_one_iff_removedHeap] at h
@@ -488,17 +488,17 @@ theorem wrle_free :
           case neg => simp only [zero_le]
     case neg h =>
       simp only [not_exists, not_and] at h
-      rw [qslSup_apply]
+      rw [fslSup_apply]
       apply iSup_le
       intro n
-      simp only [qslMul, qslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+      simp only [fslMul, fslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
       split_ifs
       case neg => exact nonneg'
       case pos h_n =>
-        rw [qslSup_apply]
+        rw [fslSup_apply]
         apply iSup_le
         intro l
-        simp only [qslMul, qslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+        simp only [fslMul, fslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
         split_ifs
         case neg => exact nonneg'
         case pos h_l =>
@@ -506,7 +506,7 @@ theorem wrle_free :
           apply sSup_le
           rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
           simp_rw [conservative_pointsTo, conservative_sup, conservative_bigSepMul]
-          simp only [qslIverson, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+          simp only [fslIverson, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
           split_ifs
           case neg => exact nonneg'
           case pos h_alloc =>
@@ -515,4 +515,4 @@ theorem wrle_free :
             apply h
             exact isAlloc_of_union_of_isAlloc h_alloc.right h_union.symm
 
-end CQSL
+end CFSL

@@ -1,11 +1,11 @@
-import InvLimDiss.CQSL.Step.Defs
+import InvLimDiss.CFSL.Step.Defs
 import InvLimDiss.Program.Support
 import Mathlib.Topology.Algebra.InfiniteSum.Order
 
-namespace CQSL
+namespace CFSL
 
 
-open Syntax Semantics QSL unitInterval
+open Syntax Semantics FSL unitInterval
 
 variable {Var : Type}
 
@@ -96,4 +96,4 @@ theorem step_error (inner : Program Var → StateRV Var) :
   rw [enabledAction, Set.mem_empty_iff_false] at h_a
   exact h_a
 
-end CQSL
+end CFSL

@@ -1,43 +1,43 @@
-import InvLimDiss.CQSL.Step.Atomic
-import InvLimDiss.CQSL.Step.Flow
-import InvLimDiss.CQSL.Step.Sequential
-import InvLimDiss.CQSL.Step.Concurrent
-import InvLimDiss.CQSL.WeakExpectation
+import InvLimDiss.CFSL.Step.Atomic
+import InvLimDiss.CFSL.Step.Flow
+import InvLimDiss.CFSL.Step.Sequential
+import InvLimDiss.CFSL.Step.Concurrent
+import InvLimDiss.CFSL.WeakExpectation
 import InvLimDiss.SL.Framing.Basic
 
-namespace CQSL
+namespace CFSL
 
 variable {Var : Type}
 
-open Syntax Semantics QSL unitInterval Action State HeapValue Classical
+open Syntax Semantics FSL unitInterval Action State HeapValue Classical
 
 
 theorem step_framing_of_term (inner : Program Var → StateRV Var) :
-    `[qsl| [[step ([Prog| ↓]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| ↓]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| ↓]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| ↓]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, _, _, rfl⟩
   rw [step_terminated, step_terminated]; exact le_one'
 
 theorem step_framing_of_abort (inner : Program Var → StateRV Var) :
-    `[qsl| [[step ([Prog| ↯]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| ↯]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| ↯]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| ↯]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, _, _, rfl⟩
   rw [step_error, step_error]; exact le_one'
 
 theorem step_framing_of_skip (inner : Program Var → StateRV Var) :
-    `[qsl| [[step ([Prog| skip]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| skip]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| skip]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| skip]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, _, _, rfl⟩
   rw [step_skip, step_skip]
@@ -46,11 +46,11 @@ theorem step_framing_of_skip (inner : Program Var → StateRV Var) :
 
 theorem step_framing_of_assign (inner : Program Var → StateRV Var)
     (h : v ∉ varRV P) :
-    `[qsl| [[step ([Prog| v ≔ e]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| v ≔ e]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| v ≔ e]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| v ≔ e]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   rw [step_assign, step_assign]
@@ -61,11 +61,11 @@ theorem step_framing_of_assign (inner : Program Var → StateRV Var)
   rw [substituteVar_eq_of_not_varRV h (e s.stack)]
 
 theorem step_framing_of_mutate (inner : Program Var → StateRV Var) :
-    `[qsl| [[step ([Prog| e_loc *≔ e_val]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| e_loc *≔ e_val]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| e_loc *≔ e_val]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| e_loc *≔ e_val]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   by_cases h_alloc : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
@@ -90,11 +90,11 @@ theorem step_framing_of_mutate (inner : Program Var → StateRV Var) :
 
 theorem step_framing_of_lookup (inner : Program Var → StateRV Var)
     (h : v ∉ varRV P) :
-    `[qsl| [[step ([Prog| v ≔* e_loc]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| v ≔* e_loc]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| v ≔* e_loc]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| v ≔* e_loc]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   by_cases h_alloc : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
@@ -117,11 +117,11 @@ theorem step_framing_of_lookup (inner : Program Var → StateRV Var)
 
 theorem step_framing_of_cas (inner : Program Var → StateRV Var)
     (h : v ∉ varRV P) :
-    `[qsl| [[step ([Prog| v ≔ cas(e_loc, e_cmp, e_val)]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| v ≔ cas(e_loc, e_cmp, e_val)]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| v ≔ cas(e_loc, e_cmp, e_val)]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| v ≔ cas(e_loc, e_cmp, e_val)]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   by_cases h_alloc : ∃ l : ℕ+, e_loc s.stack = ↑ l ∧ heap₁ l ≠ undef
@@ -166,11 +166,11 @@ theorem step_framing_of_cas (inner : Program Var → StateRV Var)
 
 theorem step_framing_of_allocate (inner : Program Var → StateRV Var)
     (h : v ∉ varRV P) :
-    `[qsl| [[step ([Prog| v ≔ alloc(e)]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| v ≔ alloc(e)]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| v ≔ alloc(e)]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| v ≔ alloc(e)]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   by_cases h_m : ∃ m : ℕ, e s.stack = ↑m
@@ -198,11 +198,11 @@ theorem step_framing_of_allocate (inner : Program Var → StateRV Var)
     simp only [zero_mul, zero_le]
 
 theorem step_framing_of_free (inner : Program Var → StateRV Var) :
-    `[qsl| [[step ([Prog| free(e_loc, e_n)]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| free(e_loc, e_n)]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| free(e_loc, e_n)]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| free(e_loc, e_n)]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   by_cases h_alloc : ∃ l : ℕ+, l = (e_loc s.stack) ∧ ∃ n : ℕ, n = (e_n s.stack) ∧ isAlloc heap₁ l n
@@ -222,11 +222,11 @@ theorem step_framing_of_free (inner : Program Var → StateRV Var) :
     simp only [zero_mul, zero_le]
 
 theorem step_framing_of_probBranching (inner : Program Var → StateRV Var) :
-    `[qsl| [[step ([Prog| pif e then [[c₁]] else [[c₂]] fi]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| pif e then [[c₁]] else [[c₂]] fi]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| pif e then [[c₁]] else [[c₂]] fi]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| pif e then [[c₁]] else [[c₂]] fi]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   rw [step_probChoice, step_probChoice]
@@ -263,11 +263,11 @@ theorem step_framing_of_probBranching (inner : Program Var → StateRV Var) :
         use heap₁, heap₂
 
 theorem step_framing_of_condBranching (inner : Program Var → StateRV Var) :
-    `[qsl| [[step ([Prog| if e then [[c₁]] else [[c₂]] fi]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| if e then [[c₁]] else [[c₂]] fi]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| if e then [[c₁]] else [[c₂]] fi]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| if e then [[c₁]] else [[c₂]] fi]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   cases Bool.eq_false_or_eq_true (e s.stack) with
@@ -287,11 +287,11 @@ theorem step_framing_of_condBranching (inner : Program Var → StateRV Var) :
         use heap₁, heap₂
 
 theorem step_framing_of_loop (inner : Program Var → StateRV Var) :
-    `[qsl| [[step ([Prog| while e begin [[c]] fi]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| while e begin [[c]] fi]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step ([Prog| while e begin [[c]] fi]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| while e begin [[c]] fi]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   cases Bool.eq_false_or_eq_true (e s.stack) with
@@ -307,13 +307,13 @@ theorem step_framing_of_loop (inner : Program Var → StateRV Var) :
     use heap₁, heap₂
 
 theorem step_framing_of_sequential (inner : Program Var → StateRV Var)
-    (ih : `[qsl| [[step c₁ fun c' ↦ inner [Prog| [[c']] ; [[c₂]]] ]] ⋆ [[P]] ]
-          ⊢ step c₁ fun c' ↦ `[qsl| [[inner [Prog| [[c']] ; [[c₂]]] ]] ⋆ [[P]] ]) :
-    `[qsl| [[step ([Prog| [[c₁]] ; [[c₂]]]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| [[c₁]] ; [[c₂]]]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    (ih : `[fsl| [[step c₁ fun c' ↦ inner [Prog| [[c']] ; [[c₂]]] ]] ⋆ [[P]] ]
+          ⊢ step c₁ fun c' ↦ `[fsl| [[inner [Prog| [[c']] ; [[c₂]]] ]] ⋆ [[P]] ]) :
+    `[fsl| [[step ([Prog| [[c₁]] ; [[c₂]]]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| [[c₁]] ; [[c₂]]]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   cases eq_or_ne c₁ [Prog| ↓] with
@@ -336,15 +336,15 @@ theorem step_framing_of_sequential (inner : Program Var → StateRV Var)
       use heap₁, heap₂
 
 theorem step_framing_of_concurrent (inner : Program Var → StateRV Var)
-    (ih₁ : `[qsl| [[step c₁ fun c' ↦ inner [Prog| [[c']] || [[c₂]]] ]] ⋆ [[P]] ]
-          ⊢ step c₁ fun c' ↦ `[qsl| [[inner [Prog| [[c']] || [[c₂]]] ]] ⋆ [[P]] ])
-    (ih₂ : `[qsl| [[step c₂ fun c' ↦ inner [Prog| [[c₁]] || [[c']]] ]] ⋆ [[P]] ]
-          ⊢ step c₂ fun c' ↦ `[qsl| [[inner [Prog| [[c₁]] || [[c']]] ]] ⋆ [[P]] ]) :
-    `[qsl| [[step ([Prog| [[c₁]] || [[c₂]]]) (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step ([Prog| [[c₁]] || [[c₂]]]) (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    (ih₁ : `[fsl| [[step c₁ fun c' ↦ inner [Prog| [[c']] || [[c₂]]] ]] ⋆ [[P]] ]
+          ⊢ step c₁ fun c' ↦ `[fsl| [[inner [Prog| [[c']] || [[c₂]]] ]] ⋆ [[P]] ])
+    (ih₂ : `[fsl| [[step c₂ fun c' ↦ inner [Prog| [[c₁]] || [[c']]] ]] ⋆ [[P]] ]
+          ⊢ step c₂ fun c' ↦ `[fsl| [[inner [Prog| [[c₁]] || [[c']]] ]] ⋆ [[P]] ]) :
+    `[fsl| [[step ([Prog| [[c₁]] || [[c₂]]]) (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step ([Prog| [[c₁]] || [[c₂]]]) (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   rw [entailment_iff_le]
   intro s
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   cases eq_or_ne c₁ [Prog| ↯] with
@@ -401,8 +401,8 @@ theorem step_framing_of_concurrent (inner : Program Var → StateRV Var)
 
 theorem step_framing (inner : Program Var → StateRV Var)
     (h : (wrtStmt c) ∩ (varRV P) = ∅) :
-    `[qsl| [[step c (fun c' => inner c')]] ⋆ [[P]]]
-      ⊢ step c (fun c' => `[qsl| [[inner c']] ⋆ [[P]]]) := by
+    `[fsl| [[step c (fun c' => inner c')]] ⋆ [[P]]]
+      ⊢ step c (fun c' => `[fsl| [[inner c']] ⋆ [[P]]]) := by
   induction c generalizing inner with
   | terminated => exact step_framing_of_term inner
   | abort => exact step_framing_of_abort inner
@@ -434,4 +434,4 @@ theorem step_framing (inner : Program Var → StateRV Var)
     · exact ih₁ _ h.left
     · exact ih₂ _ h.right
 
-end CQSL
+end CFSL

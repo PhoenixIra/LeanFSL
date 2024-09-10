@@ -1,5 +1,5 @@
 import InvLimDiss.SL.ClassicalProofrules
-import InvLimDiss.SL.QuantitativeProofrules
+import InvLimDiss.SL.FuzzyProofrules
 import InvLimDiss.Program.State.Finite
 import Mathlib.Data.Set.Pointwise.Finite
 
@@ -13,11 +13,11 @@ of the image.
 
 namespace Qsl2Sl
 
-open unitInterval State QSL SL Syntax Finite
+open unitInterval State FSL SL Syntax Finite
 
 variable {Var : Type}
 
-/-- Sets of qsl RVs with exisential quantifiers are nonempty if the
+/-- Sets of fsl RVs with exisential quantifiers are nonempty if the
   quantified type is nonempty. -/
 theorem nonempty_StateRV_set {α : Type} (f : α → StateRV Var) (s : State Var)
     (h_nonempty : Nonempty α) : Set.Nonempty { i | ∃ x, f x s = i} := by
@@ -74,9 +74,9 @@ theorem lt_sInf_of_valuesOf {values : Set I} (h_fin : Set.Finite (values)) {i : 
 /-- The separating mulitiplication is realized if the heap is finite. -/
 theorem exists_heaps_max_of_finite_heap {f₁ f₂ : StateRV Var} {s : State Var}
     (h_finite : Heap.Finite s.heap):
-    `[qsl| [[f₁]] ⋆ [[f₂]]] s ∈ { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap
+    `[fsl| [[f₁]] ⋆ [[f₂]]] s ∈ { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap
     ∧ x = f₁ ⟨s.stack, h₁⟩ * f₂ ⟨s.stack, h₂⟩} := by
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply Set.Nonempty.csSup_mem
   · use (f₁ ⟨s.stack,∅⟩ * f₂ s), ∅, s.heap, emptyHeap_disjoint', emptyHeap_union'
   · apply Set.Finite.subset
@@ -101,11 +101,11 @@ theorem exists_heaps_max_of_finite_heap {f₁ f₂ : StateRV Var} {s : State Var
       trivial
 
 /-- The separating mulitiplication is realized if image is finite -/
-theorem exists_qslSepMul_max_of_finite_values {f₁ f₂ : StateRV Var} (s : State Var)
+theorem exists_fslSepMul_max_of_finite_values {f₁ f₂ : StateRV Var} (s : State Var)
     (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)):
-    `[qsl| [[f₁]] ⋆ [[f₂]]] s ∈ { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap
+    `[fsl| [[f₁]] ⋆ [[f₂]]] s ∈ { x | ∃ h₁ h₂, disjoint h₁ h₂ ∧ h₁ ∪ h₂ = s.heap
     ∧ x = f₁ ⟨s.stack, h₁⟩ * f₂ ⟨s.stack, h₂⟩} := by
-  rw [qslSepMul]
+  rw [fslSepMul]
   apply Set.Nonempty.csSup_mem
   · use (f₁ ⟨s.stack,∅⟩ * f₂ s), ∅, s.heap, emptyHeap_disjoint', emptyHeap_union'
   · apply Set.Finite.subset (Set.Finite.mul h_finite₁ h_finite₂)
@@ -114,11 +114,11 @@ theorem exists_qslSepMul_max_of_finite_values {f₁ f₂ : StateRV Var} (s : Sta
     use (f₁ ⟨s.stack, heap₁⟩), (Set.mem_range_self _), (f₂ ⟨s.stack, heap₂⟩), (Set.mem_range_self _)
 
 /-- The separating division is realized if image is finite -/
-theorem exists_qslSepDiv_min_of_finite_values {f₁ f₂ : StateRV Var} (s : State Var)
+theorem exists_fslSepDiv_min_of_finite_values {f₁ f₂ : StateRV Var} (s : State Var)
     (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)) :
-    `[qsl| [[f₁]] -⋆ [[f₂]]] s ∈ { x | ∃ heap, disjoint s.heap heap
+    `[fsl| [[f₁]] -⋆ [[f₂]]] s ∈ { x | ∃ heap, disjoint s.heap heap
       ∧ x = f₂ ⟨s.stack, s.heap ∪ heap⟩ / f₁ ⟨s.stack, heap⟩} := by
-  rw [qslSepDiv]
+  rw [fslSepDiv]
   apply Set.Nonempty.csInf_mem
   · use ((f₂ s) / (f₁ ⟨s.stack, ∅⟩)), ∅, disjoint_emptyHeap'
     rw [union_emptyHeap']
@@ -136,7 +136,7 @@ theorem nonempty_range {f : StateRV Var} : Set.Nonempty (Set.range f) := by
   use (f s)
   exact Set.mem_range_self s
 
-theorem range_of_qslTrue : Set.range `[qsl Var| qTrue] = {1} := by
+theorem range_of_fslTrue : Set.range `[fsl Var| qTrue] = {1} := by
   rw [Set.ext_iff]
   intro i
   apply Iff.intro
@@ -150,7 +150,7 @@ theorem range_of_qslTrue : Set.range `[qsl Var| qTrue] = {1} := by
     use inhabited_state.default
     rfl
 
-theorem range_of_qslFalse : Set.range `[qsl Var| qFalse] = {0} := by
+theorem range_of_fslFalse : Set.range `[fsl Var| qFalse] = {0} := by
   rw [Set.ext_iff]
   intro i
   apply Iff.intro
@@ -165,12 +165,12 @@ theorem range_of_qslFalse : Set.range `[qsl Var| qFalse] = {0} := by
     use inhabited_state.default
     rfl
 
-theorem range_of_qslEmp : Set.range `[qsl Var| emp] = {0,1} := by
+theorem range_of_fslEmp : Set.range `[fsl Var| emp] = {0,1} := by
   rw [Set.ext_iff]
   intro i
   apply Iff.intro
   · rintro ⟨s, rfl⟩
-    rw [qslEmp]
+    rw [fslEmp]
     simp only [Set.mem_insert_iff, iteOneZero_eq_zero_def, Set.mem_singleton_iff,
       iteOneZero_eq_one_def]
     exact ne_or_eq s.heap ∅
@@ -180,54 +180,54 @@ theorem range_of_qslEmp : Set.range `[qsl Var| emp] = {0,1} := by
     | inl h =>
       rw [h]
       use ⟨inhabited_stack.default, fun l => if l = 1 then HeapValue.val 0 else HeapValue.undef⟩
-      simp only [qslEmp, iteOneZero_eq_zero_def]
+      simp only [fslEmp, iteOneZero_eq_zero_def]
       intro h
       have := congrFun h 1
       simp only [↓reduceIte] at this
     | inr h =>
       rw [h]
       use inhabited_state.default
-      simp only [qslEmp, iteOneZero_eq_one_def]
+      simp only [fslEmp, iteOneZero_eq_one_def]
       apply funext
       intro _
       rfl
 
-theorem range_of_qslPointsTo : Set.range `[qsl Var| e ↦ e'] ⊆ {0,1} := by
+theorem range_of_fslPointsTo : Set.range `[fsl Var| e ↦ e'] ⊆ {0,1} := by
   rintro i ⟨s, rfl⟩
-  rw [qslPointsTo]
+  rw [fslPointsTo]
   simp only [Set.mem_insert_iff, iteOneZero_eq_zero_def, Set.mem_singleton_iff,
     iteOneZero_eq_one_def]
   rw [Or.comm]
   exact Classical.em _
 
-theorem range_of_qslEquals : Set.range `[qsl Var| e = e'] ⊆ {0,1} := by
+theorem range_of_fslEquals : Set.range `[fsl Var| e = e'] ⊆ {0,1} := by
   rintro i ⟨s, rfl⟩
-  rw [qslEquals]
+  rw [fslEquals]
   simp only [Set.mem_insert_iff, iteOneZero_eq_zero_def, Set.mem_singleton_iff,
     iteOneZero_eq_one_def]
   exact ne_or_eq (e s.stack) (e' s.stack)
 
-theorem range_of_qslReal : Set.range `[qsl Var | <e> ] = Set.range e := by
+theorem range_of_fslReal : Set.range `[fsl Var | <e> ] = Set.range e := by
   rw [Set.ext_iff]
   intro i
   apply Iff.intro
   · rintro ⟨s, rfl⟩
-    simp only [qslReal, Set.mem_range, exists_apply_eq_apply]
+    simp only [fslReal, Set.mem_range, exists_apply_eq_apply]
   · rintro h
-    simp only [Set.mem_range, qslReal]
+    simp only [Set.mem_range, fslReal]
     simp only [Set.mem_range] at h
     obtain ⟨stack, rfl⟩ := h
     use ⟨stack, inhabited_heap.default⟩
 
-theorem range_of_qslIverson : Set.range `[qsl Var | ⁅p⁆] ⊆ {0,1} := by
+theorem range_of_fslIverson : Set.range `[fsl Var | ⁅p⁆] ⊆ {0,1} := by
   rintro i ⟨s,rfl⟩
-  rw [qslIverson]
+  rw [fslIverson]
   simp only [Set.mem_insert_iff, iteOneZero_eq_zero_def, Set.mem_singleton_iff,
     iteOneZero_eq_one_def]
   rw [Or.comm]
   exact Classical.em _
 
-theorem range_of_qslNot : Set.range `[qsl| ~[[f]]] = σ '' Set.range f := by
+theorem range_of_fslNot : Set.range `[fsl| ~[[f]]] = σ '' Set.range f := by
   rw [Set.ext_iff]
   intro i
   apply Iff.intro
@@ -240,38 +240,38 @@ theorem range_of_qslNot : Set.range `[qsl| ~[[f]]] = σ '' Set.range f := by
     use s
     rfl
 
-theorem range_of_qslMin :
-    Set.range `[qsl| [[f₁]] ⊓ [[f₂]]] ⊆ Set.image2 min (Set.range f₁) (Set.range f₂) := by
+theorem range_of_fslMin :
+    Set.range `[fsl| [[f₁]] ⊓ [[f₂]]] ⊆ Set.image2 min (Set.range f₁) (Set.range f₂) := by
   rintro i ⟨s, rfl⟩
   simp only [Set.mem_image2, Set.mem_range, exists_exists_eq_and]
   use s, s
   rfl
 
-theorem range_of_qslMax :
-    Set.range `[qsl| [[f₁]] ⊔ [[f₂]]] ⊆ Set.image2 max (Set.range f₁) (Set.range f₂) := by
+theorem range_of_fslMax :
+    Set.range `[fsl| [[f₁]] ⊔ [[f₂]]] ⊆ Set.image2 max (Set.range f₁) (Set.range f₂) := by
   rintro i ⟨s, rfl⟩
   simp only [Set.mem_image2, Set.mem_range, exists_exists_eq_and]
   use s, s
   rfl
 
-theorem range_of_qslAdd :
-    Set.range `[qsl| [[f₁]] + [[f₂]]] ⊆ Set.image2 truncatedAdd (Set.range f₁) (Set.range f₂) := by
+theorem range_of_fslAdd :
+    Set.range `[fsl| [[f₁]] + [[f₂]]] ⊆ Set.image2 truncatedAdd (Set.range f₁) (Set.range f₂) := by
   rintro i ⟨s, rfl⟩
   simp only [Set.mem_image2, Set.mem_range, exists_exists_eq_and]
   use s, s
   rfl
 
-theorem range_of_qslMul :
-    Set.range `[qsl| [[f₁]] ⬝ [[f₂]]] ⊆ Set.image2 Mul.mul (Set.range f₁) (Set.range f₂) := by
+theorem range_of_fslMul :
+    Set.range `[fsl| [[f₁]] ⬝ [[f₂]]] ⊆ Set.image2 Mul.mul (Set.range f₁) (Set.range f₂) := by
   rintro i ⟨s, rfl⟩
   simp only [Set.mem_image2, Set.mem_range, exists_exists_eq_and]
   use s, s
   rfl
 
-theorem range_of_qslSup {f : α → StateRV Var} (h_nonempty : Nonempty α) :
-    Set.range `[qsl| S x. [[f x]]] ⊆ closure ({ i | ∃ x, i ∈ Set.range (f x)}) := by
+theorem range_of_fslSup {f : α → StateRV Var} (h_nonempty : Nonempty α) :
+    Set.range `[fsl| S x. [[f x]]] ⊆ closure ({ i | ∃ x, i ∈ Set.range (f x)}) := by
   rintro i ⟨s, rfl⟩
-  rw [qslSup]
+  rw [fslSup]
   apply sSup_in_closure_of_subset
   · obtain ⟨_, ⟨x, _⟩⟩ := (nonempty_StateRV_set f s h_nonempty)
     use (f x s)
@@ -285,8 +285,8 @@ theorem range_of_qslSup {f : α → StateRV Var} (h_nonempty : Nonempty α) :
     rintro _ ⟨x,rfl⟩
     use x, s
 
-theorem range_of_qslSup_empty {f : α → StateRV Var} (h_empty : IsEmpty α) :
-    Set.range `[qsl| S x. [[f x]]] = {0} := by
+theorem range_of_fslSup_empty {f : α → StateRV Var} (h_empty : IsEmpty α) :
+    Set.range `[fsl| S x. [[f x]]] = {0} := by
   rw [Set.ext_iff]
   intro i
   apply Iff.intro
@@ -306,11 +306,11 @@ theorem range_of_qslSup_empty {f : α → StateRV Var} (h_empty : IsEmpty α) :
         Set.mem_empty_iff_false, not_false_eq_true, implies_true, false_implies]
     · exact nonneg'
 
-theorem range_of_qslSup_of_finite {f : α → StateRV Var}
+theorem range_of_fslSup_of_finite {f : α → StateRV Var}
     (h_nonempty : Nonempty α) (h_finite : Set.Finite { i | ∃ x, i ∈ Set.range (f x)}):
-    Set.range `[qsl| S x. [[f x]]] ⊆ { i | ∃ x, i ∈ Set.range (f x)} := by
+    Set.range `[fsl| S x. [[f x]]] ⊆ { i | ∃ x, i ∈ Set.range (f x)} := by
   rintro _ ⟨s, rfl⟩
-  rw [qslSup]
+  rw [fslSup]
   have h_nonempty : Set.Nonempty { i | ∃ x, i = f x s} := by {
     let x := Classical.choice h_nonempty
     use (f x s), x
@@ -334,10 +334,10 @@ theorem range_of_qslSup_of_finite {f : α → StateRV Var}
     use x'
     rw [← h_fx]
 
-theorem range_of_qslInf {f : α → StateRV Var} (h_nonempty : Nonempty α) :
-    Set.range `[qsl| I x. [[f x]]] ⊆ closure ({ i | ∃ x, i ∈ Set.range (f x)}) := by
+theorem range_of_fslInf {f : α → StateRV Var} (h_nonempty : Nonempty α) :
+    Set.range `[fsl| I x. [[f x]]] ⊆ closure ({ i | ∃ x, i ∈ Set.range (f x)}) := by
   rintro i ⟨s, rfl⟩
-  rw [qslInf]
+  rw [fslInf]
   apply sInf_in_closure_of_subset
   · obtain ⟨_, ⟨x, _⟩⟩ := (nonempty_StateRV_set f s h_nonempty)
     use (f x s)
@@ -351,8 +351,8 @@ theorem range_of_qslInf {f : α → StateRV Var} (h_nonempty : Nonempty α) :
     rintro _ ⟨x,rfl⟩
     use x, s
 
-theorem range_of_qslInf_empty {f : α → StateRV Var} (h_empty : IsEmpty α) :
-    Set.range `[qsl| I x. [[f x]]] = {1} := by
+theorem range_of_fslInf_empty {f : α → StateRV Var} (h_empty : IsEmpty α) :
+    Set.range `[fsl| I x. [[f x]]] = {1} := by
   rw [Set.ext_iff]
   intro i
   apply Iff.intro
@@ -372,11 +372,11 @@ theorem range_of_qslInf_empty {f : α → StateRV Var} (h_empty : IsEmpty α) :
       simp only [Set.mem_range, IsEmpty.exists_iff, Set.setOf_false, isEmpty_subtype,
         Set.mem_empty_iff_false, not_false_eq_true, implies_true, false_implies]
 
-theorem range_of_qslInf_of_finite {f : α → StateRV Var}
+theorem range_of_fslInf_of_finite {f : α → StateRV Var}
     (h_nonempty : Nonempty α) (h_finite : Set.Finite { i | ∃ x, i ∈ Set.range (f x)}):
-    Set.range `[qsl| I x. [[f x]]] ⊆ { i | ∃ x, i ∈ Set.range (f x)} := by
+    Set.range `[fsl| I x. [[f x]]] ⊆ { i | ∃ x, i ∈ Set.range (f x)} := by
   rintro _ ⟨s, rfl⟩
-  rw [qslInf]
+  rw [fslInf]
   have h_nonempty : Set.Nonempty { i | ∃ x, i = f x s} := by {
     let x := Classical.choice h_nonempty
     use (f x s), x
@@ -400,8 +400,8 @@ theorem range_of_qslInf_of_finite {f : α → StateRV Var}
     simp only [Set.mem_range, Subtype.exists, exists_prop, exists_exists_eq_and,
       exists_apply_eq_apply]
 
-theorem range_of_qslSepMul :
-    Set.range `[qsl| [[f₁]] ⋆ [[f₂]]] ⊆ closure (Set.image2 Mul.mul (Set.range f₁) (Set.range f₂)) := by
+theorem range_of_fslSepMul :
+    Set.range `[fsl| [[f₁]] ⋆ [[f₂]]] ⊆ closure (Set.image2 Mul.mul (Set.range f₁) (Set.range f₂)) := by
   intro i ⟨s,h⟩
   rw [← h]
   apply sSup_in_closure_of_subset
@@ -412,19 +412,19 @@ theorem range_of_qslSepMul :
     use ⟨s.stack, heap₁⟩, ⟨s.stack, heap₂⟩
     rfl
 
-theorem range_of_qslSepMul_of_finite_range
+theorem range_of_fslSepMul_of_finite_range
     (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)) :
-    Set.range `[qsl| [[f₁]] ⋆ [[f₂]]] ⊆ Set.image2 Mul.mul (Set.range f₁) (Set.range f₂) := by
+    Set.range `[fsl| [[f₁]] ⋆ [[f₂]]] ⊆ Set.image2 Mul.mul (Set.range f₁) (Set.range f₂) := by
   simp only [Set.range, Set.image2, Set.mem_setOf_eq, exists_exists_eq_and, Set.setOf_subset_setOf,
     forall_exists_index, forall_apply_eq_imp_iff]
   intro s
-  obtain ⟨heap₁, heap₂, _, _, h⟩ := exists_qslSepMul_max_of_finite_values s h_finite₁ h_finite₂
+  obtain ⟨heap₁, heap₂, _, _, h⟩ := exists_fslSepMul_max_of_finite_values s h_finite₁ h_finite₂
   rw [h]
   use ⟨s.stack, heap₁⟩, ⟨s.stack, heap₂⟩
   rfl
 
-theorem range_of_qslSepInf :
-    Set.range `[qsl| [[f₁]] -⋆ [[f₂]]] ⊆ closure (Set.image2 Div.div (Set.range f₂) (Set.range f₁)) := by
+theorem range_of_fslSepInf :
+    Set.range `[fsl| [[f₁]] -⋆ [[f₂]]] ⊆ closure (Set.image2 Div.div (Set.range f₂) (Set.range f₁)) := by
   intro i ⟨s,h⟩
   rw [← h]
   apply sInf_in_closure_of_subset
@@ -438,24 +438,24 @@ theorem range_of_qslSepInf :
     use ⟨s.stack, s.heap ∪ heap⟩, ⟨s.stack, heap⟩
     rfl
 
-theorem range_of_qslSepDiv_of_finite_range
+theorem range_of_fslSepDiv_of_finite_range
     (h_finite₁ : Set.Finite (Set.range f₁)) (h_finite₂ : Set.Finite (Set.range f₂)) :
-    Set.range `[qsl| [[f₁]] -⋆ [[f₂]]] ⊆ Set.image2 Div.div (Set.range f₂) (Set.range f₁) := by
+    Set.range `[fsl| [[f₁]] -⋆ [[f₂]]] ⊆ Set.image2 Div.div (Set.range f₂) (Set.range f₁) := by
   simp only [Set.range, Set.image2, Set.mem_setOf_eq, exists_exists_eq_and, Set.setOf_subset_setOf,
     forall_exists_index, forall_apply_eq_imp_iff]
   intro s
-  obtain ⟨heap, _, h⟩ := exists_qslSepDiv_min_of_finite_values s h_finite₁ h_finite₂
+  obtain ⟨heap, _, h⟩ := exists_fslSepDiv_min_of_finite_values s h_finite₁ h_finite₂
   rw [h]
   use ⟨s.stack, s.heap ∪ heap⟩, ⟨s.stack, heap⟩
   rfl
 
 end Range
 
-/-! Theorems to translate an qsl into sl -/
+/-! Theorems to translate an fsl into sl -/
 section Transform
 
-/-- Transform a qsl entailment into a qualtitative entailment-/
-theorem qsl_entail_if_atLeast (f g : StateRV Var) {values : Set I} (h_subset : Set.range f ⊆ values) :
+/-- Transform a fsl entailment into a qualtitative entailment-/
+theorem fsl_entail_if_atLeast (f g : StateRV Var) {values : Set I} (h_subset : Set.range f ⊆ values) :
     f ⊢ g ↔ ∀ i ∈ values, `[sl| [[λ s => i ≤ f s]] ⊢ [[fun s => i ≤ g s]]] := by
   apply Iff.intro
   · intro h i _ s h_f
@@ -474,13 +474,13 @@ theorem zero_le_atLeast (f : StateRV Var) (s : State Var) : 0 ≤ f s ↔ `[sl V
   · intro _; exact rfl
   · intro _; exact nonneg'
 
-theorem atLeast_qslTrue_iff {i : I} (s : State Var) : i ≤ `[qsl Var| qTrue] s ↔ `[sl Var| sTrue] s := by
+theorem atLeast_fslTrue_iff {i : I} (s : State Var) : i ≤ `[fsl Var| qTrue] s ↔ `[sl Var| sTrue] s := by
   apply Iff.intro
   · intro _; exact rfl
   · intro _; exact le_one'
 
-theorem atLeast_qslFalse_iff {i : I} (s : State Var) (h_pos : 0 < i) :
-    i ≤ `[qsl Var| qFalse] s ↔ `[sl Var| sFalse] s := by
+theorem atLeast_fslFalse_iff {i : I} (s : State Var) (h_pos : 0 < i) :
+    i ≤ `[fsl Var| qFalse] s ↔ `[sl Var| sFalse] s := by
   apply Iff.intro
   · intro h
     exfalso
@@ -491,28 +491,28 @@ theorem atLeast_qslFalse_iff {i : I} (s : State Var) (h_pos : 0 < i) :
     rw [slFalse, Bool.false_eq_true] at h
     exact h
 
-theorem atLeast_qslEmp_iff {i : I} (h_lt : 0 < i) (s : State Var) :
-    i ≤ `[qsl| emp] s ↔ `[sl| emp] s := by
+theorem atLeast_fslEmp_iff {i : I} (h_lt : 0 < i) (s : State Var) :
+    i ≤ `[fsl| emp] s ↔ `[sl| emp] s := by
   apply Iff.intro
   · intro h
     unfold slEmp
     split
-    unfold qslEmp at h
+    unfold fslEmp at h
     simp only at h
     have : iteOneZero (_) = 1 := iteOneZero_of_non_one <| ne_of_lt <| lt_of_lt_of_le h_lt h
     rw [iteOneZero_eq_one_def] at this
     exact this
   · intro h
-    unfold qslEmp
+    unfold fslEmp
     split
     unfold slEmp at h
     simp only at h
     rw [iteOneZero_eq_one_def.mpr h]
     exact le_one'
 
-theorem atLeast_qslPointsTo_iff {i : I} (h_lt : 0 < i) (s : State Var) :
-    i ≤ `[qsl| l ↦ l'] s ↔ `[sl| l ↦ l'] s := by
-  unfold slPointsTo qslPointsTo
+theorem atLeast_fslPointsTo_iff {i : I} (h_lt : 0 < i) (s : State Var) :
+    i ≤ `[fsl| l ↦ l'] s ↔ `[sl| l ↦ l'] s := by
+  unfold slPointsTo fslPointsTo
   apply Iff.intro
   · intro h
     split
@@ -526,12 +526,12 @@ theorem atLeast_qslPointsTo_iff {i : I} (h_lt : 0 < i) (s : State Var) :
     rw [iteOneZero_eq_one_def.mpr h]
     exact le_one'
 
-theorem atLeast_qslReal_iff {i : I} {e : ProbExp Var} (s : State Var) :
-    i ≤ `[qsl| <e>] s ↔ i ≤ (e s.stack) := ⟨fun h => h, fun h => h⟩
+theorem atLeast_fslReal_iff {i : I} {e : ProbExp Var} (s : State Var) :
+    i ≤ `[fsl| <e>] s ↔ i ≤ (e s.stack) := ⟨fun h => h, fun h => h⟩
 
-theorem atLeast_qslIverson_iff {i : I} (h_lt : 0 < i) (P : State Var → Prop) (s : State Var) :
-    i ≤ `[qsl| ⁅P⁆] s ↔ P s := by
-  unfold qslIverson
+theorem atLeast_fslIverson_iff {i : I} (h_lt : 0 < i) (P : State Var → Prop) (s : State Var) :
+    i ≤ `[fsl| ⁅P⁆] s ↔ P s := by
+  unfold fslIverson
   apply Iff.intro
   · intro h
     have : iteOneZero (_) = 1 := iteOneZero_of_non_one <| ne_of_lt <| lt_of_lt_of_le h_lt h
@@ -541,10 +541,10 @@ theorem atLeast_qslIverson_iff {i : I} (h_lt : 0 < i) (P : State Var → Prop) (
     rw [iteOneZero_pos h]
     exact le_one'
 
-theorem atLeast_qslNot_of_slNot {i : I } {f : StateRV Var} {s : State Var} {values : Set I}
+theorem atLeast_fslNot_of_slNot {i : I } {f : StateRV Var} {s : State Var} {values : Set I}
   (h_subset : Set.range f ⊆ values) :
-    `[sl| ¬ [[fun s => sInf {j ∈ values | σ i < j } ≤ f s]]] s → i ≤ `[qsl| ~[[f]]] s := by
-  unfold slNot qslNot
+    `[sl| ¬ [[fun s => sInf {j ∈ values | σ i < j } ≤ f s]]] s → i ≤ `[fsl| ~[[f]]] s := by
+  unfold slNot fslNot
   intro h
   rw [le_symm_iff_le_symm, ← not_lt]
   intro h_lt
@@ -555,21 +555,21 @@ theorem atLeast_qslNot_of_slNot {i : I } {f : StateRV Var} {s : State Var} {valu
   · exact Set.mem_of_subset_of_mem h_subset (Set.mem_range_self _)
   · exact h_lt
 
-theorem atLeast_qslNot_iff {i : I} {f : StateRV Var} {s : State Var} {values : Set I}
+theorem atLeast_fslNot_iff {i : I} {f : StateRV Var} {s : State Var} {values : Set I}
   (h_subset : Set.range f ⊆ values) (h_min : σ i < sInf {j ∈ values | σ i < j }) :
-    i ≤ `[qsl| ~[[f]]] s ↔ `[sl| ¬ [[fun s => sInf {j ∈ values | σ i < j } ≤ f s]]] s := by
+    i ≤ `[fsl| ~[[f]]] s ↔ `[sl| ¬ [[fun s => sInf {j ∈ values | σ i < j } ≤ f s]]] s := by
   apply Iff.intro
-  · unfold slNot qslNot
+  · unfold slNot fslNot
     intro h
     rw [not_le]
     rw [le_symm_iff_le_symm] at h
     apply lt_of_le_of_lt h; clear h
     exact h_min
-  · exact atLeast_qslNot_of_slNot h_subset
+  · exact atLeast_fslNot_of_slNot h_subset
 
-theorem atLeast_qslMin_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
-    i ≤ `[qsl| [[f₁]] ⊓ [[f₂]]] s ↔ `[sl| [[fun s => i ≤ f₁ s]] ∧ [[fun s => i ≤ f₂ s]]] s := by
-  rw [ qslMin, slAnd, Pi.inf_apply, Pi.inf_apply ]
+theorem atLeast_fslMin_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
+    i ≤ `[fsl| [[f₁]] ⊓ [[f₂]]] s ↔ `[sl| [[fun s => i ≤ f₁ s]] ∧ [[fun s => i ≤ f₂ s]]] s := by
+  rw [ fslMin, slAnd, Pi.inf_apply, Pi.inf_apply ]
   apply Iff.intro
   · intro h
     rw [inf_eq_min, min_def] at h
@@ -589,9 +589,9 @@ theorem atLeast_qslMin_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
     case isTrue h_le => exact h₁
     case isFalse h_lt => exact h₂
 
-theorem atLeast_qslMax_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
-    i ≤ `[qsl| [[f₁]] ⊔ [[f₂]]] s ↔ `[sl| [[fun s => i ≤ f₁ s]] ∨ [[fun s => i ≤ f₂ s]]] s := by
-  rw [ qslMax, slOr, Pi.sup_apply, Pi.sup_apply ]
+theorem atLeast_fslMax_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
+    i ≤ `[fsl| [[f₁]] ⊔ [[f₂]]] s ↔ `[sl| [[fun s => i ≤ f₁ s]] ∨ [[fun s => i ≤ f₂ s]]] s := by
+  rw [ fslMax, slOr, Pi.sup_apply, Pi.sup_apply ]
   apply Iff.intro
   · intro h
     rw [sup_eq_max, max_def] at h
@@ -613,44 +613,44 @@ theorem atLeast_qslMax_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
       case isTrue h_le => exact h
       case isFalse h_lt => rw [not_le] at h_lt; refine le_trans h (le_of_lt h_lt)
 
-theorem atLeast_qslAdd_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {values₁ values₂ : Set I}
+theorem atLeast_fslAdd_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {values₁ values₂ : Set I}
     (h_subset₁ : Set.range f₁ ⊆ values₁) (h_subset₂ : Set.range f₂ ⊆ values₂) :
-    i ≤ `[qsl| [[f₁]] + [[f₂]]] s
+    i ≤ `[fsl| [[f₁]] + [[f₂]]] s
     ↔ ∃ i₁ ∈ values₁, ∃ i₂ ∈ values₂, i ≤ (i₁:ℝ) + i₂ ∧ `[sl| [[fun s => i₁ ≤ f₁ s]] ∧ [[fun s => i₂ ≤ f₂ s]]] s := by
   apply Iff.intro
   · intro h
     use (f₁ s), (Set.mem_of_subset_of_mem h_subset₁ (Set.mem_range_self _))
     use (f₂ s), (Set.mem_of_subset_of_mem h_subset₂ (Set.mem_range_self _))
-    rw [ qslAdd, le_truncatedAdd] at h
+    rw [ fslAdd, le_truncatedAdd] at h
     use h, le_rfl
   · rintro ⟨i₁, _, i₂, _, h_i, h₁, h₂⟩
-    rw [ qslAdd, le_truncatedAdd]
+    rw [ fslAdd, le_truncatedAdd]
     rw [ Subtype.mk_le_mk] at h₁ h₂
     calc (i:ℝ)
     _ ≤ (i₁:ℝ) + i₂ := h_i
     _ ≤ (f₁ s) + i₂ := add_le_add_right h₁ ↑i₂
     _ ≤ (f₁ s) + (f₂ s) := add_le_add_left h₂ (f₁ s)
 
-theorem atLeast_qslMul_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {values₁ values₂ : Set I}
+theorem atLeast_fslMul_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {values₁ values₂ : Set I}
     (h_subset₁ : Set.range f₁ ⊆ values₁) (h_subset₂ : Set.range f₂ ⊆ values₂) :
-    i ≤ `[qsl| [[f₁]] ⬝ [[f₂]]] s
+    i ≤ `[fsl| [[f₁]] ⬝ [[f₂]]] s
     ↔ ∃ i₁ ∈ values₁, ∃ i₂ ∈ values₂, i ≤ i₁ * i₂ ∧ `[sl| [[fun s => i₁ ≤ f₁ s]] ∧ [[fun s => i₂ ≤ f₂ s]]] s := by
   apply Iff.intro
   · intro h
     use (f₁ s), (Set.mem_of_subset_of_mem h_subset₁ (Set.mem_range_self _))
     use (f₂ s), (Set.mem_of_subset_of_mem h_subset₂ (Set.mem_range_self _))
-    rw [ qslMul] at h
+    rw [ fslMul] at h
     use h, le_rfl
   · rintro ⟨i₁, _, i₂, _, h_i, h₁, h₂⟩
-    rw [ qslMul ]
+    rw [ fslMul ]
     calc i
     _ ≤ i₁ * i₂ := h_i
     _ ≤ (f₁ s) * i₂ := mul_le_mul_of_nonneg_right h₁ nonneg'
     _ ≤ (f₁ s) * (f₂ s) := mul_le_mul_of_nonneg_left h₂ nonneg'
 
-theorem atLeast_qslSup_if {α : Type} { i : I } {f : α → StateRV Var} {s : State Var} :
-    `[sl| ∃ x. [[fun s => i ≤ f x s]]] s → i ≤ `[qsl| S x. [[f x]]] s := by
-  rw [qslSup_apply, slExists_apply ]
+theorem atLeast_fslSup_if {α : Type} { i : I } {f : α → StateRV Var} {s : State Var} :
+    `[sl| ∃ x. [[fun s => i ≤ f x s]]] s → i ≤ `[fsl| S x. [[f x]]] s := by
+  rw [fslSup_apply, slExists_apply ]
   rintro ⟨x, h⟩
   rw [le_iSup_iff]
   intro j hj
@@ -658,22 +658,22 @@ theorem atLeast_qslSup_if {α : Type} { i : I } {f : α → StateRV Var} {s : St
   _ ≤ f x s := h
   _ ≤ j := hj x
 
-theorem atLeast_qslSup_iff {α : Type} { i : I } {f : α → StateRV Var} {s : State Var}
+theorem atLeast_fslSup_iff {α : Type} { i : I } {f : α → StateRV Var} {s : State Var}
     (h_max : sSup { i | ∃ y, f y s = i } ∈ { i | ∃ y, f y s = i }) :
-    i ≤ `[qsl| S x. [[f x]]] s ↔ `[sl| ∃ x. [[fun s => i ≤ f x s]]] s := by
+    i ≤ `[fsl| S x. [[f x]]] s ↔ `[sl| ∃ x. [[fun s => i ≤ f x s]]] s := by
   apply Iff.intro
-  · rw [qslSup_apply, slExists_apply ]
+  · rw [fslSup_apply, slExists_apply ]
     intro h
     obtain ⟨x, h_max⟩ := h_max
     use x
     rw [h_max]
     exact h
-  · exact atLeast_qslSup_if
+  · exact atLeast_fslSup_if
 
 
-theorem atLeast_qslInf_iff {α : Type} { i : I } {f : α → StateRV Var} {s : State Var} :
-    i ≤ `[qsl| I x. [[f x]]] s ↔ `[sl| ∀ x. [[fun s => i ≤ f x s]]] s := by
-  rw [qslInf_apply, slAll_apply]
+theorem atLeast_fslInf_iff {α : Type} { i : I } {f : α → StateRV Var} {s : State Var} :
+    i ≤ `[fsl| I x. [[f x]]] s ↔ `[sl| ∀ x. [[fun s => i ≤ f x s]]] s := by
+  rw [fslInf_apply, slAll_apply]
   apply Iff.intro
   · intro h x
     rw [le_iInf_iff] at h
@@ -683,11 +683,11 @@ theorem atLeast_qslInf_iff {α : Type} { i : I } {f : α → StateRV Var} {s : S
     rintro x
     exact h x
 
-theorem atLeast_qslSepMul_if { i : I } {f₁ f₂ : StateRV Var} {s : State Var} :
+theorem atLeast_fslSepMul_if { i : I } {f₁ f₂ : StateRV Var} {s : State Var} :
     (∃ j₁, ∃ j₂, i ≤ j₁ * j₂ ∧ `[sl| [[fun s => j₁ ≤ f₁ s]] ∗ [[fun s => j₂ ≤ f₂ s]]] s)
-    → i ≤ `[qsl| [[f₁]] ⋆ [[f₂]]] s := by
+    → i ≤ `[fsl| [[f₁]] ⋆ [[f₂]]] s := by
   rintro ⟨j₁, j₂, hi_le, ⟨heap₁, heap₂, h₁, h₂, h_disjoint, h_union⟩⟩
-  rw [qslSepMul, le_sSup_iff]
+  rw [fslSepMul, le_sSup_iff]
   rintro j h
   simp only [upperBounds, Set.mem_setOf_eq, forall_exists_index, and_imp] at h
   calc i
@@ -696,12 +696,12 @@ theorem atLeast_qslSepMul_if { i : I } {f₁ f₂ : StateRV Var} {s : State Var}
   _ ≤ (f₁ ⟨s.stack, heap₁⟩) * (f₂ ⟨s.stack, heap₂⟩) := mul_le_mul_of_nonneg_left h₂ nonneg'
   _ ≤ j := (h heap₁ heap₂ h_disjoint h_union rfl)
 
-theorem atLeast_qslSepMul_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {values₁ values₂ : Set I}
+theorem atLeast_fslSepMul_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var} {values₁ values₂ : Set I}
     (h_subset₁ : Set.range f₁ ⊆ values₁) (h_subset₂ : Set.range f₂ ⊆ values₂)
-    (h_max : `[qsl| [[f₁]] ⋆ [[f₂]]] s ∈
+    (h_max : `[fsl| [[f₁]] ⋆ [[f₂]]] s ∈
       { i | ∃ heap₁ heap₂, disjoint heap₁ heap₂ ∧ heap₁ ∪ heap₂ = s.heap
       ∧ i = f₁ ⟨s.stack, heap₁⟩ * f₂ ⟨s.stack, heap₂⟩ }) :
-    i ≤ `[qsl| [[f₁]] ⋆ [[f₂]]] s
+    i ≤ `[fsl| [[f₁]] ⋆ [[f₂]]] s
     ↔ ∃ j₁ ∈ values₁, ∃ j₂ ∈ values₂, i ≤ j₁ * j₂
       ∧ `[sl| [[fun s => j₁ ≤ f₁ s]] ∗ [[fun s => j₂ ≤ f₂ s]]] s := by
   apply Iff.intro
@@ -712,13 +712,13 @@ theorem atLeast_qslSepMul_iff { i : I } {f₁ f₂ : StateRV Var} {s : State Var
     use (f₂ ⟨s.stack, heap₂⟩), (Set.mem_of_subset_of_mem h_subset₂ (Set.mem_range_self _))
     use h, heap₁, heap₂
   · rintro ⟨j₁, _, j₂, _, h⟩
-    apply atLeast_qslSepMul_if
+    apply atLeast_fslSepMul_if
     use j₁, j₂
 
-theorem atLeast_qslSepDiv_if_of_left_one_zero {i : I} {f₁ f₂ : StateRV Var} {s : State Var}
+theorem atLeast_fslSepDiv_if_of_left_one_zero {i : I} {f₁ f₂ : StateRV Var} {s : State Var}
     (h_one_zero : Set.range f₁ = {0, 1}) :
     (`[sl| [[fun s => 1 ≤ f₁ s]] -∗ [[fun s => i ≤ f₂ s]]] s)
-    → i ≤ `[qsl| [[f₁]] -⋆ [[f₂]]] s := by
+    → i ≤ `[fsl| [[f₁]] -⋆ [[f₂]]] s := by
   intro h
   apply le_sInf
   rintro _ ⟨heap, h_disjoint, rfl⟩
@@ -736,10 +736,10 @@ theorem atLeast_qslSepDiv_if_of_left_one_zero {i : I} {f₁ f₂ : StateRV Var} 
     rw [h_one] at h
     exact h le_rfl
 
-theorem atLeast_qslSepDiv_iff_of_left_one_zero {f₁ f₂ : StateRV Var} {s : State Var}
+theorem atLeast_fslSepDiv_iff_of_left_one_zero {f₁ f₂ : StateRV Var} {s : State Var}
     (h_one_zero : Set.range f₁ = {0, 1})
     (h_finite : Set.Finite (Set.range f₂)) :
-    i ≤ `[qsl| [[f₁]] -⋆ [[f₂]]] s
+    i ≤ `[fsl| [[f₁]] -⋆ [[f₂]]] s
     ↔ `[sl| [[fun s => 1 ≤ f₁ s]] -∗ [[fun s => i ≤ f₂ s]]] s := by
   apply Iff.intro
   · intro h heap h_disjoint h_f₁
@@ -752,12 +752,12 @@ theorem atLeast_qslSepDiv_iff_of_left_one_zero {f₁ f₂ : StateRV Var} {s : St
       rw [h_zero, ← not_lt] at h_f₁
       exact h_f₁ zero_lt_one
     | inr h_one =>
-      rw [qslSepDiv, le_sInf_iff] at h
+      rw [fslSepDiv, le_sInf_iff] at h
       specialize h (f₂ ⟨s.stack, s.heap ∪ heap⟩)
       apply h
       use heap, h_disjoint
       rw [h_one, unit_div_one]
-  · exact atLeast_qslSepDiv_if_of_left_one_zero h_one_zero
+  · exact atLeast_fslSepDiv_if_of_left_one_zero h_one_zero
 
 end Transform
 

@@ -1,12 +1,12 @@
-import InvLimDiss.CQSL.Step.Basic
+import InvLimDiss.CFSL.Step.Basic
 import InvLimDiss.Program.Support
 import InvLimDiss.Mathlib.Tsum
 
-namespace CQSL
+namespace CFSL
 
 variable {Var : Type}
 
-open Syntax Semantics QSL unitInterval Action State HeapValue Classical
+open Syntax Semantics FSL unitInterval Action State HeapValue Classical
 
 theorem tsum_probChoice_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : reachState Var,
@@ -220,4 +220,4 @@ theorem step_loop_term (s : State Var) (inner : Program Var → StateRV Var)
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_loop_term_of_deterministic s inner h]
 
-end CQSL
+end CFSL

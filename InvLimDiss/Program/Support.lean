@@ -1,7 +1,7 @@
 import InvLimDiss.Program.Semantics
-import InvLimDiss.SL.Quantitative
+import InvLimDiss.SL.Fuzzy
 import Mathlib.Algebra.Group.Support
-import InvLimDiss.CQSL.Step.ReachState
+import InvLimDiss.CFSL.Step.ReachState
 
 /-!
   This file features lemmas about the support of the probability transition function.
@@ -487,7 +487,7 @@ theorem tsum_sequential_abort_support_superset (s : State Var) :
   exfalso
   exact cs.prop h'.right
 
-open QSL
+open FSL
 
 theorem tsum_sequential_cont_support_superset (s : State Var) (inner : Program Var → StateRV Var)
     (h_term : c₁ ≠ [Prog| ↓]) (h_abort : c₁ ≠ [Prog| ↯]) :

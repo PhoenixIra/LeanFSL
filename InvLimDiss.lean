@@ -3,4 +3,4 @@
 import InvLimDiss.Program
 import InvLimDiss.SL
 import InvLimDiss.Entailments
-import InvLimDiss.CQSL
+import InvLimDiss.CFSL

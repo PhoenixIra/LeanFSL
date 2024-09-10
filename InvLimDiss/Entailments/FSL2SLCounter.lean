@@ -1,15 +1,15 @@
-import InvLimDiss.Entailments.QSL2SL
+import InvLimDiss.Entailments.FSL2SL
 import Mathlib.Tactic.Rify
 
 namespace Counterexample
 
-open Qsl2Sl unitInterval State QSL SL Syntax
+open Qsl2Sl unitInterval State FSL SL Syntax
 
-theorem atLeast_qslSepDiv_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var}
-    (h_min : `[qsl| [[f₁]] -⋆ [[f₂]]] s ∈ { x | ∃ heap, disjoint s.heap heap ∧
+theorem atLeast_fslSepDiv_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var}
+    (h_min : `[fsl| [[f₁]] -⋆ [[f₂]]] s ∈ { x | ∃ heap, disjoint s.heap heap ∧
       x = f₂ ⟨s.stack,s.heap ∪ heap⟩ / f₁ ⟨s.stack,heap⟩})
     (h_finite : Set.Finite (Set.range f₁)):
-    i ≤ `[qsl| [[f₁]] -⋆ [[f₂]]] s
+    i ≤ `[fsl| [[f₁]] -⋆ [[f₂]]] s
     ↔ ∃ j₁ ∈ Set.range f₁, ∃ j₂ ∈ Set.range f₂,  i ≤ j₂ / j₁
       ∧ `[sl| [[fun s => j₁ ≤ f₁ s]] -∗ [[fun s => j₂ ≤ f₂ s]]] s := sorry
 
@@ -20,12 +20,12 @@ example : False := by
     if let HeapValue.val x := h 1
       then if h : (0:ℝ) < x ∧ x ≤ (1:ℝ) then ⟨x,⟨le_of_lt h.left,h.right⟩⟩ else 1
       else 1
-  have h_min : `[qsl| [[f₁]] -⋆ [[f₂]]] s ∈ { x | ∃ heap, disjoint s.heap heap ∧
+  have h_min : `[fsl| [[f₁]] -⋆ [[f₂]]] s ∈ { x | ∃ heap, disjoint s.heap heap ∧
       x = f₂ ⟨s.stack,s.heap ∪ heap⟩ / f₁ ⟨s.stack,heap⟩} := by {
     use ∅
     rw [State.disjoint_comm]
     use emptyHeap_disjoint'
-    rw [qslSepDiv]
+    rw [fslSepDiv]
     apply le_antisymm
     · apply sInf_le
       use ∅
@@ -40,13 +40,13 @@ example : False := by
     unfold_let f₁
     simp only [Set.range_const, Set.finite_singleton]
   }
-  have : 1 ≤ `[qsl| [[f₁]] -⋆ [[f₂]]] s := by {
-    simp only [qslSepDiv, le_sInf_iff, Set.mem_setOf_eq, forall_exists_index, and_imp]
+  have : 1 ≤ `[fsl| [[f₁]] -⋆ [[f₂]]] s := by {
+    simp only [fslSepDiv, le_sInf_iff, Set.mem_setOf_eq, forall_exists_index, and_imp]
     rintro _ _ _ rfl
     unfold_let f₁
     simp only [unit_div_zero, le_refl]
   }
-  have := (atLeast_qslSepDiv_iff h_min h_finite).mp this
+  have := (atLeast_fslSepDiv_iff h_min h_finite).mp this
   obtain ⟨j₁, h_j₁, j₂, h_j₂, _, h⟩ := this
   rw [slSepImp] at h
   unfold_let s at h
