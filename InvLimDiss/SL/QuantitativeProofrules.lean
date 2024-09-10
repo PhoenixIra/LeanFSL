@@ -9,6 +9,7 @@ import InvLimDiss.SL.Quantitative
      * Adjointness
      * Vanishing Modus Ponens
      * Simplification lemmas
+     * Distributivity over minimum and maximum
   * Eliminating theorems about quantifiers
 -/
 
