@@ -136,7 +136,7 @@ theorem nonempty_range {f : StateRV Var} : Set.Nonempty (Set.range f) := by
   use (f s)
   exact Set.mem_range_self s
 
-theorem range_of_fslTrue : Set.range `[fsl Var| qTrue] = {1} := by
+theorem range_of_fslTrue : Set.range `[fsl Var| fTrue] = {1} := by
   rw [Set.ext_iff]
   intro i
   apply Iff.intro
@@ -150,7 +150,7 @@ theorem range_of_fslTrue : Set.range `[fsl Var| qTrue] = {1} := by
     use inhabited_state.default
     rfl
 
-theorem range_of_fslFalse : Set.range `[fsl Var| qFalse] = {0} := by
+theorem range_of_fslFalse : Set.range `[fsl Var| fFalse] = {0} := by
   rw [Set.ext_iff]
   intro i
   apply Iff.intro
@@ -474,13 +474,13 @@ theorem zero_le_atLeast (f : StateRV Var) (s : State Var) : 0 ≤ f s ↔ `[sl V
   · intro _; exact rfl
   · intro _; exact nonneg'
 
-theorem atLeast_fslTrue_iff {i : I} (s : State Var) : i ≤ `[fsl Var| qTrue] s ↔ `[sl Var| sTrue] s := by
+theorem atLeast_fslTrue_iff {i : I} (s : State Var) : i ≤ `[fsl Var| fTrue] s ↔ `[sl Var| sTrue] s := by
   apply Iff.intro
   · intro _; exact rfl
   · intro _; exact le_one'
 
 theorem atLeast_fslFalse_iff {i : I} (s : State Var) (h_pos : 0 < i) :
-    i ≤ `[fsl Var| qFalse] s ↔ `[sl Var| sFalse] s := by
+    i ≤ `[fsl Var| fFalse] s ↔ `[sl Var| sFalse] s := by
   apply Iff.intro
   · intro h
     exfalso

@@ -4,7 +4,7 @@ import InvLimDiss.Mathlib.FixedPoints
 
 namespace CFSL
 
-open Syntax FSL
+open Syntax FSL OrdinalApprox unitInterval
 
 variable {Var : Type} {P Q : StateRV Var}
 
@@ -26,12 +26,94 @@ theorem wrle_mono (h : P ≤ Q) :
     `[fsl| wrle [c] ([[P]]|[[resource]]) ⊢ wrle [c] ([[Q]]|[[resource]])] := by
   intro s
   simp only [wrle']
-  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
-  rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
-  apply OrdinalApprox.gfpApprox_le_gfpApprox_of_le
+  rw [← gfpApprox_ord_eq_gfp]
+  rw [← gfpApprox_ord_eq_gfp]
+  apply gfpApprox_le_gfpApprox_of_le
     (wrle_step_hom P resource) _ ?_ ⊤ (Order.succ (Cardinal.mk _)).ord _ _
   simp only [wrle_step_hom, OrderHom.mk_le_mk]
   exact wrle_step_mono_of_le_RV h
+
+open State in
+theorem wrle_share
+    (h : `[fsl| [[Q]] ⊢ wrle [c] ([[P]]|[[resource₁]] ⋆ [[resource₂]])]) :
+    `[fsl| [[Q]] ⋆ [[resource₂]] ⊢ wrle [c] ([[P]] ⋆ [[resource₂]]|[[resource₁]])] := by
+  rw [← le_fslSepDiv_iff_fslSepMul_le]
+  apply le_trans h
+  simp only [wrle']
+  rw [← gfpApprox_ord_eq_gfp]
+  rw [← gfpApprox_ord_eq_gfp]
+  clear h
+  induction (Order.succ (Cardinal.mk (Program Var → StateRV Var))).ord
+    using Ordinal.induction generalizing c with
+  | h i ih =>
+    unfold gfpApprox
+    intro s
+    apply le_sInf
+    rintro _ ⟨heap₂, h_disjoint₂, rfl⟩
+    rw [unit_le_div_iff_mul_le]
+    apply le_sInf
+    simp only [Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton, Set.mem_insert_iff,
+      Set.mem_setOf_eq, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and,
+      forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+    rintro _ (rfl|⟨j, h_j, rfl⟩)
+    · exact le_one'
+    · rw [← unit_le_div_iff_mul_le]
+      apply sInf_le_of_le
+      · simp only [Set.mem_range, Subtype.exists, Set.mem_insert_iff, Set.mem_setOf_eq,
+          exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
+        use ?_
+        apply And.intro
+        · right
+          use j, h_j
+          exact rfl
+        · exact rfl
+      · simp only [wrle_step_hom, OrderHom.coe_mk]
+        cases eq_or_ne c [Prog| ↓]
+        case inl h_term =>
+          rw [h_term]
+          simp only [wrle_step]
+          rw [unit_le_div_iff_mul_le]
+          apply le_sSup
+          use s.heap, heap₂
+        case inr h_n_term =>
+          cases eq_or_ne c [Prog| ↯]
+          case inl h_abort =>
+            rw [h_abort]
+            simp only [wrle_step, fslFalse, zero_le]
+          case inr h_ne_abort =>
+            simp only [wrle_step]
+            rw [unit_le_div_iff_mul_le]
+            apply le_sInf
+            rintro _ ⟨heap₁, h_disjoint₁, rfl⟩
+            rw [disjoint_comm, disjoint_union_iff, disjoint_comm] at h_disjoint₁
+            rw [← unit_le_div_iff_mul_le]
+            apply sInf_le_of_le
+            · use (heap₁ ∪ heap₂)
+              apply And.intro
+              · rw [disjoint_union_iff]
+                use h_disjoint₁.left, h_disjoint₂
+              · exact rfl
+            · rw [← div_mul_eq_div_div]
+              apply unit_div_le_div
+              swap
+              · apply le_sSup
+                use heap₁, heap₂, h_disjoint₁.right
+              · simp only
+                rw [union_assoc, union_comm heap₂ heap₁]
+                swap
+                · rw [disjoint_comm]
+                  exact h_disjoint₁.right
+                · apply step_mono
+                  intro c
+                  simp only
+                  rw [fslSepMul_comm resource₁ resource₂, fslSepMul_assoc]
+                  apply fslSepMul_mono ?_ le_rfl
+                  simp only [Entailment.entail]
+                  rw [← le_fslSepDiv_iff_fslSepMul_le, fslSepMul_comm resource₂ resource₁]
+                  unfold wrle_step_hom at ih
+                  exact ih j h_j
+
+
 
 
 

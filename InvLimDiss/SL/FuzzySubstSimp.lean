@@ -10,13 +10,13 @@ namespace FSL
 open Syntax FSL State
 
 @[simp]
-theorem fslSubst_of_fslTrue : `[fsl| qTrue(v ↦ e)] = `[fsl| qTrue] := by
+theorem fslSubst_of_fslTrue : `[fsl| fTrue(v ↦ e)] = `[fsl| fTrue] := by
   apply funext
   intro s
   rfl
 
 @[simp]
-theorem fslSubst_of_fslFalse : `[fsl| qFalse(v ↦ e)] = `[fsl| qFalse] := by
+theorem fslSubst_of_fslFalse : `[fsl| fFalse(v ↦ e)] = `[fsl| fFalse] := by
   apply funext
   intro s
   rfl

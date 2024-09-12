@@ -69,8 +69,8 @@ open Lean
 
 declare_syntax_cat fsl
 
-syntax "qTrue" : fsl
-syntax "qFalse" : fsl
+syntax "fTrue" : fsl
+syntax "fFalse" : fsl
 syntax "emp" : fsl
 syntax term " ↦ " term : fsl
 syntax term:51 " = " term:51 : fsl
@@ -98,8 +98,8 @@ syntax "`[fsl " term " | " fsl " ]" : term
 syntax "`[fsl " term " | " fsl " ⊢ " fsl " ]" : term
 
 macro_rules
-  | `(term| `[fsl| qTrue]) => `(fslTrue)
-  | `(term| `[fsl| qFalse]) => `(fslFalse)
+  | `(term| `[fsl| fTrue]) => `(fslTrue)
+  | `(term| `[fsl| fFalse]) => `(fslFalse)
   | `(term| `[fsl| emp]) => `(fslEmp)
   | `(term| `[fsl| $l:term ↦ $r:term]) => `(fslPointsTo $l $r)
   | `(term| `[fsl| $l:term = $r:term]) => `(fslEquals $l $r)
@@ -124,8 +124,8 @@ macro_rules
   | `(term| `[fsl| ($f:fsl)]) => `(`[fsl|$f])
   | `(term| `[fsl| $l:fsl ⊢ $r:fsl]) => `(`[fsl|$l] ≤ `[fsl|$r])
 
-  | `(term| `[fsl $v:term | qTrue]) => `(@fslTrue $v)
-  | `(term| `[fsl $v:term | qFalse]) => `(@fslFalse $v)
+  | `(term| `[fsl $v:term | fTrue]) => `(@fslTrue $v)
+  | `(term| `[fsl $v:term | fFalse]) => `(@fslFalse $v)
   | `(term| `[fsl $v:term| emp]) => `(@fslEmp $v)
   | `(term| `[fsl $v:term| $l:term ↦ $r:term]) => `(@fslPointsTo $v $l $r)
   | `(term| `[fsl $v:term| $l:term = $r:term]) => `(@fslEquals $v $l $r)
@@ -155,11 +155,11 @@ open Lean PrettyPrinter Delaborator
 
 @[app_unexpander fslTrue]
 def unexpandQslTrue : Unexpander
-  | `($_) => `(`[fsl| qTrue])
+  | `($_) => `(`[fsl| fTrue])
 
 @[app_unexpander fslFalse]
 def unexpandQslFalse : Unexpander
-  | `($_) => `(`[fsl| qFalse])
+  | `($_) => `(`[fsl| fFalse])
 
 @[app_unexpander fslEmp]
 def unexpandQslEmp : Unexpander

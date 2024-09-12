@@ -16,7 +16,7 @@ variable {Var : Type}
 noncomputable def bellman_step (post : StateRV Var) :
     (Program Var → StateRV Var) → (Program Var → StateRV Var)
   | _, [Prog| ↓ ] => post
-  | _, [Prog| ↯ ] => `[fsl| qFalse]
+  | _, [Prog| ↯ ] => `[fsl| fFalse]
   | X, program => `[fsl| [[step program (fun c => `[fsl| [[X c]]]) ]] ]
 
 theorem bellman_monotone (post : StateRV Var) : Monotone (bellman_step post) := by

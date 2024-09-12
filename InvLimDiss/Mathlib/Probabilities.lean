@@ -251,6 +251,52 @@ lemma div_swap {i j k : I} : i / j / k = i / k / j := by
     rw [← unit_le_div_iff_mul_le, ← unit_le_div_iff_mul_le]
   }
 
+lemma div_mul_eq_div_div {i j k : I} : i / (j * k) = i / j / k := by
+  rw [Subtype.mk_eq_mk]
+  simp only [coe_div, coe_mul]
+  split_ifs
+  case pos => rw [div_div]
+  case neg h_i_jk h_ij_k h_j_i =>
+    exfalso
+    apply h_j_i
+    apply lt_of_lt_of_le h_i_jk
+    exact mul_le_left
+  case neg h_i_jk h_k_ij =>
+    exfalso
+    apply h_k_ij
+    rw [Subtype.mk_lt_mk, coe_div]
+    split_ifs
+    case pos h_i_j =>
+      have h_j_pos : 0 < (j : ℝ) := by {
+        apply lt_of_le_of_lt nonneg' h_i_j
+      }
+      rw [div_lt_iff h_j_pos, mul_comm]
+      exact h_i_jk
+    case neg h_j_i =>
+      exfalso
+      rw [not_lt] at h_j_i
+      have := lt_of_le_of_lt h_j_i h_i_jk
+      rw [← not_le] at this
+      exact this mul_le_left
+  case pos h_jk_i h_ij_k h_i_j =>
+    exfalso
+    simp only [not_lt] at h_jk_i
+    rw [Subtype.mk_lt_mk, coe_div] at h_ij_k
+    split_ifs at h_ij_k
+    have h_j_pos : 0 < j := lt_of_le_of_lt nonneg' h_i_j
+    rw [div_lt_iff h_j_pos] at h_ij_k
+    rw [Subtype.mk_le_mk] at h_jk_i
+    have := lt_of_le_of_lt h_jk_i h_ij_k
+    rw [coe_mul, mul_comm, ← not_le] at this
+    apply this
+    rfl
+  case neg h_jk_i h_ij_k h_j_i =>
+    exfalso
+    rw [Subtype.mk_lt_mk, coe_div] at h_ij_k
+    split_ifs at h_ij_k
+    rw [← not_le] at h_ij_k
+    exact h_ij_k le_one'
+  case neg => rfl
 
 end MulDiv
 

@@ -9,13 +9,13 @@ namespace FSL
 open Syntax Semantics FSL State unitInterval
 
 
-theorem varRV_of_fslTrue : varRV `[fsl Var| qTrue] = ∅ := by
+theorem varRV_of_fslTrue : varRV `[fsl Var| fTrue] = ∅ := by
   rw [varRV]
   simp only [ne_eq, Set.ext_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_exists,
     Decidable.not_not]
   intro _ _ _; rfl
 
-theorem varRV_of_fslFalse : varRV `[fsl Var| qFalse] = ∅ := by
+theorem varRV_of_fslFalse : varRV `[fsl Var| fFalse] = ∅ := by
   rw [varRV]
   simp only [ne_eq, Set.ext_iff, Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_exists,
     Decidable.not_not]

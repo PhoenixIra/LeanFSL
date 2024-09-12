@@ -8,12 +8,12 @@ variable {Var : Type}
 
 open SL unitInterval
 
-theorem conservative_true : `[fsl Var| qTrue] = `[fsl Var| ⁅`[sl Var| sTrue]⁆] := by
+theorem conservative_true : `[fsl Var| fTrue] = `[fsl Var| ⁅`[sl Var| sTrue]⁆] := by
   apply funext
   intro _
   simp only [fslTrue, fslIverson, slTrue, unitInterval.iteOneZero_true]
 
-theorem conservative_false : `[fsl Var| qFalse] = `[fsl Var| ⁅`[sl Var| sFalse]⁆] := by
+theorem conservative_false : `[fsl Var| fFalse] = `[fsl Var| ⁅`[sl Var| sFalse]⁆] := by
   apply funext
   intro _
   simp only [fslFalse, fslIverson, slFalse, unitInterval.iteOneZero_false]

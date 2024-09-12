@@ -207,7 +207,7 @@ theorem fslSepMul_fslEmp_eq (f : StateRV Var) : `[fsl| [[f]] ⋆ emp] = f := by
     use s.heap, ∅, disjoint_emptyHeap', union_emptyHeap'
     simp only [fslEmp, iteOneZero_true, mul_one]
 
-theorem fslSepMul_fslFalse_eq (f : StateRV Var) : `[fsl| [[f]] ⋆ qFalse] = `[fsl| qFalse] := by
+theorem fslSepMul_fslFalse_eq (f : StateRV Var) : `[fsl| [[f]] ⋆ fFalse] = `[fsl| fFalse] := by
   apply funext
   intro s
   apply le_antisymm

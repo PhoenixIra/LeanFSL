@@ -22,7 +22,7 @@ variable {Var : Type}
 noncomputable def wrle_step (post : StateRV Var) (resource : StateRV Var) :
     (Program Var → StateRV Var) → (Program Var → StateRV Var)
   | _, [Prog| ↓ ] => post
-  | _, [Prog| ↯ ] => `[fsl| qFalse]
+  | _, [Prog| ↯ ] => `[fsl| fFalse]
   | X, program => `[fsl| [[resource]] -⋆ [[step program (fun c => `[fsl| [[X c]] ⋆ [[resource]] ]) ]] ]
 
 theorem wrle_step_mono (post : StateRV Var) (resource : StateRV Var) : Monotone (wrle_step post resource) := by
@@ -84,7 +84,7 @@ def unexpanderwrle : Unexpander
 theorem wrle_def (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :
     `[fsl| wrle [program] ([[post]] | [[resource]])] = match program with
   | [Prog| ↓ ] => post
-  | [Prog| ↯ ] => `[fsl| qFalse]
+  | [Prog| ↯ ] => `[fsl| fFalse]
   | program => `[fsl| [[resource]] -⋆ [[step program
     (fun c => `[fsl| wrle [c] ([[post]] | [[resource]]) ⋆ [[resource]] ]) ]] ] := by
   rw [wrle', wrle_step_hom, ← map_gfp, coe_mk, wrle_step]
@@ -124,7 +124,7 @@ theorem wrle_eq_of_term
 
 theorem wrle_eq_of_abort
     (post : StateRV Var) (resource : StateRV Var) :
-    `[fsl| wrle [ [Prog| ↯] ] ([[post]] | [[resource]])] = `[fsl| qFalse] := by
+    `[fsl| wrle [ [Prog| ↯] ] ([[post]] | [[resource]])] = `[fsl| fFalse] := by
   rw [wrle_def]
 
 
