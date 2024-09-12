@@ -113,10 +113,6 @@ theorem wrle_share
                   unfold wrle_step_hom at ih
                   exact ih j h_j
 
-theorem wrle_min (h : precise R) :
-    `[fsl| wrle [c] ([[P]] |[[R]]) ⊓ wrle [c] ([[Q]]|[[R]]) ⊢ wrle [c] ([[P]] ⊓ [[Q]]|[[R]])] := by
-  sorry
-
 private theorem wrle_max_left :
     `[fsl| wrle [c] ([[P]] |[[R]]) ⊢ wrle [c] ([[P]] ⊔ [[Q]]|[[R]])] := by
   simp only [wrle', wrle_step_hom]

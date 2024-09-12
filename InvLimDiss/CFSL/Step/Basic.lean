@@ -72,10 +72,6 @@ theorem step_mono_of_semantics_support {c : Program Var} {P Q : Program Var → 
   intro s
   exact step_mono_of_state_of_semantics_support (h s)
 
-
-
-
-
 theorem step_terminated (inner : Program Var → StateRV Var) :
     step [Prog| ↓] inner s = 1 := by
   unfold step
