@@ -365,22 +365,28 @@ theorem fslSepMul_fslMin_distr_of_precise (P Q R : StateRV Var) (h : precise P) 
 
 end Precise
 
-/-! This features elimination rules for quantifiers in fsl. -/
-section Quantifiers
+/-! Proofrules for maxima and minima-/
+section MaxMin
 
-theorem fslSup_apply (P : α → StateRV Var) (s : State Var) :
-    `[fsl| S x. [[P x]]] s = ⨆ x, P x s := by
-  rw [fslSup, iSup_apply]
+theorem fslMax_comm (P Q : StateRV Var) :
+    `[fsl| [[P]] ⊔ [[Q]]] = `[fsl| [[Q]] ⊔ [[P]]] := by
+  simp only [fslMax]
+  exact sup_comm P Q
 
-theorem fslInf_apply (P : α → StateRV Var) (s : State Var) :
-    `[fsl| I x. [[P x]]] s = ⨅ x, P x s := by
-  rw [fslInf, iInf_apply]
+theorem fslMax_assoc (P Q R : StateRV Var) :
+    `[fsl| ([[P]] ⊔ [[Q]]) ⊔ [[R]]] = `[fsl| [[P]] ⊔ [[Q]] ⊔ [[R]]] := by
+  simp only [fslMax]
+  exact sup_assoc P Q R
 
-end Quantifiers
+theorem fslMin_comm (P Q : StateRV Var) :
+    `[fsl| [[P]] ⊓ [[Q]]] = `[fsl| [[Q]] ⊓ [[P]]] := by
+  simp only [fslMin]
+  exact inf_comm P Q
 
-section PointsTo
-
-open State HeapValue Syntax
+theorem fslMin_assoc (P Q R : StateRV Var) :
+    `[fsl| ([[P]] ⊓ [[Q]]) ⊓ [[R]]] = `[fsl| [[P]] ⊓ [[Q]] ⊓ [[R]]] := by
+  simp only [fslMin]
+  exact inf_assoc P Q R
 
 theorem fslMax_entailment_iff (P Q R : StateRV Var) :
     `[fsl| [[P]] ⊔ [[Q]] ⊢ [[R]]] ↔ P ⊢ R ∧ Q ⊢ R := by
@@ -401,6 +407,26 @@ theorem fslMax_entailment_iff (P Q R : StateRV Var) :
     intro s
     simp only [fslMax, Sup.sup, sup_le_iff]
     exact ⟨h_P s, h_Q s⟩
+
+
+end MaxMin
+
+/-! This features elimination rules for quantifiers in fsl. -/
+section Quantifiers
+
+theorem fslSup_apply (P : α → StateRV Var) (s : State Var) :
+    `[fsl| S x. [[P x]]] s = ⨆ x, P x s := by
+  rw [fslSup, iSup_apply]
+
+theorem fslInf_apply (P : α → StateRV Var) (s : State Var) :
+    `[fsl| I x. [[P x]]] s = ⨅ x, P x s := by
+  rw [fslInf, iInf_apply]
+
+end Quantifiers
+
+section PointsTo
+
+open State HeapValue Syntax
 
 theorem fslBigSepMul_of_fslPointsTo_of_bigSingleton_eq_one {l : ℕ+} {stack : Stack Var}:
     `[fsl| [⋆] i ∈ { ... n}. (l+i:ℚ) ↦ (0:ℚ)] ⟨stack, bigSingleton l n 0⟩ = 1 := by

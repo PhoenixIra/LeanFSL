@@ -113,7 +113,56 @@ theorem wrle_share
                   unfold wrle_step_hom at ih
                   exact ih j h_j
 
+theorem wrle_min (h : precise R) :
+    `[fsl| wrle [c] ([[P]] |[[R]]) ⊓ wrle [c] ([[Q]]|[[R]]) ⊢ wrle [c] ([[P]] ⊓ [[Q]]|[[R]])] := by
+  sorry
 
+private theorem wrle_max_left :
+    `[fsl| wrle [c] ([[P]] |[[R]]) ⊢ wrle [c] ([[P]] ⊔ [[Q]]|[[R]])] := by
+  simp only [wrle', wrle_step_hom]
+  rw [← gfpApprox_ord_eq_gfp]
+  rw [← gfpApprox_ord_eq_gfp]
+  induction (Order.succ (Cardinal.mk (Program Var → StateRV Var))).ord
+    using Ordinal.induction generalizing c with
+  | h i ih =>
+    unfold gfpApprox
+    apply le_sInf
+    simp only [OrderHom.coe_mk, Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton,
+      Set.mem_insert_iff, Set.mem_setOf_eq, exists_eq_or_imp, Pi.top_apply,
+      exists_exists_and_eq_and]
+    rintro _ (rfl|⟨j, h_j, rfl⟩)
+    · intro s
+      exact le_one'
+    · apply sInf_le_of_le
+      · simp only [Set.mem_range, Subtype.exists, Set.mem_insert_iff, Set.mem_setOf_eq,
+          exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
+        right
+        use j, h_j
+      · cases eq_or_ne c [Prog| ↓]
+        case inl h_term =>
+          rw [h_term]
+          simp only [wrle_step]
+          intro s
+          exact le_sup_left
+        case inr h_n_term =>
+          cases eq_or_ne c [Prog| ↯]
+          case inl h_abort =>
+            rw [h_abort]
+            simp only [wrle_step, le_refl]
+          case inr h_n_abort =>
+            simp only [wrle_step]
+            apply fslSepDiv_mono le_rfl
+            apply step_mono
+            intro c; simp only
+            apply fslSepMul_mono ?_ le_rfl
+            exact ih j h_j
+
+theorem wrle_max :
+    `[fsl| wrle [c] ([[P]] |[[R]]) ⊔ wrle [c] ([[Q]]|[[R]]) ⊢ wrle [c] ([[P]] ⊔ [[Q]]|[[R]])] := by
+  apply sup_le
+  · exact wrle_max_left
+  · rw [fslMax_comm P Q]
+    exact wrle_max_left
 
 
 
