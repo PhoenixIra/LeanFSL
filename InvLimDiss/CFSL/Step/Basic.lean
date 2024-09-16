@@ -29,13 +29,9 @@ theorem step_mono (c : Program Var) : Monotone (step c) := by
   | inr h_ne =>
     rw [Subtype.mk_le_mk, Set.Icc.coe_mul, Set.Icc.coe_mul]
     rw[mul_le_mul_left]
-    · rw [Pi.le_def] at h_X
-      specialize h_X cs.prog
-      rw [Pi.le_def] at h_X
-      exact h_X cs.state
+    · apply h_X
     · apply lt_of_le_of_ne nonneg'
-      apply Ne.symm
-      exact h_ne
+      exact Ne.symm h_ne
 
 theorem step_mono_of_state_of_semantics_support {c : Program Var} {s : State Var}
     {P Q : Program Var → StateRV Var}
