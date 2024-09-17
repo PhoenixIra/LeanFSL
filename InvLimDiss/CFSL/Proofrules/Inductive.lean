@@ -72,7 +72,7 @@ lemma gfpApprox_wrle_step_seq :
           · rw [unit_le_div_iff_mul_le]
             apply le_sSup_of_le
             · use s.heap, heap'
-            · rw [← unit_le_div_iff_mul_le, unitInterval.mul_div_cancel h_resource_neq_zero]
+            · rw [← unit_le_div_iff_mul_le, unitInterval.mul_div_cancel_of_pos h_resource_neq_zero]
               simp only [wrle_step]
               change _ ≤ gfpApprox (wrle_step_hom P resource) ⊤ k' c₂ s
               exact (OrdinalApprox.gfpApprox_antitone

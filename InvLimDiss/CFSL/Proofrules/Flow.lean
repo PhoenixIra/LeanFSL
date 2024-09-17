@@ -111,7 +111,7 @@ theorem wrle_while {e : BoolExp Var}
         · apply le_sSup_of_le
           · use s.heap, heap'
           · rw [← unit_le_div_iff_mul_le]
-            rw [unitInterval.mul_div_cancel h_nonzero]
+            rw [unitInterval.mul_div_cancel_of_pos h_nonzero]
             by_cases e s.stack
             case neg h =>
               rw [Bool.not_eq_true] at h

@@ -46,7 +46,7 @@ noncomputable def fslMin (P Q : StateRV Var) : StateRV Var := P ⊓ Q
 
 noncomputable def fslMax (P Q : StateRV Var) : StateRV Var := P ⊔ Q
 
-noncomputable def fslAdd (P Q : StateRV Var) : StateRV Var := λ s => truncatedAdd (P s) (Q s)
+noncomputable def fslAdd (P Q : StateRV Var) : StateRV Var := λ s => (P s) + (Q s)
 
 noncomputable def fslMul (P Q : StateRV Var) : StateRV Var := λ s => P s * Q s
 

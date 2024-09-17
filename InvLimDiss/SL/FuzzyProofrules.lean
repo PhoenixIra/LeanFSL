@@ -30,6 +30,94 @@ theorem entailment_iff_le {P Q : StateRV Var} : P ⊢ Q ↔ ∀ s, P s ≤ Q s :
 
 end Entailment
 
+/-! Proofrules for maxima and minima-/
+section MaxMin
+
+theorem fslMax_comm (P Q : StateRV Var) :
+    `[fsl| [[P]] ⊔ [[Q]]] = `[fsl| [[Q]] ⊔ [[P]]] := by
+  simp only [fslMax]
+  exact sup_comm P Q
+
+theorem fslMax_assoc (P Q R : StateRV Var) :
+    `[fsl| ([[P]] ⊔ [[Q]]) ⊔ [[R]]] = `[fsl| [[P]] ⊔ [[Q]] ⊔ [[R]]] := by
+  simp only [fslMax]
+  exact sup_assoc P Q R
+
+theorem fslMin_comm (P Q : StateRV Var) :
+    `[fsl| [[P]] ⊓ [[Q]]] = `[fsl| [[Q]] ⊓ [[P]]] := by
+  simp only [fslMin]
+  exact inf_comm P Q
+
+theorem fslMin_assoc (P Q R : StateRV Var) :
+    `[fsl| ([[P]] ⊓ [[Q]]) ⊓ [[R]]] = `[fsl| [[P]] ⊓ [[Q]] ⊓ [[R]]] := by
+  simp only [fslMin]
+  exact inf_assoc P Q R
+
+theorem fslMax_entailment_iff (P Q R : StateRV Var) :
+    `[fsl| [[P]] ⊔ [[Q]] ⊢ [[R]]] ↔ P ⊢ R ∧ Q ⊢ R := by
+  apply Iff.intro
+  · intro h
+    apply And.intro
+    · intro s
+      rw [Pi.le_def] at h
+      specialize h s
+      simp only [fslMax, Sup.sup, sup_le_iff] at h
+      exact h.left
+    · intro s
+      rw [Pi.le_def] at h
+      specialize h s
+      simp only [fslMax, Sup.sup, sup_le_iff] at h
+      exact h.right
+  · rintro ⟨h_P, h_Q⟩
+    intro s
+    simp only [fslMax, Sup.sup, sup_le_iff]
+    exact ⟨h_P s, h_Q s⟩
+
+
+end MaxMin
+
+/-! This features elimination rules for quantifiers in fsl. -/
+section Quantifiers
+
+theorem fslSup_apply (P : α → StateRV Var) (s : State Var) :
+    `[fsl| S x. [[P x]]] s = ⨆ x, P x s := by
+  rw [fslSup, iSup_apply]
+
+theorem fslInf_apply (P : α → StateRV Var) (s : State Var) :
+    `[fsl| I x. [[P x]]] s = ⨅ x, P x s := by
+  rw [fslInf, iInf_apply]
+
+end Quantifiers
+
+section PointsTo
+
+open State HeapValue Syntax
+
+theorem fslBigSepMul_of_fslPointsTo_of_bigSingleton_eq_one {l : ℕ+} {stack : Stack Var}:
+    `[fsl| [⋆] i ∈ { ... n}. (l+i:ℚ) ↦ (0:ℚ)] ⟨stack, bigSingleton l n 0⟩ = 1 := by
+  induction n with
+  | zero =>
+    simp only [fslBigSepMul, fslEmp, iteOneZero_eq_one_def, bigSingleton_of_zero]
+  | succ n ih =>
+    simp only [fslBigSepMul, bigSingleton, Pi.zero_apply]
+    apply le_antisymm le_one'
+    apply le_sSup
+    use (singleton ⟨l+n,PNat.add_right_nat⟩ 0), (bigSingleton l n 0)
+    use disjoint_singleton_bigSingleton le_rfl
+    apply And.intro
+    · simp only
+      rw [union_comm, ← union_singleton_bigSingle]
+      · simp only [Pi.zero_apply]
+      · exact disjoint_singleton_bigSingleton le_rfl
+    simp only [fslPointsTo]
+    rw [iteOneZero_pos]
+    pick_goal 2
+    · use ⟨l+n,PNat.add_right_nat⟩
+      simp only [PNat.mk_coe, Nat.cast_add, and_self]
+    · simp only [ih, mul_one]
+
+end PointsTo
+
 /-! We have here lemmas about separating multipication and division. -/
 section Separating
 
@@ -270,6 +358,81 @@ theorem fslSepMul_fslMax_distr (P Q R : StateRV Var) :
       · apply unit_mul_le_mul le_rfl ?_
         simp only [fslMax, Sup.sup, le_sup_right]
 
+theorem fslSepMul_fslAdd_subdistr (P Q R : StateRV Var) :
+    `[fsl| [[P]] ⋆ ([[Q]] + [[R]])] ⊢ `[fsl| ([[P]] ⋆ [[Q]]) + ([[P]] ⋆ [[R]])] := by
+  intro s
+  apply sSup_le
+  rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+  simp only [fslAdd]
+  apply le_trans (left_subdistr_of_unit _ _ _) ?_
+  apply truncatedAdd_le_truncatedAdd
+  · apply le_sSup
+    use heap₁, heap₂
+  · apply le_sSup
+    use heap₁, heap₂
+
+theorem fslSepMul_fslMul_of_iverson_subdistr (P : State Var → Prop) (Q R : StateRV Var) :
+    `[fsl| ⁅P⁆ ⋆ ([[Q]] ⬝ [[R]]) ⊢ (⁅P⁆ ⋆ [[Q]]) ⬝ (⁅P⁆ ⋆ [[R]])] := by
+  intro s
+  apply sSup_le
+  rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+  simp only [fslMul, fslIverson]
+  rw [← iteOneZero_mul_self]
+  apply le_trans
+  · calc (iteOneZero _ * iteOneZero _) * (Q _ * R _)
+    _ = (Q _ * R _) * (iteOneZero _ * iteOneZero _) := by rw [mul_comm]
+    _ = (Q _ * R _) * iteOneZero _ * iteOneZero _ := by rw [← mul_assoc]
+    _ = iteOneZero _ * (Q _ * R _) * iteOneZero _ := by rw [← mul_rotate]
+    _ = iteOneZero _ * Q _ * R _ * iteOneZero _ := by rw [← mul_assoc]
+    _ = iteOneZero _ * Q _ * (R _ * iteOneZero _) := by rw [mul_assoc]
+    _ = iteOneZero _ * Q _ * (iteOneZero _ * R _) := by rw [mul_comm (R _) _]
+    _ ≤ (iteOneZero _ * Q _) * (iteOneZero _ * R _) := le_rfl
+  · apply unit_mul_le_mul
+    · apply le_sSup
+      use heap₁, heap₂, h_disjoint, h_union
+      rfl
+    · apply le_sSup
+      use heap₁, heap₂, h_disjoint, h_union
+      rfl
+
+theorem fslSepMul_fslSup_distr (P : StateRV Var) (Q : α → StateRV Var) :
+    `[fsl| [[P]] ⋆ S (a : α). [[Q a]]] = `[fsl| S (a : α). [[P]] ⋆ [[Q a]]] := by
+  funext s
+  apply le_antisymm
+  · apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    rw [mul_comm, ← unit_le_div_iff_mul_le, fslSup_apply]
+    apply iSup_le
+    intro x
+    rw [unit_le_div_iff_mul_le, mul_comm, fslSup_apply, le_iSup_iff]
+    intro _ h
+    apply le_trans ?_ (h x); clear h
+    apply le_sSup
+    use heap₁, heap₂
+  · rw [fslSup_apply]
+    apply iSup_le
+    intro x
+    apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    apply le_sSup_of_le
+    · use heap₁, heap₂, h_disjoint, h_union
+    · apply unit_mul_le_mul le_rfl
+      rw [fslSup_apply, le_iSup_iff]
+      intro _ h
+      exact le_trans le_rfl (h x)
+
+theorem fslSepMul_fslInf_subdistr (P : StateRV Var) (Q : α → StateRV Var) :
+    `[fsl| [[P]] ⋆ I (a : α). [[Q a]] ⊢ I (a : α). [[P]] ⋆ [[Q a]]] := by
+  intro s
+  apply sSup_le
+  rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+  simp only [fslInf_apply, le_iInf_iff]
+  intro x
+  apply le_sSup_of_le
+  · use heap₁, heap₂, h_disjoint, h_union
+  · apply unit_mul_le_mul le_rfl
+    exact iInf_le' _ _
+
 theorem fslSepDiv_fslMax_supdistr (P Q R : StateRV Var) :
     `[fsl| ([[P]] -⋆ [[Q]]) ⊔ ([[P]] -⋆ [[R]])] ⊢ `[fsl| [[P]] -⋆ ([[Q]] ⊔ [[R]])] := by
   intro s
@@ -318,6 +481,61 @@ theorem fslSepDiv_fslMin_distr (P Q R : StateRV Var) :
       · apply unit_div_le_div ?_ le_rfl
         simp only [fslMin, Inf.inf, inf_le_right]
 
+theorem fslSepDiv_fslAdd_supdistr (P Q R : StateRV Var) :
+    `[fsl| ([[P]] -⋆ [[Q]]) + ([[P]] -⋆ [[R]]) ⊢ [[P]] -⋆ ([[Q]] + [[R]])] := by
+  intro s
+  apply le_sInf
+  rintro _ ⟨heap, h_disjoint, rfl⟩
+  simp only [fslAdd]
+  apply le_trans ?_ (superdistr_of_unit_div _ _ _)
+  apply truncatedAdd_le_truncatedAdd
+  · apply sInf_le
+    use heap
+  · apply sInf_le
+    use heap
+
+theorem fslSepDiv_fslSup_superdistr (P : StateRV Var) (Q : α → StateRV Var) :
+    `[fsl| S (a : α). [[P]] -⋆ [[Q a]] ⊢  [[P]] -⋆ S (a : α). [[Q a]]] := by
+  intro s
+  rw [fslSup_apply]
+  apply iSup_le
+  intro x
+  apply le_sInf
+  rintro _ ⟨heap, h_disjoint, rfl⟩
+  rw [fslSup_apply]
+  apply sInf_le_of_le
+  · use heap, h_disjoint
+  · apply unit_div_le_div ?_ le_rfl
+    rw [le_iSup_iff]
+    intro _ h
+    exact le_trans le_rfl (h x)
+
+theorem fslSepDiv_fslInf_distr (P : StateRV Var) (Q : α → StateRV Var) :
+    `[fsl| I (a : α). [[P]] -⋆ [[Q a]]] = `[fsl| [[P]] -⋆ I (a : α). [[Q a]]] := by
+  funext s
+  apply le_antisymm
+  · apply le_sInf
+    rintro _ ⟨heap, h_disjoint, rfl⟩
+    rw [fslInf_apply, fslInf_apply, unit_le_div_iff_mul_le]
+    apply le_iInf
+    intro x
+    rw [← unit_le_div_iff_mul_le, iInf_le_iff]
+    rintro _ h
+    apply le_trans (h x) ?_
+    apply sInf_le
+    use heap
+  · rw [fslInf_apply]
+    apply le_iInf
+    intro x
+    apply le_sInf
+    rintro _ ⟨heap, h_disjoint, rfl⟩
+    apply sInf_le_of_le
+    · use heap, h_disjoint
+    · apply unit_div_le_div ?_ le_rfl
+      rw [fslInf_apply, iInf_le_iff]
+      intro _ h
+      exact le_trans (h x) le_rfl
+
 end Separating
 
 section Precise
@@ -364,93 +582,5 @@ theorem fslSepMul_fslMin_distr_of_precise (P Q R : StateRV Var) (h : precise P) 
         simp only [zero_mul, zero_le]
 
 end Precise
-
-/-! Proofrules for maxima and minima-/
-section MaxMin
-
-theorem fslMax_comm (P Q : StateRV Var) :
-    `[fsl| [[P]] ⊔ [[Q]]] = `[fsl| [[Q]] ⊔ [[P]]] := by
-  simp only [fslMax]
-  exact sup_comm P Q
-
-theorem fslMax_assoc (P Q R : StateRV Var) :
-    `[fsl| ([[P]] ⊔ [[Q]]) ⊔ [[R]]] = `[fsl| [[P]] ⊔ [[Q]] ⊔ [[R]]] := by
-  simp only [fslMax]
-  exact sup_assoc P Q R
-
-theorem fslMin_comm (P Q : StateRV Var) :
-    `[fsl| [[P]] ⊓ [[Q]]] = `[fsl| [[Q]] ⊓ [[P]]] := by
-  simp only [fslMin]
-  exact inf_comm P Q
-
-theorem fslMin_assoc (P Q R : StateRV Var) :
-    `[fsl| ([[P]] ⊓ [[Q]]) ⊓ [[R]]] = `[fsl| [[P]] ⊓ [[Q]] ⊓ [[R]]] := by
-  simp only [fslMin]
-  exact inf_assoc P Q R
-
-theorem fslMax_entailment_iff (P Q R : StateRV Var) :
-    `[fsl| [[P]] ⊔ [[Q]] ⊢ [[R]]] ↔ P ⊢ R ∧ Q ⊢ R := by
-  apply Iff.intro
-  · intro h
-    apply And.intro
-    · intro s
-      rw [Pi.le_def] at h
-      specialize h s
-      simp only [fslMax, Sup.sup, sup_le_iff] at h
-      exact h.left
-    · intro s
-      rw [Pi.le_def] at h
-      specialize h s
-      simp only [fslMax, Sup.sup, sup_le_iff] at h
-      exact h.right
-  · rintro ⟨h_P, h_Q⟩
-    intro s
-    simp only [fslMax, Sup.sup, sup_le_iff]
-    exact ⟨h_P s, h_Q s⟩
-
-
-end MaxMin
-
-/-! This features elimination rules for quantifiers in fsl. -/
-section Quantifiers
-
-theorem fslSup_apply (P : α → StateRV Var) (s : State Var) :
-    `[fsl| S x. [[P x]]] s = ⨆ x, P x s := by
-  rw [fslSup, iSup_apply]
-
-theorem fslInf_apply (P : α → StateRV Var) (s : State Var) :
-    `[fsl| I x. [[P x]]] s = ⨅ x, P x s := by
-  rw [fslInf, iInf_apply]
-
-end Quantifiers
-
-section PointsTo
-
-open State HeapValue Syntax
-
-theorem fslBigSepMul_of_fslPointsTo_of_bigSingleton_eq_one {l : ℕ+} {stack : Stack Var}:
-    `[fsl| [⋆] i ∈ { ... n}. (l+i:ℚ) ↦ (0:ℚ)] ⟨stack, bigSingleton l n 0⟩ = 1 := by
-  induction n with
-  | zero =>
-    simp only [fslBigSepMul, fslEmp, iteOneZero_eq_one_def, bigSingleton_of_zero]
-  | succ n ih =>
-    simp only [fslBigSepMul, bigSingleton, Pi.zero_apply]
-    apply le_antisymm le_one'
-    apply le_sSup
-    use (singleton ⟨l+n,PNat.add_right_nat⟩ 0), (bigSingleton l n 0)
-    use disjoint_singleton_bigSingleton le_rfl
-    apply And.intro
-    · simp only
-      rw [union_comm, ← union_singleton_bigSingle]
-      · simp only [Pi.zero_apply]
-      · exact disjoint_singleton_bigSingleton le_rfl
-    simp only [fslPointsTo]
-    rw [iteOneZero_pos]
-    pick_goal 2
-    · use ⟨l+n,PNat.add_right_nat⟩
-      simp only [PNat.mk_coe, Nat.cast_add, and_self]
-    · simp only [ih, mul_one]
-
-end PointsTo
 
 end FSL

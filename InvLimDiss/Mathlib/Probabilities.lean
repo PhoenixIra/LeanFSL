@@ -229,7 +229,7 @@ lemma ne_zero_iff_pos {x : I} : x ≠ 0 ↔ 0 < x := by
 lemma ne_one_iff_lt {x : I} : x ≠ 1 ↔ x < 1 := by
   rw [← coe_lt_one, ← coe_ne_one, lt_iff_le_and_ne, and_iff_right (le_one x)]
 
-lemma mul_div_cancel {i j : I} (h_nonzero : i ≠ 0) : j * i / i = j := by
+lemma mul_div_cancel_of_pos {i j : I} (h_nonzero : i ≠ 0) : j * i / i = j := by
   rw [Subtype.mk_eq_mk, coe_div, coe_mul]
   split
   case isTrue h =>
@@ -242,6 +242,17 @@ lemma mul_div_cancel {i j : I} (h_nonzero : i ≠ 0) : j * i / i = j := by
     simp only [ne_eq, ne_zero_iff_pos, ← coe_pos] at h_nonzero
     simp only [ne_eq, Eq.comm, coe_eq_one, ne_one_iff_lt, ← coe_lt_one] at h
     exact Subtype.coe_lt_coe.mp <| by simpa using mul_lt_mul_of_pos_right h h_nonzero
+
+lemma div_mul_le_cancel {i j : I} : j / i * i ≤ j := by
+  rw [Subtype.mk_le_mk, coe_mul, coe_div]
+  split
+  case isTrue h_ji =>
+    have : (i : ℝ) ≠ 0 := by intro h; apply not_le.mpr h_ji; rw [Subtype.mk_le_mk, h]; exact nonneg'
+    rw [div_mul, div_self this, div_one]
+  case isFalse h_ij =>
+    rw [not_lt] at h_ij
+    rw [one_mul]
+    exact h_ij
 
 lemma div_swap {i j k : I} : i / j / k = i / k / j := by
   apply le_antisymm
@@ -504,6 +515,11 @@ lemma iteOneZero_mul_iteOneZero_eq {P Q : Prop} :
   case pos h_Q h => exfalso; apply h_Q; exact h.right
   case neg => rfl
 
+lemma iteOneZero_mul_self {P : Prop} :
+    iteOneZero P * iteOneZero P = iteOneZero P := by
+  simp only [iteOneZero_eq_iff, mul_ite, mul_one, mul_zero, ite_eq_left_iff]
+  intro h
+  rw [if_neg h]
 
 end Ite
 
@@ -524,9 +540,20 @@ theorem truncatedAdd_mem_unit (i j : I) : min 1 ((i:ℝ) + j) ∈ I := by
 
 noncomputable def truncatedAdd (i j : I) : I := ⟨min 1 (i + j), truncatedAdd_mem_unit i j⟩
 
-theorem le_truncatedAdd (i j k : I) : i ≤ truncatedAdd j k ↔ i ≤ (j:ℝ) + k := by
-  unfold truncatedAdd
-  rw [Subtype.mk_le_mk]
+
+noncomputable instance : Add unitInterval where
+  add := truncatedAdd
+
+theorem truncatedAdd_def {i j : I} : i + j = truncatedAdd i j := rfl
+
+@[simp]
+theorem coe_truncatedAdd {i j : I} : ↑(i + j) = min 1 ((i:ℝ) + j) := by
+  conv => left; congr; rw [HAdd.hAdd, instHAdd, Add.add, instAddElemReal_invLimDiss]
+  simp only
+  rw [truncatedAdd]
+
+theorem le_truncatedAdd (i j k : I) : i ≤ j + k ↔ i ≤ (j:ℝ) + k := by
+  rw [Subtype.mk_le_mk, coe_truncatedAdd]
   apply Iff.intro
   · intro h
     simp only [le_min_iff] at h
@@ -536,36 +563,43 @@ theorem le_truncatedAdd (i j k : I) : i ≤ truncatedAdd j k ↔ i ≤ (j:ℝ) +
     exact ⟨le_one', h⟩
 
 @[simp]
-theorem zero_truncatedAdd (i : I) : truncatedAdd 0 i = i := by
-  simp only [truncatedAdd, coe_zero, zero_add, min_def]
+theorem zero_truncatedAdd (i : I) : 0 + i = i := by
+  rw [Subtype.mk_eq_mk, coe_truncatedAdd]
+  simp only [coe_zero, zero_add, min_def]
   split
   case isTrue h => exact le_antisymm h le_one'
   case isFalse _ => rfl
 
 @[simp]
-theorem truncatedAdd_zero (i : I) : truncatedAdd i 0 = i := by
-  simp only [truncatedAdd, coe_zero, add_zero, min_def]
+theorem truncatedAdd_zero (i : I) : i + 0 = i := by
+  rw [Subtype.mk_eq_mk, coe_truncatedAdd]
+  simp only [coe_zero, add_zero, min_def]
   split
   case isTrue h => exact le_antisymm h le_one'
   case isFalse _ => rfl
 
 @[simp]
-theorem one_truncatedAdd (i : I) : truncatedAdd 1 i = 1 := by
-  simp only [truncatedAdd, coe_one, min_def, le_add_iff_nonneg_right]
-  rw [←Subtype.coe_inj, Subtype.coe_mk, coe_one]
-  rw [if_pos]
-  exact nonneg'
+theorem one_truncatedAdd (i : I) : 1 + i = 1 := by
+  rw [Subtype.mk_eq_mk, coe_truncatedAdd]
+  simp only [coe_one, min_def, le_add_iff_nonneg_right, ite_eq_left_iff, not_le, add_right_eq_self,
+    coe_eq_zero]
+  intro h
+  exfalso
+  exact (not_le.mpr h) nonneg'
 
 @[simp]
-theorem truncatedAdd_one (i : I) : truncatedAdd i 1 = 1 := by
-  simp only [truncatedAdd, coe_one, min_def, le_add_iff_nonneg_left]
-  rw [←Subtype.coe_inj, Subtype.coe_mk, coe_one]
-  rw [if_pos]
-  exact nonneg'
+theorem truncatedAdd_one (i : I) : i + 1 = 1 := by
+  rw [Subtype.mk_eq_mk, coe_truncatedAdd]
+  simp only [coe_one, min_def, le_add_iff_nonneg_left, ite_eq_left_iff, not_le, add_left_eq_self,
+    coe_eq_zero]
+  intro h
+  exfalso
+  exact (not_le.mpr h) nonneg'
 
 theorem truncatedAdd_assoc (i j k : I) :
-    truncatedAdd (truncatedAdd i j) k = truncatedAdd i ( truncatedAdd j k) := by
-  simp only [truncatedAdd, min_def, Subtype.mk.injEq]
+    (i + j) + k = i + (j + k) := by
+  rw [Subtype.mk_eq_mk]
+  simp only [coe_truncatedAdd, min_def, Subtype.mk.injEq]
   split
   case isTrue h_ij =>
     rw [if_pos]
@@ -609,38 +643,26 @@ theorem truncatedAdd_assoc (i j k : I) :
         rw [← add_assoc, if_neg h_ijk]
 
 theorem truncatedAdd_comm (i j : I) :
-    (truncatedAdd i j) = truncatedAdd j i := by
-  simp only [truncatedAdd, min_def, Subtype.mk.injEq]
+    i + j = j + i := by
+  rw [Subtype.mk_eq_mk]
+  simp only [coe_truncatedAdd, min_def, Subtype.mk.injEq]
   rw [add_comm]
 
 theorem truncatedAdd_le_truncatedAdd_left (i j : I) (h_le : i ≤ j) :
-    ∀ k, truncatedAdd k i ≤ truncatedAdd k j := by
+    ∀ k, k + i ≤ k + j := by
   intro k
-  unfold truncatedAdd
-  rw [Subtype.mk_le_mk] at h_le
-  simp only [min_def, Subtype.mk_le_mk]
-  split
-  case isTrue h_ki =>
-    rw [if_pos]
-    calc (1:ℝ)
-    _ ≤ k + i := h_ki
-    _ ≤ k + j := (add_le_add_iff_left ↑k).mpr h_le
-  case isFalse h_ki =>
-    rw [not_le] at h_ki
-    split
-    case isTrue h_kj =>
-      exact le_of_lt h_ki
-    case isFalse h_kj =>
-      exact (add_le_add_iff_left ↑k).mpr h_le
+  rw [Subtype.mk_le_mk] at h_le ⊢
+  simp only [coe_truncatedAdd, le_min_iff, min_le_iff, le_refl, true_or, add_le_add_iff_left,
+    Subtype.coe_le_coe, true_and]
+  right
+  exact h_le
 
-noncomputable instance : Add unitInterval where
-  add := truncatedAdd
-
-@[simp]
-theorem coe_truncatedAdd {i j : I} : ↑(i + j) = min 1 ((i:ℝ) + j) := by
-  conv => left; congr; rw [HAdd.hAdd, instHAdd, Add.add, instAddElemReal_invLimDiss]
-  simp only
-  rw [truncatedAdd]
+theorem truncatedAdd_le_truncatedAdd (i₁ i₂ j₁ j₂ : I) (h_i : i₁ ≤ i₂) (h_j : j₁ ≤ j₂) :
+    i₁ + j₁ ≤ i₂ + j₂ := by
+  rw [Subtype.mk_le_mk] at h_i h_j ⊢
+  simp only [coe_truncatedAdd, le_min_iff, min_le_iff, le_refl, true_or, true_and]
+  right
+  apply add_le_add h_i h_j
 
 noncomputable instance : OrderedAddCommMonoid unitInterval where
   add_assoc := truncatedAdd_assoc
@@ -758,6 +780,26 @@ theorem left_distrib_of_unit (i j k : I) (h_unit : (i:ℝ) + (j:ℝ) ≤ 1) :
   simp only [unit_mul_comm]
   rw [unit_mul_comm k (i + j)]
   exact right_distrib_of_unit i j k h_unit
+
+theorem left_subdistr_of_unit (i j k : I) :
+    i * (j + k) ≤ (i * j) + (i * k) := by
+  simp only [le_truncatedAdd, coe_mul, coe_truncatedAdd, ← left_distrib]
+  apply mul_le_mul le_rfl ?_ (truncatedAdd_mem_unit _ _).left nonneg'
+  simp only [min_le_iff, le_refl, or_true]
+
+theorem right_subdistr_of_unit (i j k : I) :
+    (j + k) * i ≤ (j * i) + (k * i) := by
+  rw [mul_comm]
+  apply le_trans (left_subdistr_of_unit _ _ _)
+  rw [mul_comm i j, mul_comm i k]
+
+theorem superdistr_of_unit_div (i j k : I) :
+    (j/i) + (k/i) ≤ (j + k) / i := by
+  rw [unit_le_div_iff_mul_le]
+  apply le_trans (right_subdistr_of_unit _ _ _)
+  apply truncatedAdd_le_truncatedAdd
+  · exact div_mul_le_cancel
+  · exact div_mul_le_cancel
 
 end AddSub
 
