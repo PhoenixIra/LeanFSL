@@ -190,7 +190,7 @@ theorem wrle_lookup (h : v ∉ varRV RI) :
       intro q
       apply sSup_le
       rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
-      simp only [fslPointsTo, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+      simp only [fslPointsTo, iteOneZero_eq_ite, ite_mul, one_mul, zero_mul]
       split
       case isTrue h_l' =>
         obtain ⟨l', h_l', h_singleton⟩ := h_l'
@@ -346,7 +346,7 @@ theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
         rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
         simp only [fslMul, fslPointsTo, fslNot, fslEquals, sym_iteOneZero_eq,
           iteOneZero_mul_iteOneZero_eq]
-        rw [iteOneZero_eq_iff]
+        rw [iteOneZero_eq_ite]
         split_ifs
         case pos h_l =>
           obtain ⟨⟨l', h_l', h_singleton⟩, _⟩ := h_l
@@ -415,7 +415,7 @@ theorem wrle_allocate (h : v ∉ varRV RI) :
       rw [wrle_eq_of_term]
       rw [fslSup_apply, iSup_le_iff]
       intro n'
-      simp only [fslMul, fslEquals, substituteStack, allocateHeap, iteOneZero_eq_iff]
+      simp only [fslMul, fslEquals, substituteStack, allocateHeap, iteOneZero_eq_ite]
       split
       case isFalse h_n' =>
         simp only [zero_mul, zero_le]
@@ -458,7 +458,7 @@ theorem wrle_free :
       rw [fslSup_apply]
       apply iSup_le
       intro n'
-      simp only [fslMul, fslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+      simp only [fslMul, fslEquals, iteOneZero_eq_ite, ite_mul, one_mul, zero_mul]
       split_ifs
       case neg => exact nonneg'
       case pos h_n' =>
@@ -467,14 +467,14 @@ theorem wrle_free :
         apply iSup_le
         simp only [Subtype.forall, Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
         intro l'
-        simp only [fslMul, fslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+        simp only [fslMul, fslEquals, iteOneZero_eq_ite, ite_mul, one_mul, zero_mul]
         split_ifs
         case neg => exact nonneg'
         case pos h_l' =>
           apply sSup_le
           rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
           simp_rw [conservative_pointsTo, conservative_sup, conservative_bigSepMul]
-          simp only [fslIverson, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+          simp only [fslIverson, iteOneZero_eq_ite, ite_mul, one_mul, zero_mul]
           split_ifs
           case pos h =>
             rw [SL.slBigSepCon_eq_one_iff_removedHeap] at h
@@ -491,14 +491,14 @@ theorem wrle_free :
       rw [fslSup_apply]
       apply iSup_le
       intro n
-      simp only [fslMul, fslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+      simp only [fslMul, fslEquals, iteOneZero_eq_ite, ite_mul, one_mul, zero_mul]
       split_ifs
       case neg => exact nonneg'
       case pos h_n =>
         rw [fslSup_apply]
         apply iSup_le
         intro l
-        simp only [fslMul, fslEquals, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+        simp only [fslMul, fslEquals, iteOneZero_eq_ite, ite_mul, one_mul, zero_mul]
         split_ifs
         case neg => exact nonneg'
         case pos h_l =>
@@ -506,7 +506,7 @@ theorem wrle_free :
           apply sSup_le
           rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
           simp_rw [conservative_pointsTo, conservative_sup, conservative_bigSepMul]
-          simp only [fslIverson, iteOneZero_eq_iff, ite_mul, one_mul, zero_mul]
+          simp only [fslIverson, iteOneZero_eq_ite, ite_mul, one_mul, zero_mul]
           split_ifs
           case neg => exact nonneg'
           case pos h_alloc =>

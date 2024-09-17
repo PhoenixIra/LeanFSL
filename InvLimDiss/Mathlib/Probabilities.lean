@@ -446,7 +446,7 @@ lemma iteOneZero_eq_zero_def {P : Prop} : iteOneZero P = 0 ↔ ¬ P := by
   unfold iteOneZero
   exact (ite_unit_def_of_ne <| Ne.symm zero_ne_one).2
 
-lemma iteOneZero_eq_iff {P : Prop} : iteOneZero P = if P then 1 else 0 := rfl
+lemma iteOneZero_eq_ite {P : Prop} : iteOneZero P = if P then 1 else 0 := rfl
 
 lemma iteOneZero_def {P : Prop} : iteOneZero P = i ↔ i = 0 ∧ ¬ P ∨ i = 1 ∧ P := by
   apply Iff.intro
@@ -479,7 +479,7 @@ lemma iteOneZero_eq_iteOneZero_iff {P Q : Prop} :
     · intro hp; rw [iteOneZero_pos hp, Eq.comm, iteOneZero_eq_one_def] at h; exact h
     · intro hq; rw [iteOneZero_pos hq, iteOneZero_eq_one_def] at h; exact h
   · intro h
-    rw [iteOneZero_eq_iff]
+    rw [iteOneZero_eq_ite]
     split
     case isTrue hp => rw [Eq.comm, iteOneZero_eq_one_def]; exact h.mp hp
     case isFalse hnp => rw [Eq.comm, iteOneZero_eq_zero_def]; exact (not_iff_not.mpr h).mp hnp
@@ -491,7 +491,7 @@ lemma iteOneZero_le {P : Prop} {i : I} :
     rw [← iteOneZero_pos h_P]
     exact h_ite
   · intro h_imp
-    rw [iteOneZero_eq_iff]
+    rw [iteOneZero_eq_ite]
     split
     case isTrue h_P => exact h_imp h_P
     case isFalse => exact bot_le
@@ -499,14 +499,14 @@ lemma iteOneZero_le {P : Prop} {i : I} :
 @[simp]
 lemma sym_iteOneZero_eq {P : Prop} :
     σ (iteOneZero P) = iteOneZero (¬ P) := by
-  simp only [iteOneZero_eq_iff]
+  simp only [iteOneZero_eq_ite]
   split_ifs
   case pos => exact symm_one
   case neg => exact symm_zero
 
 lemma iteOneZero_mul_iteOneZero_eq {P Q : Prop} :
     iteOneZero P * iteOneZero Q = iteOneZero (P ∧ Q) := by
-  simp only [iteOneZero_eq_iff, mul_ite, mul_one, mul_zero]
+  simp only [iteOneZero_eq_ite, mul_ite, mul_one, mul_zero]
   split_ifs
   case pos => rfl
   case neg h_Q h_P h => exfalso; apply h; exact ⟨h_P, h_Q⟩
@@ -517,7 +517,7 @@ lemma iteOneZero_mul_iteOneZero_eq {P Q : Prop} :
 
 lemma iteOneZero_mul_self {P : Prop} :
     iteOneZero P * iteOneZero P = iteOneZero P := by
-  simp only [iteOneZero_eq_iff, mul_ite, mul_one, mul_zero, ite_eq_left_iff]
+  simp only [iteOneZero_eq_ite, mul_ite, mul_one, mul_zero, ite_eq_left_iff]
   intro h
   rw [if_neg h]
 

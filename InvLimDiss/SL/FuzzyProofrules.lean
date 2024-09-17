@@ -274,7 +274,7 @@ theorem fslEmp_fslSepDiv_eq (f : StateRV Var) : `[fsl| emp -⋆ [[f]]] = f := by
     simp only [union_emptyHeap, fslEmp, iteOneZero_true, unit_div_one]
   · apply le_sInf
     rintro _ ⟨heap, _, rfl⟩
-    simp only [fslEmp, iteOneZero_eq_iff]
+    simp only [fslEmp, iteOneZero_eq_ite]
     split
     case isTrue h => rw [h, union_emptyHeap, unit_div_one]
     case isFalse h => rw [unit_div_zero]; exact le_one'
@@ -285,7 +285,7 @@ theorem fslSepMul_fslEmp_eq (f : StateRV Var) : `[fsl| [[f]] ⋆ emp] = f := by
   apply le_antisymm
   · apply sSup_le
     rintro _ ⟨heap₁, heap₂, _, h_union, rfl⟩
-    simp only [fslEmp, iteOneZero_eq_iff, mul_ite, mul_one, mul_zero]
+    simp only [fslEmp, iteOneZero_eq_ite, mul_ite, mul_one, mul_zero]
     split
     case isTrue h =>
       rw [h, union_emptyHeap] at h_union
@@ -294,6 +294,42 @@ theorem fslSepMul_fslEmp_eq (f : StateRV Var) : `[fsl| [[f]] ⋆ emp] = f := by
   · apply le_sSup
     use s.heap, ∅, disjoint_emptyHeap', union_emptyHeap'
     simp only [fslEmp, iteOneZero_true, mul_one]
+
+theorem fslEmp_fslMul_fslSepMul_distr (f g : StateRV Var) :
+    `[fsl| emp ⬝ ([[f]] ⋆ [[g]])] = `[fsl| (emp ⬝ [[f]]) ⋆ (emp ⬝ [[g]])] := by
+  funext s
+  apply le_antisymm
+  · simp only [fslMul, fslEmp, iteOneZero_eq_ite, ite_mul, one_mul, zero_mul]
+    split
+    case isTrue h_emp =>
+      apply sSup_le
+      rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+      apply le_sSup
+      use heap₁, heap₂, h_disjoint, h_union
+      rw [← h_union, union_eq_emptyHeap_iff] at h_emp
+      apply congrArg₂
+      · simp only [fslMul, fslEmp, iteOneZero_pos h_emp.left, one_mul]
+      · simp only [fslMul, fslEmp, iteOneZero_pos h_emp.right, one_mul]
+    case isFalse => exact nonneg'
+  · apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    conv => right; rw [fslMul, fslEmp]
+    simp only [iteOneZero_eq_ite, ite_mul, one_mul, zero_mul]
+    split
+    case isTrue h_emp =>
+      rw [← h_union, union_eq_emptyHeap_iff] at h_emp
+      apply le_sSup
+      use heap₁, heap₂, h_disjoint, h_union
+      apply congrArg₂
+      · simp only [fslMul, fslEmp, iteOneZero_pos h_emp.left, one_mul]
+      · simp only [fslMul, fslEmp, iteOneZero_pos h_emp.right, one_mul]
+    case isFalse h_n_emp =>
+      simp only [fslMul, fslEmp, nonpos_iff_eq_zero, mul_eq_zero, iteOneZero_eq_zero_def]
+      simp only [← h_union, union_eq_emptyHeap_iff, not_and_or] at h_n_emp
+      cases h_n_emp
+      case inl h₁ => left; left; exact h₁
+      case inr h₂ => right; left; exact h₂
+
 
 theorem fslSepMul_fslFalse_eq (f : StateRV Var) : `[fsl| [[f]] ⋆ fFalse] = `[fsl| fFalse] := by
   apply funext

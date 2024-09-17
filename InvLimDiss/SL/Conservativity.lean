@@ -49,7 +49,7 @@ theorem conservative_min (P Q : StateProp Var) :
     `[fsl Var| ⁅P⁆ ⊓ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var| [[P]] ∧ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [fslMin, Inf.inf, fslIverson, iteOneZero_eq_iff, slAnd]
+  simp only [fslMin, Inf.inf, fslIverson, iteOneZero_eq_ite, slAnd]
   split
   case isTrue h_p =>
     split
@@ -69,7 +69,7 @@ theorem conservative_max (P Q : StateProp Var) :
     `[fsl Var| ⁅P⁆ ⊔ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var| [[P]] ∨ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [fslMax, Sup.sup, fslIverson, iteOneZero_eq_iff, slOr]
+  simp only [fslMax, Sup.sup, fslIverson, iteOneZero_eq_ite, slOr]
   split
   case isTrue h_p =>
     rw [sup_of_le_left le_one', if_pos (Or.inl h_p)]
@@ -87,7 +87,7 @@ theorem conservative_add (P Q : StateProp Var) :
     `[fsl Var| ⁅P⁆ + ⁅Q⁆] = `[fsl Var| ⁅`[sl Var| [[P]] ∨ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [fslAdd, Sup.sup, fslIverson, iteOneZero_eq_iff, slOr]
+  simp only [fslAdd, Sup.sup, fslIverson, iteOneZero_eq_ite, slOr]
   split
   case isTrue h_p =>
     rw [one_truncatedAdd, if_pos]
@@ -106,7 +106,7 @@ theorem conservative_mul (P Q : StateProp Var) :
     `[fsl Var| ⁅P⁆ ⬝ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var| [[P]] ∧ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [fslMul, fslIverson, iteOneZero_eq_iff, mul_ite, mul_one, mul_zero, slAnd, Inf.inf]
+  simp only [fslMul, fslIverson, iteOneZero_eq_ite, mul_ite, mul_one, mul_zero, slAnd, Inf.inf]
   split
   case isTrue h_q =>
     split
@@ -124,7 +124,7 @@ theorem conservative_sup (P : α → StateProp Var) :
   apply funext
   intro _
   simp only [fslSup, fslIverson, slExists, sSup, iSup_Prop_eq, Subtype.exists, exists_prop,
-    iteOneZero_eq_iff]
+    iteOneZero_eq_ite]
   split
   case isTrue h =>
     rw [iSup_apply] at h
@@ -148,7 +148,7 @@ theorem conservative_inf (P : α → StateProp Var) :
     `[fsl Var|I (x : α). ⁅P x⁆] = `[fsl Var| ⁅`[sl Var|∀ (x : α). [[P x]]]⁆] := by
   apply funext
   intro _
-  simp only [fslIverson, iteOneZero_eq_iff]
+  simp only [fslIverson, iteOneZero_eq_ite]
   split
   case isTrue h =>
     apply le_antisymm
@@ -171,7 +171,7 @@ theorem conservative_sepMul (P Q : StateProp Var) :
     `[fsl Var|⁅P⁆ ⋆ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var|[[P]] ∗ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [fslSepMul, fslIverson, iteOneZero_eq_iff, mul_ite, mul_one, mul_zero, slSepCon]
+  simp only [fslSepMul, fslIverson, iteOneZero_eq_ite, mul_ite, mul_one, mul_zero, slSepCon]
   split
   case isTrue h =>
     obtain ⟨heap₁, heap₂, h_p, h_q, h_disjoint, h_union⟩ := h
@@ -203,7 +203,7 @@ theorem conservative_sepDiv (P Q : StateProp Var) :
     `[fsl Var|⁅P⁆ -⋆ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var|[[P]] -∗ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [fslSepDiv, fslIverson, iteOneZero_eq_iff, slSepImp]
+  simp only [fslSepDiv, fslIverson, iteOneZero_eq_ite, slSepImp]
   split
   case isTrue h =>
     apply le_antisymm
