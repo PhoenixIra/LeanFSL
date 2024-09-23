@@ -76,6 +76,30 @@ theorem fslMax_entailment_iff (P Q R : StateRV Var) :
 
 end MaxMin
 
+section Arithmetic
+
+theorem fslAdd_mono {P₁ P₂ Q₁ Q₂ : StateRV Var} :
+    P₁ ⊢ P₂ → Q₁ ⊢ Q₂ → `[fsl| [[P₁]] + [[Q₁]] ⊢ [[P₂]] + [[Q₂]]] := by
+  intro h_P h_Q s
+  exact truncatedAdd_le_truncatedAdd _ _ _ _ (h_P s) (h_Q s)
+
+theorem fslMul_mono {P₁ P₂ Q₁ Q₂ : StateRV Var} :
+    P₁ ⊢ P₂ → Q₁ ⊢ Q₂ → `[fsl| [[P₁]] ⬝ [[Q₁]] ⊢ [[P₂]] ⬝ [[Q₂]]] := by
+  intro h_P h_Q s
+  exact unit_mul_le_mul (h_P s) (h_Q s)
+
+theorem fslAdd_fslFalse (P : StateRV Var) :
+    `[fsl| [[P]] + fFalse] = P := by
+  funext s
+  simp only [fslAdd, fslFalse, add_zero]
+
+theorem fslMul_fslFalse (P : StateRV Var) :
+    `[fsl| [[P]] ⬝ fFalse] = fslFalse := by
+  funext s
+  simp only [fslMul, fslFalse, mul_zero]
+
+end Arithmetic
+
 /-! This features elimination rules for quantifiers in fsl. -/
 section Quantifiers
 
@@ -400,12 +424,31 @@ theorem fslSepMul_fslAdd_subdistr (P Q R : StateRV Var) :
   apply sSup_le
   rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
   simp only [fslAdd]
-  apply le_trans (left_subdistr_of_unit _ _ _) ?_
+  apply le_trans (left_subdistr_of_unit _ _ _)
   apply truncatedAdd_le_truncatedAdd
   · apply le_sSup
     use heap₁, heap₂
   · apply le_sSup
     use heap₁, heap₂
+
+theorem fslSepMul_weight_fslAdd_subdistr (P Q R : StateRV Var) :
+    `[fsl| [[P]] ⋆ (<e> ⬝ [[Q]] + ~<e> ⬝ [[R]])]
+    ⊢ `[fsl| <e> ⬝ ([[P]] ⋆ [[Q]]) + ~<e> ⬝ ([[P]] ⋆ [[R]])] := by
+  intro s
+  apply sSup_le
+  rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+  simp only [fslAdd, fslMul, fslReal, fslNot]
+  apply le_trans (left_subdistr_of_unit _ _ _)
+  apply truncatedAdd_le_truncatedAdd
+  · rw [← mul_assoc, mul_comm _ (e s.stack), mul_assoc]
+    apply unit_mul_le_mul le_rfl
+    apply le_sSup
+    use heap₁, heap₂
+  · rw [← mul_assoc, mul_comm _ (σ <| e s.stack), mul_assoc]
+    apply unit_mul_le_mul le_rfl
+    apply le_sSup
+    use heap₁, heap₂
+
 
 theorem fslSepMul_fslMul_of_iverson_subdistr (P : State Var → Prop) (Q R : StateRV Var) :
     `[fsl| ⁅P⁆ ⋆ ([[Q]] ⬝ [[R]]) ⊢ (⁅P⁆ ⋆ [[Q]]) ⬝ (⁅P⁆ ⋆ [[R]])] := by
@@ -530,6 +573,24 @@ theorem fslSepDiv_fslAdd_supdistr (P Q R : StateRV Var) :
   · apply sInf_le
     use heap
 
+theorem fslSepdiv_weight_fslAdd_subdistr (P Q R : StateRV Var) :
+    `[fsl| <e> ⬝ ([[P]] -⋆ [[Q]]) + ~<e> ⬝ ([[P]] -⋆ [[R]])]
+    ⊢ `[fsl| [[P]] -⋆ (<e> ⬝ [[Q]] + ~<e> ⬝ [[R]])] := by
+  intro s
+  apply le_sInf
+  rintro _ ⟨heap, h_disjoint, rfl⟩
+  simp only [fslAdd, fslMul, fslReal, fslNot]
+  apply le_trans ?_ (superdistr_of_unit_div _ _ _)
+  apply truncatedAdd_le_truncatedAdd
+  · apply le_trans ?_ unit_mul_div
+    apply unit_mul_le_mul le_rfl
+    apply sInf_le
+    use heap
+  · apply le_trans ?_ unit_mul_div
+    apply unit_mul_le_mul le_rfl
+    apply sInf_le
+    use heap
+
 theorem fslSepDiv_fslSup_superdistr (P : StateRV Var) (Q : α → StateRV Var) :
     `[fsl| S (a : α). [[P]] -⋆ [[Q a]] ⊢  [[P]] -⋆ S (a : α). [[Q a]]] := by
   intro s
@@ -616,6 +677,51 @@ theorem fslSepMul_fslMin_distr_of_precise (P Q R : StateRV Var) (h : precise P) 
         specialize h heap₁' (subset_of_union h_disjoint' h_union'.symm) h_neq
         rw [h]
         simp only [zero_mul, zero_le]
+
+open Syntax in
+theorem fslSepMul_weight_fslAdd_distr_of_precise (e : ProbExp Var) (P Q R : StateRV Var) (h : precise P) :
+    `[fsl| [[P]] ⋆ (<e> ⬝ [[Q]] + ~<e> ⬝ [[R]])] = `[fsl| <e> ⬝ ([[P]] ⋆ [[Q]]) + ~<e> ⬝ ([[P]] ⋆ [[R]])] := by
+  apply le_antisymm (fslSepMul_weight_fslAdd_subdistr P Q R)
+  intro s
+  obtain ⟨heap₁, h_subset, h⟩ := h s
+  obtain ⟨heap₂, h_disjoint, h_union⟩ := union_of_subset h_subset
+  apply le_sSup_of_le
+  · use heap₁, heap₂, h_disjoint, h_union.symm
+  · simp only [fslAdd, fslMul, fslReal, fslNot]
+    rw [left_distrib_of_unit]
+    swap
+    · exact weighted_is_unit _ _ _
+    · apply truncatedAdd_le_truncatedAdd
+      · rw [← mul_assoc, mul_comm _ (e s.stack), mul_assoc]
+        apply unit_mul_le_mul le_rfl
+        apply sSup_le
+        rintro _ ⟨heap₁', heap₂', h_disjoint', h_union', rfl⟩
+        cases eq_or_ne heap₁ heap₁'
+        case inl h_eq =>
+          rw [h_eq] at h_union h_disjoint ⊢
+          apply unit_mul_le_mul le_rfl
+          have := eq_of_union_of_union_left h_disjoint h_union h_disjoint' h_union'.symm
+          rw [this]
+        case inr h_neq =>
+          specialize h heap₁' (subset_of_union h_disjoint' h_union'.symm) h_neq
+          rw [h]
+          simp only [zero_mul, zero_le]
+      · rw [← mul_assoc, mul_comm _ (σ <| e s.stack), mul_assoc]
+        apply unit_mul_le_mul le_rfl
+        apply sSup_le
+        rintro _ ⟨heap₁', heap₂', h_disjoint', h_union', rfl⟩
+        cases eq_or_ne heap₁ heap₁'
+        case inl h_eq =>
+          rw [h_eq] at h_union h_disjoint ⊢
+          apply unit_mul_le_mul le_rfl
+          have := eq_of_union_of_union_left h_disjoint h_union h_disjoint' h_union'.symm
+          rw [this]
+        case inr h_neq =>
+          specialize h heap₁' (subset_of_union h_disjoint' h_union'.symm) h_neq
+          rw [h]
+          simp only [zero_mul, zero_le]
+
+
 
 end Precise
 

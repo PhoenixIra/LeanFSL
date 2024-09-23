@@ -33,6 +33,11 @@ theorem step_skip (inner : Program Var → StateRV Var) :
     simp only [enabledAction, Set.mem_singleton_iff] at h_a
     rw [h_a, tsum_skip_of_deterministic s inner]
 
+theorem step_skip' (inner : Program Var → StateRV Var) :
+    step [Prog| skip] inner = inner [Prog| ↓] := by
+  funext s
+  exact step_skip _
+
 theorem tsum_assign_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : reachState Var,
     (semantics [Prog| v ≔ e] s deterministic cs.prog cs.state) * inner cs.prog cs.state)

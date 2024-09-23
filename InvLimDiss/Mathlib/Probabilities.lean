@@ -309,6 +309,27 @@ lemma div_mul_eq_div_div {i j k : I} : i / (j * k) = i / j / k := by
     exact h_ij_k le_one'
   case neg => rfl
 
+theorem unit_mul_div {i j k : I} : i * (j / k) ≤ i * j / k := by
+  rw [Subtype.mk_le_mk]
+  simp only [coe_mul, coe_div, mul_ite, mul_one]
+  split_ifs
+  case pos h_jk h_ijk =>
+    rw [mul_div (i : ℝ) j k]
+  case neg h_jk h_kij =>
+    exfalso
+    apply h_kij
+    apply lt_of_le_of_lt ?_ h_jk
+    exact mul_le_right
+  case pos h_kj h_ijk =>
+    rw [not_lt, Subtype.mk_le_mk] at h_kj
+    rw [← mul_div]
+    rw [← one_le_div (lt_of_le_of_lt nonneg' h_ijk)] at h_kj
+    apply le_trans ?_ <| mul_le_mul le_rfl h_kj zero_le_one nonneg'
+    simp only [mul_one, le_refl]
+  case neg => exact le_one'
+
+
+
 end MulDiv
 
 /-!
@@ -761,12 +782,24 @@ theorem add_symm_mem_unitInterval (i j k : I) : (i : ℝ) * j + (1 - i:ℝ) * k 
       exact (add_symm_mem_unitInterval_of_self i k).right
 
 
-theorem truncatedAdd_symm_eq (i j : I) : i * j + σ i * j = j := by
+theorem truncatedAdd_sym_mul_eq (i j : I) : i * j + σ i * j = j := by
   rw [Subtype.mk_eq_mk]
   simp only [coe_truncatedAdd, coe_mul, coe_symm_eq]
   rw [min_eq_right_iff.mpr]
   · rw [← right_distrib, add_sub_cancel, one_mul]
   · exact (add_symm_mem_unitInterval i j j).right
+
+theorem truncatedAdd_sym_eq (i : I) : i + σ i = 1 := by
+  rw [← truncatedAdd_sym_mul_eq i 1]
+  simp only [mul_one]
+
+theorem weighted_is_unit (i j k : I) : (i * j : ℝ) + (σ i * k : ℝ) ≤ 1 := by
+  simp only [coe_symm_eq]
+  nth_rw 2 [← add_sub_cancel (i:ℝ) 1]
+  apply add_le_add
+  · exact mul_le_left
+  · rw [← coe_symm_eq]
+    exact mul_le_left
 
 theorem right_distrib_of_unit (i j k : I) (h_unit : (i:ℝ) + (j:ℝ) ≤ 1) :
     (i + j) * k = i * k + j * k := by

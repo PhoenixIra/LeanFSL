@@ -33,7 +33,7 @@ theorem tsum_probChoice_of_deterministic (s : State Var) (inner : Program Var �
           (fun cs : reachState Var => semantics _ s deterministic cs.prog cs.state * inner cs.prog cs.state)]
         unfold programSmallStepSemantics probabilisticBranchingSmallStepSemantics
         simp only [reachState.state, and_self, ↓reduceIte, reachState.prog, one_mul]
-        rw [truncatedAdd_symm_eq]
+        rw [truncatedAdd_sym_mul_eq]
     | inr h_ne =>
       cases eq_or_ne c₁ [Prog|↯] with
       | inl h_c₁ =>

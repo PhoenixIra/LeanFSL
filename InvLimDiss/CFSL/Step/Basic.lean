@@ -78,6 +78,11 @@ theorem step_terminated (inner : Program Var → StateRV Var) :
   rw [enabledAction, Set.mem_empty_iff_false] at h_a
   exact h_a
 
+theorem step_terminated' (inner : Program Var → StateRV Var) :
+    step [Prog| ↓] inner = fun x => 1 := by
+  funext s
+  exact step_terminated _
+
 theorem step_error (inner : Program Var → StateRV Var) :
     step [Prog| ↯] inner s = 1 := by
   unfold step
@@ -87,5 +92,10 @@ theorem step_error (inner : Program Var → StateRV Var) :
   exfalso
   rw [enabledAction, Set.mem_empty_iff_false] at h_a
   exact h_a
+
+theorem step_error' (inner : Program Var → StateRV Var) :
+    step [Prog| ↯] inner = fun x => 1 := by
+  funext s
+  exact step_error _
 
 end CFSL
