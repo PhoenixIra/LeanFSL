@@ -11,7 +11,7 @@ namespace CFSL
 
 open Syntax Semantics FSL unitInterval HeapValue State
 
-private lemma weighted_step_fslAdd_superdistr_terminated
+private lemma step_fslAdd_weighted_superdistr_terminated
     (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
     `[fsl| <e> ⬝ [[step [Prog| ↓] (fun c' => P c')]] + ~<e> ⬝ [[step [Prog| ↓] (fun c' => Q c')]]]
     ⊢ step [Prog| ↓] (fun c' => `[fsl| <e> ⬝ [[P c']] + ~<e> ⬝ [[Q c']]]) := by
@@ -19,7 +19,7 @@ private lemma weighted_step_fslAdd_superdistr_terminated
   simp only [fslAdd, fslMul, fslReal, step_terminated', mul_one, fslNot]
   rw [truncatedAdd_sym_eq]
 
-private lemma weighted_step_fslAdd_superdistr_abort
+private lemma step_fslAdd_weighted_superdistr_abort
     (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
     `[fsl| <e> ⬝ [[step [Prog| ↯] (fun c' => P c')]] + ~<e> ⬝ [[step [Prog| ↯] (fun c' => Q c')]]]
     ⊢ step [Prog| ↯] (fun c' => `[fsl| <e> ⬝ [[P c']] + ~<e> ⬝ [[Q c']]]) := by
@@ -27,7 +27,7 @@ private lemma weighted_step_fslAdd_superdistr_abort
   simp only [fslAdd, fslMul, fslReal, step_error', mul_one, fslNot]
   rw [truncatedAdd_sym_eq]
 
-private lemma weighted_step_fslAdd_superdistr_assign (e : ProbExp Var) (P Q : Program Var → StateRV Var)
+private lemma step_fslAdd_weighted_superdistr_assign (e : ProbExp Var) (P Q : Program Var → StateRV Var)
     (h : v ∉ (varRV (fslReal e))) :
     `[fsl| <e> ⬝ [[step [Prog| v ≔ e'] (fun c' => P c')]] + ~<e> ⬝ [[step [Prog| v ≔ e'] (fun c' => Q c')]]]
     ⊢ step [Prog| v ≔ e'] (fun c' => `[fsl| <e> ⬝ [[P c']] + ~<e> ⬝ [[Q c']]]) := by
@@ -35,7 +35,7 @@ private lemma weighted_step_fslAdd_superdistr_assign (e : ProbExp Var) (P Q : Pr
   simp only [fslAdd, fslMul, step_assign, State.substituteStack, fslNot]
   rw [substituteVar_eq_of_not_varRV h (e' s.stack) s.stack]
 
-private lemma weighted_step_fslAdd_superdistr_mutate (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
+private lemma step_fslAdd_weighted_superdistr_mutate (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
     `[fsl| <e> ⬝ [[step [Prog| e_l *≔ e_v] (fun c' => P c')]] + ~<e> ⬝ [[step [Prog| e_l *≔ e_v] (fun c' => Q c')]]]
     ⊢ step [Prog| e_l *≔ e_v] (fun c' => `[fsl| <e> ⬝ [[P c']] + ~<e> ⬝ [[Q c']]]) := by
   intro s
@@ -48,7 +48,7 @@ private lemma weighted_step_fslAdd_superdistr_mutate (e : ProbExp Var) (P Q : Pr
     simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
     simp only [fslAdd, fslMul, step_mutate_of_abort _ _ h_alloc, mul_zero, add_zero, le_refl]
 
-private lemma weighted_step_fslAdd_superdistr_lookup (e : ProbExp Var) (P Q : Program Var → StateRV Var)
+private lemma step_fslAdd_weighted_superdistr_lookup (e : ProbExp Var) (P Q : Program Var → StateRV Var)
     (h : v ∉ (varRV (fslReal e))) :
     `[fsl| <e> ⬝ [[step [Prog| v ≔* e_l] (fun c' => P c')]]
       + ~<e> ⬝ [[step [Prog| v ≔* e_l] (fun c' => Q c')]]]
@@ -64,7 +64,7 @@ private lemma weighted_step_fslAdd_superdistr_lookup (e : ProbExp Var) (P Q : Pr
     simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
     simp only [fslAdd, fslMul, step_lookup_of_abort _ _ h_alloc, mul_zero, add_zero, le_refl]
 
-private lemma weighted_step_fslAdd_superdistr_cas (e : ProbExp Var) (P Q : Program Var → StateRV Var)
+private lemma step_fslAdd_weighted_superdistr_cas (e : ProbExp Var) (P Q : Program Var → StateRV Var)
     (h : v ∉ (varRV (fslReal e))) :
     `[fsl| <e> ⬝ [[step [Prog| v ≔ cas(e_l, e_c, e_s)] (fun c' => P c')]]
       + ~<e> ⬝ [[step [Prog| v ≔ cas(e_l, e_c, e_s)] (fun c' => Q c')]]]
@@ -91,7 +91,7 @@ private lemma weighted_step_fslAdd_superdistr_cas (e : ProbExp Var) (P Q : Progr
     simp only [ne_eq, not_exists, not_and, not_not] at h_alloc
     simp only [fslAdd, fslMul, step_cas_of_abort _ _ h_alloc, mul_zero, add_zero, le_refl]
 
-private lemma weighted_step_fslAdd_superdistr_allocate (e : ProbExp Var) (P Q : Program Var → StateRV Var)
+private lemma step_fslAdd_weighted_superdistr_allocate (e : ProbExp Var) (P Q : Program Var → StateRV Var)
     (h : v ∉ (varRV (fslReal e))) :
     `[fsl| <e> ⬝ [[step [Prog| v ≔ alloc(e_n)] (fun c' => P c')]]
       + ~<e> ⬝ [[step [Prog| v ≔ alloc(e_n)] (fun c' => Q c')]]]
@@ -118,7 +118,7 @@ private lemma weighted_step_fslAdd_superdistr_allocate (e : ProbExp Var) (P Q : 
     simp only [not_exists] at h_n
     simp only [fslAdd, fslMul, step_alloc_of_abort _ _ h_n, mul_zero, add_zero, le_refl]
 
-private lemma weighted_step_fslAdd_superdistr_free (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
+private lemma step_fslAdd_weighted_superdistr_free (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
     `[fsl| <e> ⬝ [[step [Prog| free(e_l, e_n)] (fun c' => P c')]]
       + ~<e> ⬝ [[step [Prog| free(e_l, e_n)] (fun c' => Q c')]]]
     ⊢ step [Prog| free(e_l, e_n)] (fun c' => `[fsl| <e> ⬝ [[P c']] + ~<e> ⬝ [[Q c']]]) := by
@@ -132,7 +132,7 @@ private lemma weighted_step_fslAdd_superdistr_free (e : ProbExp Var) (P Q : Prog
     simp only [not_exists, not_and] at h_alloc
     simp only [fslAdd, fslMul, step_free_of_abort _ _ h_alloc, mul_zero, add_zero, le_refl]
 
-private lemma weighted_step_fslAdd_superdistr_pchoice (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
+private lemma step_fslAdd_weighted_superdistr_pchoice (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
     `[fsl| <e> ⬝ [[step [Prog| pif e_p then [[c₁]] else [[c₂]] fi] (fun c' => P c')]]
       + ~<e> ⬝ [[step [Prog| pif e_p then [[c₁]] else [[c₂]] fi] (fun c' => Q c')]]]
     ⊢ step [Prog| pif e_p then [[c₁]] else [[c₂]] fi] (fun c' => `[fsl| <e> ⬝ [[P c']] + ~<e> ⬝ [[Q c']]]) := by
@@ -171,7 +171,7 @@ private lemma weighted_step_fslAdd_superdistr_pchoice (e : ProbExp Var) (P Q : P
 
 
 
-private lemma weighted_step_fslAdd_superdistr_condchoice (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
+private lemma step_fslAdd_weighted_superdistr_condchoice (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
     `[fsl| <e> ⬝ [[step [Prog| if e_c then [[c₁]] else [[c₂]] fi] (fun c' => P c')]]
       + ~<e> ⬝ [[step [Prog| if e_c then [[c₁]] else [[c₂]] fi] (fun c' => Q c')]]]
     ⊢ step [Prog| if e_c then [[c₁]] else [[c₂]] fi] (fun c' => `[fsl| <e> ⬝ [[P c']] + ~<e> ⬝ [[Q c']]]) := by
@@ -189,7 +189,7 @@ private lemma weighted_step_fslAdd_superdistr_condchoice (e : ProbExp Var) (P Q 
     case pos => simp only [add_zero, le_refl]
     case neg => rfl
 
-private lemma weighted_step_fslAdd_superdistr_loop (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
+private lemma step_fslAdd_weighted_superdistr_loop (e : ProbExp Var) (P Q : Program Var → StateRV Var) :
     `[fsl| <e> ⬝ [[step [Prog| while e_c begin [[c₁]] fi] (fun c' => P c')]]
       + ~<e> ⬝ [[step [Prog| while e_c begin [[c₁]] fi] (fun c' => Q c')]]]
     ⊢ step [Prog| while e_c begin [[c₁]] fi] (fun c' => `[fsl| <e> ⬝ [[P c']] + ~<e> ⬝ [[Q c']]]) := by
@@ -201,7 +201,7 @@ private lemma weighted_step_fslAdd_superdistr_loop (e : ProbExp Var) (P Q : Prog
     simp only [Bool.not_eq_true] at h_c
     simp only [fslAdd, fslMul, step_loop_term _ _ h_c, le_refl]
 
-private lemma weighted_step_fslAdd_superdistr_sequential (e : ProbExp Var) (P Q : Program Var → StateRV Var)
+private lemma step_fslAdd_weighted_superdistr_sequential (e : ProbExp Var) (P Q : Program Var → StateRV Var)
     (h : wrtStmt c₁ ∩ varRV `[fsl| <e> ] = ∅)
     (ih : ∀ (P Q : Program Var → StateRV Var), wrtStmt c₁ ∩ varRV `[fsl| <e> ] = ∅ →
       (`[fsl| (<e> ⬝ [[step c₁ fun c' ↦ P c']]) + (~<e> ⬝ [[step c₁ fun c' ↦ Q c']]) ]) ⊢
@@ -224,7 +224,7 @@ private lemma weighted_step_fslAdd_superdistr_sequential (e : ProbExp Var) (P Q 
       simp only [fslAdd, fslMul, step_sequential_cont _ _ h_ne_term h_ne_abort]
       exact (ih _ _ h s)
 
-private lemma weighted_step_fslAdd_superdistr_concurrent (e : ProbExp Var) (P Q : Program Var → StateRV Var)
+private lemma step_fslAdd_weighted_superdistr_concurrent (e : ProbExp Var) (P Q : Program Var → StateRV Var)
     (h₁ : wrtStmt c₁ ∩ varRV `[fsl| <e> ] = ∅) (h₂ : wrtStmt c₂ ∩ varRV `[fsl| <e> ] = ∅)
     (ih₁ : ∀ (P Q : Program Var → StateRV Var), wrtStmt c₁ ∩ varRV `[fsl| <e> ] = ∅ →
     (`[fsl| (<e> ⬝ [[step c₁ fun c' ↦ P c']]) + (~<e> ⬝ [[step c₁ fun c' ↦ Q c']]) ]) ⊢
@@ -280,40 +280,40 @@ private lemma weighted_step_fslAdd_superdistr_concurrent (e : ProbExp Var) (P Q 
               apply unit_mul_le_mul le_rfl
               apply min_le_right
 
-theorem weighted_step_fslAdd_superdistr (e : ProbExp Var) (P Q : Program Var → StateRV Var)
+theorem step_fslAdd_weighted_superdistr (e : ProbExp Var) (P Q : Program Var → StateRV Var)
     (h : (wrtStmt c) ∩ (varRV (fslReal e)) = ∅) :
     `[fsl| <e> ⬝ [[step c (fun c' => P c')]] + ~<e> ⬝ [[step c (fun c' => Q c')]]]
     ⊢ step c (fun c' => `[fsl| <e> ⬝ [[P c']] + ~<e> ⬝ [[Q c']]]) := by
   induction c generalizing P Q with
-  | terminated => exact weighted_step_fslAdd_superdistr_terminated _ _ _
-  | abort => exact weighted_step_fslAdd_superdistr_abort _ _ _
+  | terminated => exact step_fslAdd_weighted_superdistr_terminated _ _ _
+  | abort => exact step_fslAdd_weighted_superdistr_abort _ _ _
   | skip' => simp only [step_skip']; exact le_rfl
   | assign v e' =>
     simp only [wrtStmt, Set.singleton_inter_eq_empty] at h
-    exact weighted_step_fslAdd_superdistr_assign _ _ _ h
-  | mutate e_l e_v => exact weighted_step_fslAdd_superdistr_mutate _ _ _
+    exact step_fslAdd_weighted_superdistr_assign _ _ _ h
+  | mutate e_l e_v => exact step_fslAdd_weighted_superdistr_mutate _ _ _
   | lookup v e_l =>
     simp only [wrtStmt, Set.singleton_inter_eq_empty] at h
-    exact weighted_step_fslAdd_superdistr_lookup _ _ _ h
+    exact step_fslAdd_weighted_superdistr_lookup _ _ _ h
   | compareAndSet v e_loc e_cmp e_set =>
     simp only [wrtStmt, Set.singleton_inter_eq_empty] at h
-    exact weighted_step_fslAdd_superdistr_cas _ _ _ h
+    exact step_fslAdd_weighted_superdistr_cas _ _ _ h
   | allocate v e_n =>
     simp only [wrtStmt, Set.singleton_inter_eq_empty] at h
-    exact weighted_step_fslAdd_superdistr_allocate _ _ _ h
+    exact step_fslAdd_weighted_superdistr_allocate _ _ _ h
   | free' e_l e_n =>
-    exact weighted_step_fslAdd_superdistr_free _ _ _
+    exact step_fslAdd_weighted_superdistr_free _ _ _
   | probabilisticBranching e_p c₁ c₂ =>
-    exact weighted_step_fslAdd_superdistr_pchoice _ _ _
+    exact step_fslAdd_weighted_superdistr_pchoice _ _ _
   | conditionalBranching e_c c₁ c₂ =>
-    exact weighted_step_fslAdd_superdistr_condchoice _ _ _
+    exact step_fslAdd_weighted_superdistr_condchoice _ _ _
   | loop e_c c =>
-    exact weighted_step_fslAdd_superdistr_loop _ _ _
+    exact step_fslAdd_weighted_superdistr_loop _ _ _
   | sequential c₁ c₂ ih₁ =>
     simp only [wrtStmt] at h
-    exact weighted_step_fslAdd_superdistr_sequential _ _ _ h ih₁
+    exact step_fslAdd_weighted_superdistr_sequential _ _ _ h ih₁
   | concurrent c₁ c₂ ih₁ ih₂ =>
     simp only [wrtStmt, Set.union_inter_distrib_right, Set.union_empty_iff] at h
-    exact weighted_step_fslAdd_superdistr_concurrent _ _ _ h.left h.right ih₁ ih₂
+    exact step_fslAdd_weighted_superdistr_concurrent _ _ _ h.left h.right ih₁ ih₂
 
 end CFSL
