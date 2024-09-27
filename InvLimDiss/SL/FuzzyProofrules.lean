@@ -721,7 +721,33 @@ theorem fslSepMul_weight_fslAdd_distr_of_precise (e : ProbExp Var) (P Q R : Stat
           rw [h]
           simp only [zero_mul, zero_le]
 
-
+theorem fslSepMul_fslInf_distr_of_precise
+    (P : StateRV Var) (Q : α → StateRV Var) (h : precise P) [Nonempty α] :
+    `[fsl| [[P]] ⋆ I (a : α). [[Q a]]] = `[fsl| I (a : α). [[P]] ⋆ [[Q a]]] := by
+  apply le_antisymm (fslSepMul_fslInf_subdistr P Q)
+  intro s
+  obtain ⟨heap₁, h_subset, h_prec⟩ := h s
+  obtain ⟨heap₂, h_disjoint, h_union⟩ := union_of_subset h_subset
+  apply le_sSup_of_le
+  · use heap₁, heap₂, h_disjoint, h_union.symm
+  · simp only [fslInf_apply]
+    rw [mul_iInf]
+    apply le_iInf
+    intro a
+    rw [iInf_le_iff]
+    rintro _ h
+    apply le_trans (h a)
+    apply sSup_le
+    rintro _ ⟨heap₁', heap₂', h_disjoint', h_union', rfl⟩
+    cases eq_or_ne heap₁ heap₁'
+    case inl h_eq =>
+      rw [h_eq] at h_disjoint h_union ⊢
+      apply unit_mul_le_mul le_rfl
+      have := eq_of_union_of_union_left h_disjoint h_union h_disjoint' h_union'.symm
+      rw [this]
+    case inr h_neq =>
+      specialize h_prec heap₁' (subset_of_union h_disjoint' h_union'.symm) h_neq
+      simp only [h_prec, zero_mul, zero_le]
 
 end Precise
 

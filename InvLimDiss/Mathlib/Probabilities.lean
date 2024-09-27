@@ -328,7 +328,10 @@ theorem unit_mul_div {i j k : I} : i * (j / k) ≤ i * j / k := by
     simp only [mul_one, le_refl]
   case neg => exact le_one'
 
-
+theorem mul_iInf [Nonempty α] {i : I} {j : α → I} : i * ⨅ a : α, j a = ⨅ a : α, i * j a := by
+  rw [Subtype.mk_eq_mk]
+  simp only [coe_mul, coe_iInf]
+  rw [Real.mul_iInf_of_nonneg nonneg']
 
 end MulDiv
 
