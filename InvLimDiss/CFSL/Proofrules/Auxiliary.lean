@@ -9,18 +9,18 @@ open Syntax FSL OrdinalApprox unitInterval
 
 variable {Var : Type} {P Q : StateRV Var}
 
-theorem wrle_step_mono_of_parameters_of_le_RV (h_le : P s ≤ Q s) :
-    wrle_step P resource X c s ≤ wrle_step Q resource X c s := by
-  simp only [wrle_step]
+theorem wrleStep_mono_of_parameters_of_le_RV (h_le : P s ≤ Q s) :
+    wrleStep P resource X c s ≤ wrleStep Q resource X c s := by
+  simp only [wrleStep]
   split
   case h_1 => exact h_le
   case h_2 => rfl
   case h_3 => rfl
 
-theorem wrle_step_mono_of_le_RV (h_le : P ≤ Q) :
-    wrle_step P resource ≤ wrle_step Q resource := by
+theorem wrleStep_mono_of_le_RV (h_le : P ≤ Q) :
+    wrleStep P resource ≤ wrleStep Q resource := by
   intro X c s
-  apply wrle_step_mono_of_parameters_of_le_RV
+  apply wrleStep_mono_of_parameters_of_le_RV
   exact h_le s
 
 theorem wrle_mono (h : P ≤ Q) :
@@ -30,9 +30,9 @@ theorem wrle_mono (h : P ≤ Q) :
   rw [← gfpApprox_ord_eq_gfp]
   rw [← gfpApprox_ord_eq_gfp]
   apply gfpApprox_le_gfpApprox_of_le
-    (wrle_step_hom P resource) _ ?_ ⊤ (Order.succ (Cardinal.mk _)).ord _ _
-  simp only [wrle_step_hom, OrderHom.mk_le_mk]
-  exact wrle_step_mono_of_le_RV h
+    (wrleStepHom P resource) _ ?_ ⊤ (Order.succ (Cardinal.mk _)).ord _ _
+  simp only [wrleStepHom, OrderHom.mk_le_mk]
+  exact wrleStep_mono_of_le_RV h
 
 open State in
 theorem wrle_share
@@ -68,11 +68,11 @@ theorem wrle_share
           use j, h_j
           exact rfl
         · exact rfl
-      · simp only [wrle_step_hom, OrderHom.coe_mk]
+      · simp only [wrleStepHom, OrderHom.coe_mk]
         cases eq_or_ne c [Prog| ↓]
         case inl h_term =>
           rw [h_term]
-          simp only [wrle_step]
+          simp only [wrleStep]
           rw [unit_le_div_iff_mul_le]
           apply le_sSup
           use s.heap, heap₂
@@ -80,9 +80,9 @@ theorem wrle_share
           cases eq_or_ne c [Prog| ↯]
           case inl h_abort =>
             rw [h_abort]
-            simp only [wrle_step, fslFalse, zero_le]
+            simp only [wrleStep, fslFalse, zero_le]
           case inr h_ne_abort =>
-            simp only [wrle_step]
+            simp only [wrleStep]
             rw [unit_le_div_iff_mul_le]
             apply le_sInf
             rintro _ ⟨heap₁, h_disjoint₁, rfl⟩
@@ -111,12 +111,12 @@ theorem wrle_share
                   apply fslSepMul_mono ?_ le_rfl
                   simp only [Entailment.entail]
                   rw [← le_fslSepDiv_iff_fslSepMul_le, fslSepMul_comm resource₂ resource₁]
-                  unfold wrle_step_hom at ih
+                  unfold wrleStepHom at ih
                   exact ih j h_j
 
 private theorem wrle_max_left :
     `[fsl| wrle [c] ([[P]] |[[R]]) ⊢ wrle [c] ([[P]] ⊔ [[Q]]|[[R]])] := by
-  simp only [wrle', wrle_step_hom]
+  simp only [wrle', wrleStepHom]
   rw [← gfpApprox_ord_eq_gfp]
   rw [← gfpApprox_ord_eq_gfp]
   induction (Order.succ (Cardinal.mk (Program Var → StateRV Var))).ord
@@ -138,16 +138,16 @@ private theorem wrle_max_left :
       · cases eq_or_ne c [Prog| ↓]
         case inl h_term =>
           rw [h_term]
-          simp only [wrle_step]
+          simp only [wrleStep]
           intro s
           exact le_sup_left
         case inr h_n_term =>
           cases eq_or_ne c [Prog| ↯]
           case inl h_abort =>
             rw [h_abort]
-            simp only [wrle_step, le_refl]
+            simp only [wrleStep, le_refl]
           case inr h_n_abort =>
-            simp only [wrle_step]
+            simp only [wrleStep]
             apply fslSepDiv_mono le_rfl
             apply step_mono
             intro c; simp only
@@ -164,7 +164,7 @@ theorem wrle_max :
 theorem wrle_weighted_sum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslReal e)) = ∅):
     `[fsl| <e> ⬝ wrle [c] ([[P]] | [[R]]) + ~<e> ⬝ wrle [c] ([[Q]] | [[R]])
     ⊢ wrle [c] (<e> ⬝ [[P]] + ~<e> ⬝ [[Q]]| [[R]])] := by
-  simp only [wrle', wrle_step_hom]
+  simp only [wrle', wrleStepHom]
   rw [← gfpApprox_ord_eq_gfp]
   rw [← gfpApprox_ord_eq_gfp]
   rw [← gfpApprox_ord_eq_gfp]
@@ -178,7 +178,7 @@ theorem wrle_weighted_sum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslR
       exists_exists_and_eq_and]
     rintro _ (rfl|⟨j, h_j, rfl⟩)
     · exact le_top
-    · rw [wrle_step]
+    · rw [wrleStep]
       split
       case h_1 =>
         apply fslAdd_mono
@@ -186,14 +186,14 @@ theorem wrle_weighted_sum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslR
           · exact le_rfl
           · apply sInf_le
             simp only [Set.mem_range, Subtype.exists, Set.mem_insert_iff, Set.mem_setOf_eq,
-              exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and, wrle_step,
+              exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and, wrleStep,
               and_true]
             right; use j
         · apply fslMul_mono
           · exact le_rfl
           · apply sInf_le
             simp only [Set.mem_range, Subtype.exists, Set.mem_insert_iff, Set.mem_setOf_eq,
-              exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and, wrle_step,
+              exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and, wrleStep,
               and_true]
             right; use j
       case h_2 =>
@@ -204,7 +204,7 @@ theorem wrle_weighted_sum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslR
           · exact le_rfl
           · apply sInf_le
             simp only [Set.mem_range, Subtype.exists, Set.mem_insert_iff, Set.mem_setOf_eq,
-              exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and, wrle_step,
+              exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and, wrleStep,
               and_true]
             right; use j
         · conv => right; rw [← fslMul_fslFalse (fslNot <| fslReal e)]
@@ -212,7 +212,7 @@ theorem wrle_weighted_sum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslR
           · exact le_rfl
           · apply sInf_le
             simp only [Set.mem_range, Subtype.exists, Set.mem_insert_iff, Set.mem_setOf_eq,
-              exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and, wrle_step,
+              exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and, wrleStep,
               and_true]
             right; use j
       case h_3 c _ _ _ _ =>
@@ -242,7 +242,7 @@ theorem wrle_weighted_sum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslR
                 exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
               right
               use j, h_j
-            · simp only [wrle_step]
+            · simp only [wrleStep]
               simp_rw [fslSepMul_comm]
               rfl
           · apply fslMul_mono le_rfl
@@ -251,7 +251,7 @@ theorem wrle_weighted_sum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslR
                 exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
               right
               use j, h_j
-            · simp only [wrle_step]
+            · simp only [wrleStep]
               simp_rw [fslSepMul_comm]
               rfl
 

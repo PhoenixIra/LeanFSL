@@ -15,11 +15,11 @@ open FSL Syntax OrderHom unitInterval Atom Semantics OrdinalApprox
 
 variable {Vars : Type}
 
-lemma gfpApprox_wrle_step_seq :
+lemma gfpApprox_wrleStep_seq :
     gfpApprox
-      (wrle_step_hom (gfpApprox (wrle_step_hom P resource) ⊤ k c₂) resource)
+      (wrleStepHom (gfpApprox (wrleStepHom P resource) ⊤ k c₂) resource)
       ⊤ (Order.succ k) c₁
-    ≤ gfpApprox (wrle_step_hom P resource) ⊤ k [Prog| [[c₁]] ; [[c₂]]] := by
+    ≤ gfpApprox (wrleStepHom P resource) ⊤ k [Prog| [[c₁]] ; [[c₂]]] := by
   induction k
     using Ordinal.induction generalizing c₁ with
   | h k ih =>
@@ -32,7 +32,7 @@ lemma gfpApprox_wrle_step_seq :
     simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
       exists_exists_and_eq_and] at h_i
     obtain ⟨k', h_k', rfl⟩ := h_i
-    simp only [wrle_step_hom, wrle_step]
+    simp only [wrleStepHom, wrleStep]
     apply le_sInf
     rintro _ ⟨heap', h_disjoint, rfl⟩
     cases eq_or_ne (resource ⟨s.stack, heap'⟩) 0 with
@@ -51,7 +51,7 @@ lemma gfpApprox_wrle_step_seq :
           simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
             exists_exists_and_eq_and]
           use Order.succ k', Order.succ_lt_succ h_k'
-          simp only [h_abort₂, wrle_step]
+          simp only [h_abort₂, wrleStep]
           unfold gfpApprox
           apply le_antisymm ?_ nonneg'
           apply sInf_le
@@ -63,7 +63,7 @@ lemma gfpApprox_wrle_step_seq :
           apply Or.inr
           use k', h_k'
           apply funext
-          simp only [wrle_step, fslFalse, Pi.zero_apply, implies_true]
+          simp only [wrleStep, fslFalse, Pi.zero_apply, implies_true]
         case isFalse h_ne_abort₂ =>
           apply sInf_le_of_le
           · simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists,
@@ -73,10 +73,10 @@ lemma gfpApprox_wrle_step_seq :
             apply le_sSup_of_le
             · use s.heap, heap'
             · rw [← unit_le_div_iff_mul_le, unitInterval.mul_div_cancel_of_pos h_resource_neq_zero]
-              simp only [wrle_step]
-              change _ ≤ gfpApprox (wrle_step_hom P resource) ⊤ k' c₂ s
+              simp only [wrleStep]
+              change _ ≤ gfpApprox (wrleStepHom P resource) ⊤ k' c₂ s
               exact (OrdinalApprox.gfpApprox_antitone
-                  (wrle_step_hom _ _) _ (le_of_lt h_k')) c₂ s
+                  (wrleStepHom _ _) _ (le_of_lt h_k')) c₂ s
       | inr h_ne_term₁ =>
         cases eq_or_ne c₁ [Prog| ↯] with
         | inl h_abort₁ =>
@@ -86,7 +86,7 @@ lemma gfpApprox_wrle_step_seq :
           simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists,
             Order.lt_succ_iff, exists_prop, exists_exists_and_eq_and]
           use k', le_of_lt h_k'
-          simp only [coe_mk, wrle_step, fslFalse]
+          simp only [coe_mk, wrleStep, fslFalse]
         | inr h_ne_abort₁ =>
           apply sInf_le_of_le
           · simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists,
@@ -94,7 +94,7 @@ lemma gfpApprox_wrle_step_seq :
             have : Order.succ k' ≤ k := by exact Order.succ_le_iff.mpr h_k'
             use Order.succ k', this
           · rw [step_sequential_cont _ _ h_ne_term₁ h_ne_abort₁]
-            simp only [coe_mk, wrle_step]
+            simp only [coe_mk, wrleStep]
             apply sInf_le_of_le
             · use heap', h_disjoint
             · apply unit_div_le_div ?_ le_rfl
@@ -104,11 +104,11 @@ lemma gfpApprox_wrle_step_seq :
               apply fslSepMul_mono ?_ le_rfl
               apply le_trans ?_ (ih k' h_k')
               apply OrdinalApprox.gfpApprox_le_gfpApprox_of_le
-                (wrle_step_hom (gfpApprox (wrle_step_hom _ _) _ _ _) _)
-              simp only [wrle_step_hom, mk_le_mk]
-              apply wrle_step_mono_of_le_RV
+                (wrleStepHom (gfpApprox (wrleStepHom _ _) _ _ _) _)
+              simp only [wrleStepHom, mk_le_mk]
+              apply wrleStep_mono_of_le_RV
               apply OrdinalApprox.gfpApprox_antitone
-                (wrle_step_hom P resource) ⊤ (le_of_lt h_k')
+                (wrleStepHom P resource) ⊤ (le_of_lt h_k')
 
 theorem wrle_seq {P resource : StateRV Vars} :
     `[fsl| wrle [c₁] (wrle [c₂] ([[P]] | [[resource]]) | [[resource]])
@@ -123,12 +123,12 @@ theorem wrle_seq {P resource : StateRV Vars} :
     apply OrdinalApprox.gfpApprox_ord_mem_fixedPoint
     exact le_top
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
-  exact gfpApprox_wrle_step_seq
+  exact gfpApprox_wrleStep_seq
 
-private lemma gfpApprox_wrle_step_concur_symmetric_of_left_abort
+private lemma gfpApprox_wrleStep_concur_symmetric_of_left_abort
     (c : Program Var) (P resource : StateRV Var) (i : Ordinal) :
-    gfpApprox (wrle_step_hom P resource) ⊤ i ([Prog| ↯ || [[c]]])
-    = gfpApprox (wrle_step_hom P resource) ⊤ i ([Prog| [[c]] || ↯]) := by
+    gfpApprox (wrleStepHom P resource) ⊤ i ([Prog| ↯ || [[c]]])
+    = gfpApprox (wrleStepHom P resource) ⊤ i ([Prog| [[c]] || ↯]) := by
   unfold gfpApprox
   apply le_antisymm
   · apply le_sInf
@@ -142,7 +142,7 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_left_abort
           exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
         apply Or.inr
         use i', h_i'
-      · simp only [wrle_step_hom, coe_mk, wrle_step]
+      · simp only [wrleStepHom, coe_mk, wrleStep]
         apply fslSepDiv_mono le_rfl
         intro s
         rw [step_concurrent_abort_left]
@@ -158,21 +158,21 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_left_abort
           exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
         apply Or.inr
         use i'
-      · simp only [wrle_step_hom, coe_mk, wrle_step]
+      · simp only [wrleStepHom, coe_mk, wrleStep]
         apply fslSepDiv_mono le_rfl
         intro s
         rw [step_concurrent_abort_right]
         exact nonneg'
 
 
-private lemma gfpApprox_wrle_step_concur_symmetric_of_left_term
+private lemma gfpApprox_wrleStep_concur_symmetric_of_left_term
     {c : Program Var} (P resource : StateRV Var) (i : Ordinal)
     (h_neq_abort : c ≠ [Prog| ↯]) (h_neq_term : c ≠ [Prog| ↓])
     (h_ind : ∀ i' < i, ∀ c',
-    gfpApprox (wrle_step_hom P resource) ⊤ i' ([Prog| ↓ || [[c']]])
-    = gfpApprox (wrle_step_hom P resource) ⊤ i' ([Prog| [[c']] || ↓])) :
-    gfpApprox (wrle_step_hom P resource) ⊤ i ([Prog| ↓ || [[c]]])
-    = gfpApprox (wrle_step_hom P resource) ⊤ i ([Prog| [[c]] || ↓]) := by
+    gfpApprox (wrleStepHom P resource) ⊤ i' ([Prog| ↓ || [[c']]])
+    = gfpApprox (wrleStepHom P resource) ⊤ i' ([Prog| [[c']] || ↓])) :
+    gfpApprox (wrleStepHom P resource) ⊤ i ([Prog| ↓ || [[c]]])
+    = gfpApprox (wrleStepHom P resource) ⊤ i ([Prog| [[c]] || ↓]) := by
   unfold gfpApprox
   apply le_antisymm
   · apply le_sInf
@@ -185,7 +185,7 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_left_term
           exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
         apply Or.inr
         use i'
-      · simp only [wrle_step_hom, coe_mk, wrle_step]
+      · simp only [wrleStepHom, coe_mk, wrleStep]
         apply fslSepDiv_mono le_rfl
         intro s
         rw [step_concurrent_cont_only_right _ _ h_neq_term h_neq_abort]
@@ -194,7 +194,7 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_left_term
         intro c s
         simp only
         specialize h_ind i' h_i' c
-        simp only [wrle_step_hom] at h_ind
+        simp only [wrleStepHom] at h_ind
         rw [h_ind]
   · apply le_sInf
     simp only [Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton, Set.mem_insert_iff,
@@ -206,7 +206,7 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_left_term
           exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
         apply Or.inr
         use i'
-      · simp only [wrle_step_hom, coe_mk, wrle_step]
+      · simp only [wrleStepHom, coe_mk, wrleStep]
         apply fslSepDiv_mono le_rfl
         intro s
         rw [step_concurrent_cont_only_right _ _ h_neq_term h_neq_abort]
@@ -215,18 +215,18 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_left_term
         intro c s
         simp only
         specialize h_ind i' h_i' c
-        simp only [wrle_step_hom] at h_ind
+        simp only [wrleStepHom] at h_ind
         rw [h_ind]
 
-private lemma gfpApprox_wrle_step_concur_symmetric_of_no_term
+private lemma gfpApprox_wrleStep_concur_symmetric_of_no_term
     {c₁ c₂ : Program Var} (P resource : StateRV Var) (i : Ordinal)
     (h_c₁_neq_abort : c₁ ≠ [Prog| ↯]) (h_c₁_neq_term : c₁ ≠ [Prog| ↓])
     (h_c₂_neq_abort : c₂ ≠ [Prog| ↯]) (h_c₂_neq_term : c₂ ≠ [Prog| ↓])
     (h_ind : ∀ i' < i, ∀ c₁' c₂',
-    gfpApprox (wrle_step_hom P resource) ⊤ i' ([Prog| [[c₁']] || [[c₂']]])
-    = gfpApprox (wrle_step_hom P resource) ⊤ i' ([Prog| [[c₂']] || [[c₁']]])) :
-    gfpApprox (wrle_step_hom P resource) ⊤ i ([Prog| [[c₁]] || [[c₂]]])
-    = gfpApprox (wrle_step_hom P resource) ⊤ i ([Prog| [[c₂]] || [[c₁]]]) := by
+    gfpApprox (wrleStepHom P resource) ⊤ i' ([Prog| [[c₁']] || [[c₂']]])
+    = gfpApprox (wrleStepHom P resource) ⊤ i' ([Prog| [[c₂']] || [[c₁']]])) :
+    gfpApprox (wrleStepHom P resource) ⊤ i ([Prog| [[c₁]] || [[c₂]]])
+    = gfpApprox (wrleStepHom P resource) ⊤ i ([Prog| [[c₂]] || [[c₁]]]) := by
   unfold gfpApprox
   apply le_antisymm
   · apply le_sInf
@@ -239,7 +239,7 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_no_term
           exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
         apply Or.inr
         use i'
-      · simp only [wrle_step_hom, coe_mk, wrle_step]
+      · simp only [wrleStepHom, coe_mk, wrleStep]
         apply fslSepDiv_mono le_rfl
         intro s
         rw [step_concurrent_cont _ _ h_c₂_neq_term h_c₁_neq_term h_c₂_neq_abort h_c₁_neq_abort]
@@ -250,7 +250,7 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_no_term
           intro c' s'
           simp only
           specialize h_ind i' h_i' c₁ c'
-          simp only [wrle_step_hom] at h_ind
+          simp only [wrleStepHom] at h_ind
           rw [h_ind]
         · rw [step_concurrent_cont _ _ h_c₁_neq_term h_c₂_neq_term h_c₁_neq_abort h_c₂_neq_abort]
           apply min_le_of_left_le
@@ -258,7 +258,7 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_no_term
           intro c' s'
           simp only
           specialize h_ind i' h_i' c' c₂
-          simp only [wrle_step_hom] at h_ind
+          simp only [wrleStepHom] at h_ind
           rw [h_ind]
   · apply le_sInf
     simp only [Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton, Set.mem_insert_iff,
@@ -270,7 +270,7 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_no_term
           exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
         apply Or.inr
         use i'
-      · simp only [wrle_step_hom, coe_mk, wrle_step]
+      · simp only [wrleStepHom, coe_mk, wrleStep]
         apply fslSepDiv_mono le_rfl
         intro s
         rw [step_concurrent_cont _ _ h_c₁_neq_term h_c₂_neq_term h_c₁_neq_abort h_c₂_neq_abort]
@@ -281,7 +281,7 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_no_term
           intro c' s'
           simp only
           specialize h_ind i' h_i' c₂ c'
-          simp only [wrle_step_hom] at h_ind
+          simp only [wrleStepHom] at h_ind
           rw [h_ind]
         · rw [step_concurrent_cont _ _ h_c₂_neq_term h_c₁_neq_term h_c₂_neq_abort h_c₁_neq_abort]
           apply min_le_of_left_le
@@ -289,24 +289,24 @@ private lemma gfpApprox_wrle_step_concur_symmetric_of_no_term
           intro c' s'
           simp only
           specialize h_ind i' h_i' c' c₁
-          simp only [wrle_step_hom] at h_ind
+          simp only [wrleStepHom] at h_ind
           rw [h_ind]
 
-theorem gfpApprox_wrle_step_concur_symmetric
+theorem gfpApprox_wrleStep_concur_symmetric
     (c₁ c₂ : Program Var) (P resource : StateRV Var) (i : Ordinal) :
-    gfpApprox (wrle_step_hom P resource) ⊤ i ([Prog| [[c₁]] || [[c₂]]])
-    = gfpApprox (wrle_step_hom P resource) ⊤ i ([Prog| [[c₂]] || [[c₁]]]) := by
+    gfpApprox (wrleStepHom P resource) ⊤ i ([Prog| [[c₁]] || [[c₂]]])
+    = gfpApprox (wrleStepHom P resource) ⊤ i ([Prog| [[c₂]] || [[c₁]]]) := by
   induction i using Ordinal.induction generalizing c₁ c₂ with
   | h i ih =>
     cases eq_or_ne c₁ [Prog| ↯] with
     | inl h_c₁_abort =>
       rw [h_c₁_abort]
-      exact gfpApprox_wrle_step_concur_symmetric_of_left_abort c₂ P resource i
+      exact gfpApprox_wrleStep_concur_symmetric_of_left_abort c₂ P resource i
     | inr h_c₁_neq_abort =>
       cases eq_or_ne c₂ [Prog| ↯] with
       | inl h_c₂_abort =>
         rw [h_c₂_abort, eq_comm]
-        exact gfpApprox_wrle_step_concur_symmetric_of_left_abort c₁ P resource i
+        exact gfpApprox_wrleStep_concur_symmetric_of_left_abort c₁ P resource i
       | inr h_c₂_neq_abort =>
         cases eq_or_ne c₁ [Prog| ↓] with
         | inl h_c₁_term =>
@@ -315,7 +315,7 @@ theorem gfpApprox_wrle_step_concur_symmetric
           | inl h_c₂_term =>
             rw [h_c₂_term]
           | inr h_c₂_neq_term =>
-            apply gfpApprox_wrle_step_concur_symmetric_of_left_term _ _ _
+            apply gfpApprox_wrleStep_concur_symmetric_of_left_term _ _ _
               h_c₂_neq_abort h_c₂_neq_term
             intro i' h_i' c'
             apply ih i' h_i'
@@ -323,12 +323,12 @@ theorem gfpApprox_wrle_step_concur_symmetric
           cases eq_or_ne c₂ [Prog| ↓] with
           | inl h_c₂_term =>
             rw [h_c₂_term, eq_comm]
-            apply gfpApprox_wrle_step_concur_symmetric_of_left_term _ _ _
+            apply gfpApprox_wrleStep_concur_symmetric_of_left_term _ _ _
               h_c₁_neq_abort h_c₁_neq_term
             intro i' h_i' c'
             apply ih i' h_i'
           | inr h_c₂_neq_term =>
-            apply gfpApprox_wrle_step_concur_symmetric_of_no_term _ _ _
+            apply gfpApprox_wrleStep_concur_symmetric_of_no_term _ _ _
               h_c₁_neq_abort h_c₁_neq_term h_c₂_neq_abort h_c₂_neq_term
             intro i' h_i' c₁' c₂'
             apply ih i' h_i'
@@ -339,14 +339,14 @@ theorem wrle_concur_symmetric
     = `[fsl| wrle [[[c₂]] || [[c₁]]] ([[P]] | [[resource]])] := by
   unfold wrle'
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
-  exact gfpApprox_wrle_step_concur_symmetric c₁ c₂ P resource _
+  exact gfpApprox_wrleStep_concur_symmetric c₁ c₂ P resource _
 
 
 private lemma wrle_concur_of_left_abort
     (c : Program Var) (P₁ P₂ resource : StateRV Var) :
-    (`[fsl| [[gfpApprox (wrle_step_hom P₁ resource) ⊤ i [Prog| ↯ ] ]]
-    ⋆ [[gfpApprox (wrle_step_hom P₂ resource) ⊤ i c]] ]) ≤
-    gfpApprox (wrle_step_hom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource) ⊤ i ([Prog| ↯ || [[c]]]) := by
+    (`[fsl| [[gfpApprox (wrleStepHom P₁ resource) ⊤ i [Prog| ↯ ] ]]
+    ⋆ [[gfpApprox (wrleStepHom P₂ resource) ⊤ i c]] ]) ≤
+    gfpApprox (wrleStepHom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource) ⊤ i ([Prog| ↯ || [[c]]]) := by
   unfold gfpApprox
   apply le_sInf
   simp only [Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton, Set.mem_insert_iff,
@@ -356,7 +356,7 @@ private lemma wrle_concur_of_left_abort
   · intro s
     apply sSup_le
     rintro _ ⟨heap₁, heap₂, _, _, rfl⟩
-    simp only [wrle_step_hom, coe_mk, wrle_step]
+    simp only [wrleStepHom, coe_mk, wrleStep]
     apply le_sInf
     rintro _ ⟨heap', _, rfl⟩
     rw [← unit_le_div_iff_mul_le]
@@ -368,16 +368,16 @@ private lemma wrle_concur_of_left_abort
       apply And.intro
       · apply Or.inr
         use i', h_i'
-        simp only [wrle_step]
+        simp only [wrleStep]
         rfl
       · rfl
     · exact nonneg'
 
 private lemma wrle_concur_of_term
     (P₁ P₂ resource : StateRV Var) :
-    (`[fsl| [[gfpApprox (wrle_step_hom P₁ resource) ⊤ i [Prog| ↓ ] ]]
-    ⋆ [[gfpApprox (wrle_step_hom P₂ resource) ⊤ i [Prog| ↓ ] ]] ]) ≤
-    gfpApprox (wrle_step_hom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource) ⊤ i ([Prog| ↓ || ↓ ]) := by
+    (`[fsl| [[gfpApprox (wrleStepHom P₁ resource) ⊤ i [Prog| ↓ ] ]]
+    ⋆ [[gfpApprox (wrleStepHom P₂ resource) ⊤ i [Prog| ↓ ] ]] ]) ≤
+    gfpApprox (wrleStepHom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource) ⊤ i ([Prog| ↓ || ↓ ]) := by
   unfold gfpApprox
   apply le_sInf
   simp only [Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton, Set.mem_insert_iff,
@@ -387,7 +387,7 @@ private lemma wrle_concur_of_term
   · intro s
     apply sSup_le
     rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
-    simp only [wrle_step_hom, coe_mk, wrle_step]
+    simp only [wrleStepHom, coe_mk, wrleStep]
     apply le_sInf
     rintro _ ⟨heap', h_disjoint', rfl⟩
     rw [step_concurrent_term _ _]
@@ -403,7 +403,7 @@ private lemma wrle_concur_of_term
         forall_apply_eq_imp_iff₂]
       rintro _ (rfl | ⟨_, _, rfl⟩)
       · exact le_one'
-      · simp only [wrle_step]
+      · simp only [wrleStep]
         rw [← unit_le_div_iff_mul_le]
         apply sInf_le_of_le
         · simp only [Set.mem_range, Subtype.exists, Set.mem_insert_iff, Set.mem_setOf_eq,
@@ -412,7 +412,7 @@ private lemma wrle_concur_of_term
           apply And.intro
           · apply Or.inr
             use i', h_i'
-            simp only [wrle_step]
+            simp only [wrleStep]
           · rfl
         · rw [unit_le_div_iff_mul_le, mul_comm, ← unit_le_div_iff_mul_le]
           apply sInf_le_of_le
@@ -422,7 +422,7 @@ private lemma wrle_concur_of_term
             apply And.intro
             · apply Or.inr
               use i', h_i'
-              simp only [wrle_step]
+              simp only [wrleStep]
             · rfl
           · rw [unit_le_div_iff_mul_le, mul_comm]
             apply le_sSup
@@ -435,13 +435,13 @@ private lemma wrle_concur_cont_of_left_term
     (h_vars  : wrtProg c ∩ (varRV P₁ ∪ varRV resource) = ∅)
     (h_ind : ∀ k < i, ∀ {c : Program Var},
       wrtProg c ∩ (varRV P₁ ∪ varRV resource) = ∅ →
-        (`[fsl| [[gfpApprox (wrle_step_hom P₁ resource) ⊤ k [Prog| ↓] ]]
-        ⋆ [[gfpApprox (wrle_step_hom P₂ resource) ⊤ k c]] ])
-        ≤ gfpApprox (wrle_step_hom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource)
+        (`[fsl| [[gfpApprox (wrleStepHom P₁ resource) ⊤ k [Prog| ↓] ]]
+        ⋆ [[gfpApprox (wrleStepHom P₂ resource) ⊤ k c]] ])
+        ≤ gfpApprox (wrleStepHom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource)
           ⊤ k ([Prog| ↓ || [[c]]])) :
-    (`[fsl| [[gfpApprox (wrle_step_hom P₁ resource) ⊤ i [Prog| ↓ ] ]]
-    ⋆ [[gfpApprox (wrle_step_hom P₂ resource) ⊤ i c]] ]) ≤
-    gfpApprox (wrle_step_hom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource) ⊤ i ([Prog| ↓ || [[c]]]) := by
+    (`[fsl| [[gfpApprox (wrleStepHom P₁ resource) ⊤ i [Prog| ↓ ] ]]
+    ⋆ [[gfpApprox (wrleStepHom P₂ resource) ⊤ i c]] ]) ≤
+    gfpApprox (wrleStepHom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource) ⊤ i ([Prog| ↓ || [[c]]]) := by
   unfold gfpApprox
   apply le_sInf
   simp only [Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton, Set.mem_insert_iff,
@@ -451,7 +451,7 @@ private lemma wrle_concur_cont_of_left_term
   · intro s
     apply sSup_le
     rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
-    simp only [wrle_step_hom, coe_mk, wrle_step]
+    simp only [wrleStepHom, coe_mk, wrleStep]
     apply le_sInf
     rintro _ ⟨heap', h_disjoint', rfl⟩
     rw [step_concurrent_cont_only_right _ _ h_neq_term h_neq_abort]
@@ -463,7 +463,7 @@ private lemma wrle_concur_cont_of_left_term
       apply And.intro
       · apply Or.inr
         use i', h_i'
-        simp only [wrle_step]
+        simp only [wrleStep]
       · rfl
     · rw [unit_le_div_iff_mul_le, mul_comm, ← unit_le_div_iff_mul_le]
       apply sInf_le_of_le
@@ -475,7 +475,7 @@ private lemma wrle_concur_cont_of_left_term
           use i', h_i'
           exact rfl
         · rfl
-      · simp only [wrle_step]
+      · simp only [wrleStep]
         apply sInf_le_of_le
         · use heap'
           apply And.intro
@@ -518,7 +518,7 @@ private lemma wrle_concur_cont_of_left_term
                 exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
               rintro _ (rfl | ⟨_, _, rfl⟩)
               · intro s; exact le_one'
-              · simp only [wrle_step_hom, coe_mk, wrle_step]
+              · simp only [wrleStepHom, coe_mk, wrleStep]
                 exact le_rfl
             · simp_rw [fslSepMul_comm P₁ _, ← fslSepMul_assoc, fslSepMul_comm P₁ _]
               simp_rw [fslSepMul_assoc]
@@ -531,7 +531,7 @@ private lemma wrle_concur_cont_of_left_term
                   Set.subset_union_left
               · apply le_sSup
                 use heap₂ ∪ heap', heap₁
-                simp only [wrle_step_hom, and_true]
+                simp only [wrleStepHom, and_true]
                 have : disjoint heap₁ heap' := by {
                   rw [← h_union, disjoint_comm _ _, disjoint_union_iff] at h_disjoint'
                   rw [disjoint_comm _ _]
@@ -560,17 +560,17 @@ private lemma wrle_concur_cont_of_left
     (h_ind : ∀ k < i, ∀ {c₁ c₂ : Program Var},
       wrtProg c₁ ∩ (varProg c₂ ∪ varRV P₂ ∪ varRV resource) = ∅ →
       wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁ ∪ varRV resource) = ∅ →
-        (`[fsl| [[gfpApprox (wrle_step_hom P₁ resource) ⊤ k c₁]]
-        ⋆ [[gfpApprox (wrle_step_hom P₂ resource) ⊤ k c₂]] ])
+        (`[fsl| [[gfpApprox (wrleStepHom P₁ resource) ⊤ k c₁]]
+        ⋆ [[gfpApprox (wrleStepHom P₂ resource) ⊤ k c₂]] ])
         ≤ gfpApprox
-          (wrle_step_hom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource)
+          (wrleStepHom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource)
           ⊤ k ([Prog| [[c₁]] || [[c₂]]])) :
-      gfpApprox (wrle_step_hom P₁ resource) ⊤ i c₁ ⟨ stack, heap₁⟩
-    * gfpApprox (wrle_step_hom P₂ resource) ⊤ i c₂ ⟨ stack, heap₂⟩
+      gfpApprox (wrleStepHom P₁ resource) ⊤ i c₁ ⟨ stack, heap₁⟩
+    * gfpApprox (wrleStepHom P₂ resource) ⊤ i c₂ ⟨ stack, heap₂⟩
     * resource ⟨stack, heap'⟩
     ≤ step c₁ (fun c ↦
       `[fsl|
-        [[gfpApprox (wrle_step_hom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource)
+        [[gfpApprox (wrleStepHom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource)
             ⊤ i' ([Prog| [[c]] || [[c₂]]])]]
           ⋆ [[resource]] ])
       ⟨ stack, heap ∪ heap' ⟩ := by
@@ -586,7 +586,7 @@ private lemma wrle_concur_cont_of_left
       use i', h_i'
       exact rfl
     · rfl
-  · rw [wrle_step_hom, OrderHom.coe_mk, wrle_step]
+  · rw [wrleStepHom, OrderHom.coe_mk, wrleStep]
     simp only
     rw [← h_union, disjoint_comm _ _, disjoint_union_iff] at h_disjoint'
     apply sInf_le_of_le
@@ -623,7 +623,7 @@ private lemma wrle_concur_cont_of_left
         · apply Set.Subset.antisymm ?_ (Set.empty_subset _)
           apply Set.Subset.trans ?_ (subset_of_eq h_vars₁)
           apply Set.inter_subset_inter wrtStmt_subset_wrtProg
-          exact varRV_of_gfpApprox_wrle_step
+          exact varRV_of_gfpApprox_wrleStep
         · apply le_sSup_of_le
           · use (heap₁ ∪ heap'), heap₂
             apply And.intro
@@ -637,7 +637,7 @@ private lemma wrle_concur_cont_of_left
               rfl
           · simp_rw [fslSepMul_comm]
             apply unit_mul_le_mul le_rfl
-            apply OrdinalApprox.gfpApprox_antitone ⟨wrle_step P₂ resource,_⟩
+            apply OrdinalApprox.gfpApprox_antitone ⟨wrleStep P₂ resource,_⟩
             exact le_of_lt h_i'
 
 
@@ -651,14 +651,14 @@ private lemma wrle_concur_cont
     (h_ind : ∀ k < i, ∀ {c₁ c₂ : Program Var},
       wrtProg c₁ ∩ (varProg c₂ ∪ varRV P₂ ∪ varRV resource) = ∅ →
       wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁ ∪ varRV resource) = ∅ →
-        (`[fsl| [[gfpApprox (wrle_step_hom P₁ resource) ⊤ k c₁]]
-        ⋆ [[gfpApprox (wrle_step_hom P₂ resource) ⊤ k c₂]] ])
+        (`[fsl| [[gfpApprox (wrleStepHom P₁ resource) ⊤ k c₁]]
+        ⋆ [[gfpApprox (wrleStepHom P₂ resource) ⊤ k c₂]] ])
         ≤ gfpApprox
-          (wrle_step_hom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource)
+          (wrleStepHom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource)
           ⊤ k ([Prog| [[c₁]] || [[c₂]]])) :
-    (`[fsl| [[gfpApprox (wrle_step_hom P₁ resource) ⊤ i c₁ ]]
-    ⋆ [[gfpApprox (wrle_step_hom P₂ resource) ⊤ i c₂]] ]) ≤
-    gfpApprox (wrle_step_hom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource) ⊤ i ([Prog| [[c₁]] || [[c₂]]]) := by
+    (`[fsl| [[gfpApprox (wrleStepHom P₁ resource) ⊤ i c₁ ]]
+    ⋆ [[gfpApprox (wrleStepHom P₂ resource) ⊤ i c₂]] ]) ≤
+    gfpApprox (wrleStepHom (`[fsl| [[P₁]] ⋆ [[P₂]] ]) resource) ⊤ i ([Prog| [[c₁]] || [[c₂]]]) := by
   nth_rw 3 [gfpApprox]
   apply le_sInf
   simp only [Set.mem_range, Subtype.exists, exists_prop, Set.union_singleton, Set.mem_insert_iff,
@@ -680,14 +680,14 @@ private lemma wrle_concur_cont
         h_vars₁ h_vars₂ h_ind
     · nth_rw 2 [mul_comm]
       rw [fslSepMul_comm]
-      conv => right; left; intro c'; rw [gfpApprox_wrle_step_concur_symmetric]
+      conv => right; left; intro c'; rw [gfpApprox_wrleStep_concur_symmetric]
       rw [union_comm _ _ h_disjoint] at h_union
       rw [disjoint_comm _ _] at h_disjoint
       apply wrle_concur_cont_of_left h_i' h_disjoint h_union h_disjoint'
         h_c₂_neq_abort h_c₂_neq_term h_c₁_neq_abort h_c₁_neq_term
         h_vars₂ h_vars₁
       intro i'' h_i'' c₁' c₂' h_vars₁' h_vars₂'
-      rw [gfpApprox_wrle_step_concur_symmetric]
+      rw [gfpApprox_wrleStep_concur_symmetric]
       rw [fslSepMul_comm]
       simp_rw [fslSepMul_comm]
       apply h_ind i'' h_i'' h_vars₂' h_vars₁'
@@ -714,7 +714,7 @@ theorem wrle_concur
       cases eq_or_ne c₂ [Prog| ↯] with
       | inl h_c₂_abort =>
         rw [h_c₂_abort]
-        rw [gfpApprox_wrle_step_concur_symmetric]
+        rw [gfpApprox_wrleStep_concur_symmetric]
         rw [fslSepMul_comm]
         simp_rw [fslSepMul_comm P₁ P₂]
         apply wrle_concur_of_left_abort
@@ -738,13 +738,13 @@ theorem wrle_concur
           cases eq_or_ne c₂ [Prog| ↓] with
           | inl h_c₂_term =>
             rw [h_c₂_term]
-            rw [gfpApprox_wrle_step_concur_symmetric]
+            rw [gfpApprox_wrleStep_concur_symmetric]
             rw [fslSepMul_comm]
             simp_rw [fslSepMul_comm P₁ P₂]
             simp only [h_c₂_term, varProg, Set.empty_union] at h_vars₁
             apply wrle_concur_cont_of_left_term h_c₁_neq_abort h_c₁_neq_term h_vars₁
             intro i' h_i' c h_vars
-            rw [gfpApprox_wrle_step_concur_symmetric]
+            rw [gfpApprox_wrleStep_concur_symmetric]
             rw [fslSepMul_comm]
             simp_rw [fslSepMul_comm P₂ P₁]
             apply ih i' h_i'

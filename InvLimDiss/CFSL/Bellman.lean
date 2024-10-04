@@ -116,11 +116,11 @@ open OrderHom
 
 open OrdinalApprox in
 theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
-    gfp (wrle_step_hom post `[fsl|emp])
+    gfp (wrleStepHom post `[fsl|emp])
     = gfp (bellman_step_hom post) := by
   apply le_antisymm
   · rw [← gfpApprox_ord_eq_gfp, ← gfpApprox_ord_eq_gfp]
-    simp only [wrle_step_hom, bellman_step_hom]
+    simp only [wrleStepHom, bellman_step_hom]
     induction (Order.succ (Cardinal.mk _)).ord using Ordinal.induction with
     | h i ih =>
       unfold gfpApprox
@@ -134,7 +134,7 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
         use j, h_j
       · simp only [coe_mk]
         rw [Pi.le_def]; intro c
-        rw [wrle_step, bellman_step]
+        rw [wrleStep, bellman_step]
         split
         case a.h.a.h.h_1 => rfl
         case a.h.a.h.h_2 => rfl
@@ -145,7 +145,7 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
           exact ih j h_j c
   · rw [← OrderHom.map_gfp]
     rw [← gfpApprox_ord_eq_gfp, ← gfpApprox_ord_eq_gfp]
-    simp only [wrle_step_hom, bellman_step_hom]
+    simp only [wrleStepHom, bellman_step_hom]
     induction (Order.succ (Cardinal.mk _)).ord using Ordinal.induction with
     | h i ih =>
       unfold gfpApprox
@@ -155,7 +155,7 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
         forall_apply_eq_imp_iff₂, true_and]
       intro j h_j
       rw [Pi.le_def]; intro c
-      rw [bellman_step, wrle_step]
+      rw [bellman_step, wrleStep]
       split
       case a.h.a.h_1 => rfl
       case a.h.a.h_2 => rfl

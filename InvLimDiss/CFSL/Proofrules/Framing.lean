@@ -26,17 +26,17 @@ theorem wrle_frame {c : Program Var} {P : StateRV Var}
     obtain ⟨j, h_j, rfl⟩ := h_Q
     cases eq_or_ne c [Prog| ↓] with
     | inl h_eq =>
-      simp only [wrle_step_hom, OrderHom.coe_mk, wrle_step, h_eq]
+      simp only [wrleStepHom, OrderHom.coe_mk, wrleStep, h_eq]
       refine fslSepMul_mono ?_ (le_rfl)
       apply sInf_le
       simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
         exists_exists_and_eq_and, and_true]
       use j, h_j
-      simp only [wrle_step]
+      simp only [wrleStep]
     | inr h_ne_term =>
       cases eq_or_ne c [Prog| ↯] with
       | inl h_eq =>
-        simp only [wrle_step_hom, OrderHom.coe_mk, h_eq, wrle_step]
+        simp only [wrleStepHom, OrderHom.coe_mk, h_eq, wrleStep]
         rw [← le_fslSepDiv_iff_fslSepMul_le]
         apply sInf_le_of_le
         · simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
@@ -44,7 +44,7 @@ theorem wrle_frame {c : Program Var} {P : StateRV Var}
           use j, h_j
         · exact bot_le
       | inr h_ne_abort =>
-        conv => right; rw [wrle_step_hom, OrderHom.coe_mk, wrle_step]
+        conv => right; rw [wrleStepHom, OrderHom.coe_mk, wrleStep]
         simp only
         rw [le_fslSepDiv_iff_fslSepMul_le]
         apply le_trans
@@ -72,7 +72,7 @@ theorem wrle_frame {c : Program Var} {P : StateRV Var}
           simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
             exists_exists_and_eq_and]
           use j, h_j
-          rw [wrle_step_hom, OrderHom.coe_mk, wrle_step]
+          rw [wrleStepHom, OrderHom.coe_mk, wrleStep]
           split
           case h_1 => simp only [ne_eq, not_true_eq_false] at h_ne_term
           case h_2 => simp only [ne_eq, not_true_eq_false] at h_ne_abort

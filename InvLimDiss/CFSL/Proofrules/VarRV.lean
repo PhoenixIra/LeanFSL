@@ -11,8 +11,8 @@ variable {Vars : Type}
 
 private theorem gfpApprox_of_term_eq
     (h : v ∉ varRV P) (q : ℚ):
-    gfpApprox (wrle_step_hom P resource) ⊤ i [Prog| ↓] s
-    = gfpApprox (wrle_step_hom P resource) ⊤ i [Prog| ↓]
+    gfpApprox (wrleStepHom P resource) ⊤ i [Prog| ↓] s
+    = gfpApprox (wrleStepHom P resource) ⊤ i [Prog| ↓]
       ⟨substituteVar s.stack v q, s.heap⟩ := by
   unfold gfpApprox
   rw [sInf_apply, iInf_apply, iInf_apply]
@@ -22,14 +22,14 @@ private theorem gfpApprox_of_term_eq
     forall_eq_or_imp, Pi.top_apply, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
   apply And.intro rfl
   intro i' _
-  simp only [wrle_step_hom, OrderHom.coe_mk, wrle_step]
+  simp only [wrleStepHom, OrderHom.coe_mk, wrleStep]
   simp only [varRV, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not] at h
   exact h s q
 
 private theorem gfpApprox_of_term_fslSepMul_resource_eq
     (h : v ∉ varRV P ∪ varRV resource) (q : ℚ):
-    `[fsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i [Prog| ↓] ]] ⋆ [[resource]]] s
-    = `[fsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i [Prog| ↓] ]] ⋆ [[resource]]]
+    `[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ i [Prog| ↓] ]] ⋆ [[resource]]] s
+    = `[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ i [Prog| ↓] ]] ⋆ [[resource]]]
       ⟨substituteVar s.stack v q, s.heap⟩ := by
   simp only [Set.mem_union, not_or] at h
   obtain ⟨h_P, h_resource⟩ := h
@@ -456,8 +456,8 @@ private theorem step_eq_of_not_mem_vars {c : Program Vars} {P resource : StateRV
 
 private theorem gfpApprox_eq_of_not_mem_vars {c : Program Vars} {P resource : StateRV Vars}
     (h : v ∉ varProg c ∪ varRV P ∪ varRV resource) :
-    gfpApprox (wrle_step_hom P resource) ⊤ i c s
-    = gfpApprox (wrle_step_hom P resource) ⊤ i c ⟨substituteVar s.stack v q, s.heap⟩ := by
+    gfpApprox (wrleStepHom P resource) ⊤ i c s
+    = gfpApprox (wrleStepHom P resource) ⊤ i c ⟨substituteVar s.stack v q, s.heap⟩ := by
   induction i using Ordinal.induction generalizing c s with
   | h i ih =>
     have h_vars := h
@@ -474,7 +474,7 @@ private theorem gfpApprox_eq_of_not_mem_vars {c : Program Vars} {P resource : St
     apply And.intro
     · rfl
     · intro i' h_i'
-      rw [wrle_step_hom, OrderHom.coe_mk, wrle_step]
+      rw [wrleStepHom, OrderHom.coe_mk, wrleStep]
       cases eq_or_ne c [Prog| ↓] with
       | inl h_term =>
         rw [h_term]
@@ -494,12 +494,12 @@ private theorem gfpApprox_eq_of_not_mem_vars {c : Program Vars} {P resource : St
           conv => {
             left; right; intro i; left; intro i; right; intro h'
             right; right; left; left; intro c
-            change `[fsl| [[gfpApprox (wrle_step_hom P resource) ⊤ i' c]] ⋆ [[resource]] ]
+            change `[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ i' c]] ⋆ [[resource]] ]
           }
           have : ∀ k < i, ∀ {c : Program Vars} {s : State Vars},
             v ∉ varProg c ∪ varRV P ∪ varRV resource →
-            (`[fsl| [[gfpApprox (wrle_step_hom P resource) ⊤ k c]] ⋆ [[resource]] ]) s =
-            (`[fsl| [[gfpApprox (wrle_step_hom P resource) ⊤ k c]] ⋆ [[resource]] ])
+            (`[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ k c]] ⋆ [[resource]] ]) s =
+            (`[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ k c]] ⋆ [[resource]] ])
               ⟨substituteVar s.stack v q, s.heap⟩ := by {
             intro i' h_i' c s h_vars
             simp only [fslSepMul]
@@ -522,8 +522,8 @@ private theorem gfpApprox_eq_of_not_mem_vars {c : Program Vars} {P resource : St
           }
           rfl
 
-theorem varRV_of_gfpApprox_wrle_step {P resource : StateRV Var} :
-    varRV (gfpApprox (wrle_step_hom P resource) ⊤ i c)
+theorem varRV_of_gfpApprox_wrleStep {P resource : StateRV Var} :
+    varRV (gfpApprox (wrleStepHom P resource) ⊤ i c)
     ⊆ varProg c ∪ varRV P ∪ varRV resource := by
   intro v h_v
   contrapose h_v

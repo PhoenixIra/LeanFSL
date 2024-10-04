@@ -5,8 +5,8 @@ import InvLimDiss.Program.AtomicFinal
 import Mathlib.Order.FixedPoints
 
 /-! This file contains the concurrent bellman-fixpoint and lemmas about, especially
-  * `wrle_step` the concurrent bellman-operator
-  * `wrle_step_mono` the concurrent bellman-operator is monotone
+  * `wrleStep` the concurrent bellman-operator
+  * `wrleStep_mono` the concurrent bellman-operator is monotone
   * `wrle'` the fixpoint of the concurrent bellman-equation
   * `wrle_def` one unfolding of the bellman-solution
 
@@ -19,17 +19,17 @@ open FSL Syntax OrderHom unitInterval Atom Semantics
 variable {Var : Type}
 
 /-- The concurrent bellman-operator.-/
-noncomputable def wrle_step (post : StateRV Var) (resource : StateRV Var) :
+noncomputable def wrleStep (post : StateRV Var) (resource : StateRV Var) :
     (Program Var → StateRV Var) → (Program Var → StateRV Var)
   | _, [Prog| ↓ ] => post
   | _, [Prog| ↯ ] => `[fsl| fFalse]
   | X, program => `[fsl| [[resource]] -⋆ [[step program (fun c => `[fsl| [[X c]] ⋆ [[resource]] ]) ]] ]
 
-theorem wrle_step_mono (post : StateRV Var) (resource : StateRV Var) : Monotone (wrle_step post resource) := by
+theorem wrleStep_mono (post : StateRV Var) (resource : StateRV Var) : Monotone (wrleStep post resource) := by
   intro X X' h_X
   rw [Pi.le_def]
   intro c
-  unfold wrle_step
+  unfold wrleStep
   split
   case h_1 => exact le_rfl
   case h_2 => exact le_rfl
@@ -45,14 +45,14 @@ theorem wrle_step_mono (post : StateRV Var) (resource : StateRV Var) : Monotone 
       exact h_X c
     · exact le_rfl
 
-/-- wrle_step as a monotone function -/
-noncomputable def wrle_step_hom (post : StateRV Var) (resource : StateRV Var) :
+/-- wrleStep as a monotone function -/
+noncomputable def wrleStepHom (post : StateRV Var) (resource : StateRV Var) :
     (Program Var → StateRV Var) →o (Program Var → StateRV Var) :=
-  ⟨wrle_step post resource, wrle_step_mono post resource⟩
+  ⟨wrleStep post resource, wrleStep_mono post resource⟩
 
 /-- The greatest solution to the concurrent bellman equation -/
 noncomputable def wrle' (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :=
-  gfp (wrle_step_hom post resource) program
+  gfp (wrleStepHom post resource) program
 
 syntax "wrle [" term "] (" fsl " | " fsl ")" : fsl
 macro_rules
@@ -87,7 +87,7 @@ theorem wrle_def (program : Program Var) (post : StateRV Var) (resource : StateR
   | [Prog| ↯ ] => `[fsl| fFalse]
   | program => `[fsl| [[resource]] -⋆ [[step program
     (fun c => `[fsl| wrle [c] ([[post]] | [[resource]]) ⋆ [[resource]] ]) ]] ] := by
-  rw [wrle', wrle_step_hom, ← map_gfp, coe_mk, wrle_step]
+  rw [wrle', wrleStepHom, ← map_gfp, coe_mk, wrleStep]
   split
   case h_1 =>
     split

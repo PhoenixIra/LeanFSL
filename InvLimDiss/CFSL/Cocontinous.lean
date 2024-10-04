@@ -6,7 +6,7 @@ namespace CFSL
 
 open OmegaCompletePartialOrder FSL Syntax Semantics
 
-theorem wrle_step_cocontinous (post : StateRV Var) (resource : StateRV Var) :
-    Continuous (OrderHom.dual <| wrle_step_hom post resource) := sorry
+theorem wrleStep_cocontinous (post : StateRV Var) (resource : StateRV Var) :
+    Continuous (OrderHom.dual <| wrleStepHom post resource) := sorry
 
 end CFSL
