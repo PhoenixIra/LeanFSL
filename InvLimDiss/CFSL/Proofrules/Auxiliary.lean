@@ -161,7 +161,7 @@ theorem wrle_max :
   · rw [fslMax_comm P Q]
     exact wrle_max_left
 
-theorem wrle_weighted_sum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslReal e)) = ∅):
+theorem wrle_weightedSum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslReal e)) = ∅):
     `[fsl| <e> ⬝ wrle [c] ([[P]] | [[R]]) + ~<e> ⬝ wrle [c] ([[Q]] | [[R]])
     ⊢ wrle [c] (<e> ⬝ [[P]] + ~<e> ⬝ [[Q]]| [[R]])] := by
   simp only [wrle', wrleStepHom]

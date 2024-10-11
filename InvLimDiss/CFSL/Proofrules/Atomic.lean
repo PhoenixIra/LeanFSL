@@ -50,9 +50,9 @@ private theorem support_wrle'_of_atom {c : Program Var} (h_atom : atomicProgram 
   · exfalso
     exact h_sem <| semantics_eq_zero_of_atomProgram h_atom h_fin_cs s a cs.state
 
-theorem wrle_atom (h : `[fsl| [[P]] ⋆ [[resource]] ⊢ wrle [c] ([[P]] ⋆ [[resource]] | emp)])
+theorem wrle_atom (h : `[fsl| [[Q]] ⋆ [[resource]] ⊢ wrle [c] ([[P]] ⋆ [[resource]] | emp)])
     (h_atom : atomicProgram c) :
-    `[fsl| [[P]] ⊢ wrle [c] ([[P]] | [[resource]])] := by
+    `[fsl| [[Q]] ⊢ wrle [c] ([[P]] | [[resource]])] := by
   have := atomic_not_final h_atom
   rw [wrle_eq_of_not_final this, le_fslSepDiv_iff_fslSepMul_le]
   apply le_trans h
