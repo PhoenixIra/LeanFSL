@@ -8,7 +8,7 @@ open Qsl2Sl unitInterval State FSL SL Syntax
 theorem atLeast_fslSepDiv_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var}
     (h_min : `[fsl| [[f₁]] -⋆ [[f₂]]] s ∈ { x | ∃ heap, disjoint s.heap heap ∧
       x = f₂ ⟨s.stack,s.heap ∪ heap⟩ / f₁ ⟨s.stack,heap⟩})
-    (h_finite : Set.Finite (Set.range f₁)):
+    (h_finite : Set.Finite (Set.range f₁)) :
     i ≤ `[fsl| [[f₁]] -⋆ [[f₂]]] s
     ↔ ∃ j₁ ∈ Set.range f₁, ∃ j₂ ∈ Set.range f₂,  i ≤ j₂ / j₁
       ∧ `[sl| [[fun s => j₁ ≤ f₁ s]] -∗ [[fun s => j₂ ≤ f₂ s]]] s := sorry

@@ -227,6 +227,11 @@ theorem range_of_fslIverson : Set.range `[fsl Var | ⁅p⁆] ⊆ {0,1} := by
   rw [Or.comm]
   exact Classical.em _
 
+theorem range_of_fslSubst : Set.range `[fsl Var| [[f]](x ↦ e)] ⊆ Set.range f := by
+  rintro i ⟨s,rfl⟩
+  rw [fslSubst]
+  simp only [substituteStack, Set.mem_range, exists_apply_eq_apply]
+
 theorem range_of_fslNot : Set.range `[fsl| ~[[f]]] = σ '' Set.range f := by
   rw [Set.ext_iff]
   intro i
@@ -541,6 +546,9 @@ theorem atLeast_fslIverson_iff {i : I} (h_lt : 0 < i) (P : State Var → Prop) (
     rw [iteOneZero_pos h]
     exact le_one'
 
+theorem atLeast_fslSubst_iff {i : I} {f : StateRV Var} {v : Var} {e : ValueExp Var} (s : State Var) :
+    i ≤ `[fsl| [[f]](v ↦ e)] s ↔ `[sl| [[fun s => i ≤ f s]](v ↦ e)] s := ⟨fun h => h, fun h => h⟩
+
 theorem atLeast_fslNot_of_slNot {i : I } {f : StateRV Var} {s : State Var} {values : Set I}
   (h_subset : Set.range f ⊆ values) :
     `[sl| ¬ [[fun s => sInf {j ∈ values | σ i < j } ≤ f s]]] s → i ≤ `[fsl| ~[[f]]] s := by
@@ -548,8 +556,7 @@ theorem atLeast_fslNot_of_slNot {i : I } {f : StateRV Var} {s : State Var} {valu
   intro h
   rw [le_symm_iff_le_symm, ← not_lt]
   intro h_lt
-  rw [not_le] at h
-  apply (not_le_of_lt h)
+  apply h
   apply sInf_le
   apply And.intro
   · exact Set.mem_of_subset_of_mem h_subset (Set.mem_range_self _)
@@ -737,8 +744,7 @@ theorem atLeast_fslSepDiv_if_of_left_one_zero {i : I} {f₁ f₂ : StateRV Var} 
     exact h le_rfl
 
 theorem atLeast_fslSepDiv_iff_of_left_one_zero {f₁ f₂ : StateRV Var} {s : State Var}
-    (h_one_zero : Set.range f₁ = {0, 1})
-    (h_finite : Set.Finite (Set.range f₂)) :
+    (h_one_zero : Set.range f₁ = {0, 1}) :
     i ≤ `[fsl| [[f₁]] -⋆ [[f₂]]] s
     ↔ `[sl| [[fun s => 1 ≤ f₁ s]] -∗ [[fun s => i ≤ f₂ s]]] s := by
   apply Iff.intro
