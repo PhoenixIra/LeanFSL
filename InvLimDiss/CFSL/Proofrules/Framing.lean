@@ -44,7 +44,7 @@ theorem wrle_frame {c : Program Var} {P : StateRV Var}
           use j, h_j
         · exact bot_le
       | inr h_ne_abort =>
-        conv => right; rw [wrleStepHom, OrderHom.coe_mk, wrleStep]
+        conv => right; rw [wrleStepHom, OrderHom.coe_mk]; unfold wrleStep
         simp only
         rw [le_fslSepDiv_iff_fslSepMul_le]
         apply le_trans
@@ -73,9 +73,7 @@ theorem wrle_frame {c : Program Var} {P : StateRV Var}
             exists_exists_and_eq_and]
           use j, h_j
           rw [wrleStepHom, OrderHom.coe_mk, wrleStep]
-          split
-          case h_1 => simp only [ne_eq, not_true_eq_false] at h_ne_term
-          case h_2 => simp only [ne_eq, not_true_eq_false] at h_ne_abort
-          case h_3 => rfl
+          · exact h_ne_term
+          · exact h_ne_abort
 
 end CFSL

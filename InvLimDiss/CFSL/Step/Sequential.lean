@@ -34,7 +34,8 @@ theorem step_sequential_term (s : State Var) (inner : Program Var → StateRV Va
   apply le_antisymm
   · apply sInf_le
     use deterministic
-    simp only [enabledAction, or_false, ↓reduceIte, Set.mem_singleton_iff, true_and]
+    simp only [enabledAction, reduceCtorEq, or_false, ↓reduceIte, Set.mem_singleton_iff,
+      Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state, true_and]
     exact tsum_sequential_term_of_deterministic s inner
   · apply le_sInf
     rintro _ ⟨a, h_a, rfl⟩
@@ -98,13 +99,15 @@ theorem tsum_sequential_cont (s : State Var) (inner : Program Var → StateRV Va
         Prod.exists, Subtype.mk.injEq, Prod.mk.injEq, Program.sequential.injEq, and_true,
         exists_and_left, exists_prop, exists_eq_right_right, exists_eq_left]
       unfold programSmallStepSemantics at h_sem
-      simp only [↓reduceIte, if_neg h_term, if_neg h_abort, ne_eq, ite_eq_left_iff, Classical.not_imp] at h_sem
+      simp only [reduceCtorEq, and_false, iteOneZero_false, ↓reduceIte, if_neg h_abort,
+        if_neg h_term, ne_eq, ite_eq_left_iff, Classical.not_imp] at h_sem
       obtain ⟨h_abort, h_sem⟩ := h_sem
       exact ⟨⟨h_sem, h_inner⟩, h_abort⟩
     · intro cs
       conv => left; unfold programSmallStepSemantics
-      simp only [reachState.state, ne_eq, Set.mem_setOf_eq, inj, reachState.prog, ↓reduceIte,
-        if_neg h_term, if_neg h_abort, ite_mul, zero_mul, Set.coe_setOf, ite_eq_right_iff, zero_eq_mul]
+      simp only [reachState.state, ne_eq, Set.mem_setOf_eq, inj, reachState.prog, reduceCtorEq,
+        and_false, iteOneZero_false, ↓reduceIte, if_neg h_abort, if_neg h_term, ite_mul, zero_mul,
+        Set.coe_setOf, ite_eq_right_iff, zero_eq_mul]
       obtain ⟨⟨⟨c,s⟩,h⟩,h'⟩ := cs
       intro h_abort
       exfalso

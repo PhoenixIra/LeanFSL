@@ -474,53 +474,54 @@ private theorem gfpApprox_eq_of_not_mem_vars {c : Program Vars} {P resource : St
     apply And.intro
     · rfl
     · intro i' h_i'
-      rw [wrleStepHom, OrderHom.coe_mk, wrleStep]
+      rw [wrleStepHom, OrderHom.coe_mk]
       cases eq_or_ne c [Prog| ↓] with
       | inl h_term =>
-        rw [h_term]
-        simp only
-        rw [h_P _ q]
+        rw [h_term, wrleStep, h_P _ q]
       | inr h_neq_term =>
         cases eq_or_ne c [Prog| ↯] with
         | inl h_abort =>
           rw [h_abort]
           rfl
         | inr h_neq_abort =>
-          simp only [fslSepDiv]
-          conv => {
-            left; right; intro i; left; intro i; right; intro h'
-            rw [h_resource _ q]
-          }
-          conv => {
-            left; right; intro i; left; intro i; right; intro h'
-            right; right; left; left; intro c
-            change `[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ i' c]] ⋆ [[resource]] ]
-          }
-          have : ∀ k < i, ∀ {c : Program Vars} {s : State Vars},
-            v ∉ varProg c ∪ varRV P ∪ varRV resource →
-            (`[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ k c]] ⋆ [[resource]] ]) s =
-            (`[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ k c]] ⋆ [[resource]] ])
-              ⟨substituteVar s.stack v q, s.heap⟩ := by {
-            intro i' h_i' c s h_vars
-            simp only [fslSepMul]
+          rw [wrleStep]
+          · simp only [fslSepDiv]
             conv => {
-              left; right; intro a; left; intro a; right; intro h₁
-              rw [ih i' h_i' h_vars]
-            }
-            simp only
-            simp only [varRV, substituteStack, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or,
-              not_exists, Decidable.not_not] at h_vars
-            obtain ⟨_, h_resource⟩ := h_vars
-            conv => {
-              left; right; intro a; left; intro a; right; intro h₁; right; intro h₂
+              left; right; intro i; left; intro i; right; intro h'
               rw [h_resource _ q]
             }
-          }
-          conv => {
-            left; right; intro i; left; intro i; right; intro h'
-            rw [step_eq_of_not_mem_vars _ h_vars (this i' h_i')]
-          }
-          rfl
+            conv => {
+              left; right; intro i; left; intro i; right; intro h'
+              right; right; left; left; intro c
+              change `[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ i' c]] ⋆ [[resource]] ]
+            }
+            have : ∀ k < i, ∀ {c : Program Vars} {s : State Vars},
+              v ∉ varProg c ∪ varRV P ∪ varRV resource →
+              (`[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ k c]] ⋆ [[resource]] ]) s =
+              (`[fsl| [[gfpApprox (wrleStepHom P resource) ⊤ k c]] ⋆ [[resource]] ])
+                ⟨substituteVar s.stack v q, s.heap⟩ := by {
+              intro i' h_i' c s h_vars
+              simp only [fslSepMul]
+              conv => {
+                left; right; intro a; left; intro a; right; intro h₁
+                rw [ih i' h_i' h_vars]
+              }
+              simp only
+              simp only [varRV, substituteStack, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or,
+                not_exists, Decidable.not_not] at h_vars
+              obtain ⟨_, h_resource⟩ := h_vars
+              conv => {
+                left; right; intro a; left; intro a; right; intro h₁; right; intro h₂
+                rw [h_resource _ q]
+              }
+            }
+            conv => {
+              left; right; intro i; left; intro i; right; intro h'
+              rw [step_eq_of_not_mem_vars _ h_vars (this i' h_i')]
+            }
+            rfl
+          · exact h_neq_term
+          · exact h_neq_abort
 
 theorem varRV_of_gfpApprox_wrleStep {P resource : StateRV Var} :
     varRV (gfpApprox (wrleStepHom P resource) ⊤ i c)

@@ -141,7 +141,7 @@ theorem wrle_mutate :
           simp only
           rw [State.disjoint_comm] at h_disjoint
           apply disjoint_singleton_of_disjoint_alloc h_disjoint
-          simp only [h_val', State.singleton, ↓reduceIte, ne_eq, not_false_eq_true]
+          simp only [h_val', State.singleton, ↓reduceIte, ne_eq, reduceCtorEq, not_false_eq_true]
         · rfl
       · simp only [fslPointsTo]
         rw [iteOneZero_pos]
@@ -164,7 +164,7 @@ theorem wrle_mutate :
       use l, h_loc.symm
       rw [← h_union, h_val]
       apply ne_undef_of_union_of_ne_undef
-      simp only [State.singleton, ↓reduceIte, ne_eq, not_false_eq_true]
+      simp only [State.singleton, ↓reduceIte, ne_eq, reduceCtorEq, not_false_eq_true]
 
 
 theorem wrle_lookup (h : v ∉ varRV RI) :
@@ -198,7 +198,7 @@ theorem wrle_lookup (h : v ∉ varRV RI) :
         obtain rfl := h_l'
         have h_singleton' := h_singleton
         rw [Eq.comm, singleton_eq_iff] at h_singleton'
-        simp only [← congrFun h_union l', h_singleton'.left, ne_eq, not_false_eq_true,
+        simp only [← congrFun h_union l', h_singleton'.left, ne_eq, reduceCtorEq, not_false_eq_true,
           union_val_iff_of_val, val.injEq] at h_q
         obtain rfl := h_q
         clear h_singleton'
@@ -226,7 +226,7 @@ theorem wrle_lookup (h : v ∉ varRV RI) :
         intro l h_l h_heap₁
         specialize h_nalloc l h_l.symm
         rw [← h_union, union_undef_iff_undef, h_heap₁] at h_nalloc
-        simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
+        simp only [State.singleton, ↓reduceIte, reduceCtorEq, false_and] at h_nalloc
 
 theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
     `[fsl| e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ)))
@@ -299,7 +299,7 @@ theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
         simp only [ne_eq, not_exists, not_and, not_not] at h_nalloc
         specialize h_nalloc l h_loc.symm
         rw [← h_union, union_undef_iff_undef, h_singleton] at h_nalloc
-        simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
+        simp only [State.singleton, ↓reduceIte, reduceCtorEq, false_and] at h_nalloc
 
 theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
     `[fsl| S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))
@@ -334,8 +334,8 @@ theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
           obtain rfl := h_l'
           rw [← h_eq]
           rw [Eq.comm, singleton_eq_iff] at h_singleton
-          simp only [← h_union, h_singleton.left, ne_eq, not_false_eq_true, union_val_iff_of_val,
-            val.injEq] at h_q
+          simp only [← h_union, h_singleton.left, ne_eq, reduceCtorEq, not_false_eq_true,
+            union_val_iff_of_val, val.injEq] at h_q
           exact h_q
       case inr h_ne =>
         rw [step_cas_of_neq s _ h_loc (neq_undef_iff_exists_val.mpr ⟨q, h_q⟩) (by simp [h_q, h_ne])]
@@ -382,7 +382,7 @@ theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
         simp only [ne_eq, not_exists, not_and, not_not] at h_nalloc
         specialize h_nalloc l h_loc.symm
         rw [← h_union, union_undef_iff_undef, h_singleton] at h_nalloc
-        simp only [State.singleton, ↓reduceIte, false_and] at h_nalloc
+        simp only [State.singleton, ↓reduceIte, reduceCtorEq, false_and] at h_nalloc
 
 theorem wrle_compareAndSet (h : v ∉ varRV RI) :
     `[fsl| (e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ))))

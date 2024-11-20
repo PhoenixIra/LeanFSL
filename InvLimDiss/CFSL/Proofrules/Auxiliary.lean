@@ -178,7 +178,7 @@ theorem wrle_weightedSum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslRe
       exists_exists_and_eq_and]
     rintro _ (rfl|⟨j, h_j, rfl⟩)
     · exact le_top
-    · rw [wrleStep]
+    · unfold wrleStep
       split
       case h_1 =>
         apply fslAdd_mono
@@ -242,8 +242,8 @@ theorem wrle_weightedSum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslRe
                 exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
               right
               use j, h_j
-            · simp only [wrleStep]
-              simp_rw [fslSepMul_comm]
+            · simp_rw [fslSepMul_comm R]
+              unfold wrleStep
               rfl
           · apply fslMul_mono le_rfl
             apply sInf_le_of_le
@@ -251,7 +251,7 @@ theorem wrle_weightedSum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslRe
                 exists_prop, exists_eq_or_imp, Pi.top_apply, exists_exists_and_eq_and]
               right
               use j, h_j
-            · simp only [wrleStep]
+            · unfold wrleStep
               simp_rw [fslSepMul_comm]
               rfl
 

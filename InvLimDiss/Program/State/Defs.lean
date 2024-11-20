@@ -65,13 +65,13 @@ theorem neq_undef_iff_exists_val {heap : Heap} {l : PNat} :
     | undef => exfalso; exact h h_l
   · rintro ⟨q, h_l⟩
     rw [h_l]
-    simp only [ne_eq, not_false_eq_true]
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true]
 
 theorem undef_iff_forall_neq_val {heap : Heap} {l : PNat} :
     heap l = undef ↔ ∀ q, heap l ≠ val q := by
   apply Iff.intro
   · intro h q
-    simp only [h, ne_eq, not_false_eq_true]
+    simp only [h, ne_eq, reduceCtorEq, not_false_eq_true]
   · intro h_neq_val
     by_contra h_neq_undef
     rw [← ne_eq, neq_undef_iff_exists_val] at h_neq_undef

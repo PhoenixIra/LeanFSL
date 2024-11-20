@@ -587,58 +587,59 @@ private lemma wrle_concur_cont_of_left
       exact rfl
     · rfl
   · rw [wrleStepHom, OrderHom.coe_mk, wrleStep]
-    simp only
-    rw [← h_union, disjoint_comm _ _, disjoint_union_iff] at h_disjoint'
-    apply sInf_le_of_le
-    · use heap'
-      apply And.intro
-      · simp only
-        rw [disjoint_comm _ _]
-        exact h_disjoint'.left
-      · rfl
-    · rw [div_swap]
-      apply unit_div_le_div ?_ le_rfl
-      rw [unit_le_div_iff_mul_le]
-      apply le_trans
-      swap
-      · apply step_mono_of_state_of_semantics_support
-        intro a _ c' s' h_semantics
-        apply fslSepMul_mono ?_ le_rfl
+    · rw [← h_union, disjoint_comm _ _, disjoint_union_iff] at h_disjoint'
+      apply sInf_le_of_le
+      · use heap'
+        apply And.intro
+        · simp only
+          rw [disjoint_comm _ _]
+          exact h_disjoint'.left
+        · rfl
+      · rw [div_swap]
+        apply unit_div_le_div ?_ le_rfl
+        rw [unit_le_div_iff_mul_le]
+        apply le_trans
         swap
-        apply h_ind i' h_i'
-        · apply Set.Subset.antisymm ?_ (Set.empty_subset _)
-          apply Set.Subset.trans ?_ (subset_of_eq h_vars₁)
-          exact Set.inter_subset_inter
-            (written_of_transition h_semantics)
-            le_rfl
-        · apply Set.Subset.antisymm ?_ (Set.empty_subset _)
-          apply Set.Subset.trans ?_ (subset_of_eq h_vars₂)
-          apply Set.inter_subset_inter le_rfl
-          apply Set.union_subset_union ?_ le_rfl
-          apply Set.union_subset_union ?_ le_rfl
-          exact vars_of_transition h_semantics
-      · simp_rw [← fslSepMul_assoc, fslSepMul_comm _ _, fslSepMul_assoc]
-        apply le_trans ?_ (step_framing _ ?_ ⟨stack, heap ∪ heap'⟩)
-        swap
-        · apply Set.Subset.antisymm ?_ (Set.empty_subset _)
-          apply Set.Subset.trans ?_ (subset_of_eq h_vars₁)
-          apply Set.inter_subset_inter wrtStmt_subset_wrtProg
-          exact varRV_of_gfpApprox_wrleStep
-        · apply le_sSup_of_le
-          · use (heap₁ ∪ heap'), heap₂
-            apply And.intro
-            · rw [disjoint_comm _ _, disjoint_union_iff]
-              rw [disjoint_comm heap₂ heap₁, disjoint_comm heap₂ heap']
-              exact ⟨h_disjoint, h_disjoint'.right⟩
-            · simp only [← h_union]
-              rw [union_assoc, union_comm heap' heap₂ h_disjoint'.right]
-              rw [← union_assoc]
-              simp only [true_and]
-              rfl
-          · simp_rw [fslSepMul_comm]
-            apply unit_mul_le_mul le_rfl
-            apply OrdinalApprox.gfpApprox_antitone ⟨wrleStep P₂ resource,_⟩
-            exact le_of_lt h_i'
+        · apply step_mono_of_state_of_semantics_support
+          intro a _ c' s' h_semantics
+          apply fslSepMul_mono ?_ le_rfl
+          swap
+          apply h_ind i' h_i'
+          · apply Set.Subset.antisymm ?_ (Set.empty_subset _)
+            apply Set.Subset.trans ?_ (subset_of_eq h_vars₁)
+            exact Set.inter_subset_inter
+              (written_of_transition h_semantics)
+              le_rfl
+          · apply Set.Subset.antisymm ?_ (Set.empty_subset _)
+            apply Set.Subset.trans ?_ (subset_of_eq h_vars₂)
+            apply Set.inter_subset_inter le_rfl
+            apply Set.union_subset_union ?_ le_rfl
+            apply Set.union_subset_union ?_ le_rfl
+            exact vars_of_transition h_semantics
+        · simp_rw [← fslSepMul_assoc, fslSepMul_comm _ _, fslSepMul_assoc]
+          apply le_trans ?_ (step_framing _ ?_ ⟨stack, heap ∪ heap'⟩)
+          swap
+          · apply Set.Subset.antisymm ?_ (Set.empty_subset _)
+            apply Set.Subset.trans ?_ (subset_of_eq h_vars₁)
+            apply Set.inter_subset_inter wrtStmt_subset_wrtProg
+            exact varRV_of_gfpApprox_wrleStep
+          · apply le_sSup_of_le
+            · use (heap₁ ∪ heap'), heap₂
+              apply And.intro
+              · rw [disjoint_comm _ _, disjoint_union_iff]
+                rw [disjoint_comm heap₂ heap₁, disjoint_comm heap₂ heap']
+                exact ⟨h_disjoint, h_disjoint'.right⟩
+              · simp only [← h_union]
+                rw [union_assoc, union_comm heap' heap₂ h_disjoint'.right]
+                rw [← union_assoc]
+                simp only [true_and]
+                rfl
+            · simp_rw [fslSepMul_comm]
+              apply unit_mul_le_mul le_rfl
+              apply OrdinalApprox.gfpApprox_antitone ⟨wrleStep P₂ resource,_⟩
+              exact le_of_lt h_i'
+    · exact h_c₁_neq_term
+    · exact h_c₁_neq_abort
 
 
 open State in

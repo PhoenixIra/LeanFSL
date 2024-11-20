@@ -126,7 +126,7 @@ theorem slBigSepCon_eq_one_iff_removedHeap {stack : Stack Var} {heap : Heap} :
             · rw [ne_eq, ← PNat.coe_inj, PNat.mk_coe] at h_ne
               exact h_ne
           · simp_rw [h_heap₁]
-            simp only [State.singleton, ite_eq_right_iff, imp_false]
+            simp only [State.singleton, ite_eq_right_iff, reduceCtorEq, imp_false]
             intro h_eq
             apply h_ne
             rw [← PNat.coe_inj, PNat.mk_coe]

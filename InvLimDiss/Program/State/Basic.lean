@@ -53,7 +53,7 @@ theorem undef_of_disjoint_of_ne_undef {heap₁ heap₂ : Heap} {l : PNat}
 theorem undef_of_disjoint_of_val {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ}
     (h : disjoint heap₁ heap₂) (h_undef : heap₁ l = q) : heap₂ l = undef := by
   apply undef_of_disjoint_of_ne_undef h
-  simp only [h_undef, ne_eq, not_false_eq_true]
+  simp only [h_undef, ne_eq, reduceCtorEq, not_false_eq_true]
 
 
 theorem substituteLoc_disjoint {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ}
@@ -65,7 +65,7 @@ theorem substituteLoc_disjoint {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ}
     | inl h_disjoint =>
       simp only at h_disjoint
       split at h_disjoint
-      case isTrue _ => exfalso; exact h_disjoint
+      case isTrue _ => exfalso; simp only [reduceCtorEq] at h_disjoint
       case isFalse _ => exact Or.inl h_disjoint
     | inr h_disjoint => exact Or.inr h_disjoint
   · intro h_disjoint l'
@@ -177,7 +177,7 @@ theorem substituteLoc_union {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ} :
       rw [h_eq]
   case h_2 h_eq =>
     split at h_eq
-    case isTrue _ => exfalso; exact h_eq
+    case isTrue _ => exfalso; simp only [reduceCtorEq] at h_eq
     case isFalse h_l =>
       simp only [h_eq, if_neg h_l]
 
@@ -199,7 +199,7 @@ theorem union_val_iff_of_val {heap₁ heap₂ : Heap} {l : PNat}
 
 theorem union_val_of_val {heap₁ heap₂ : Heap} {l : PNat} {q : ℚ}
     (h : heap₁ l = val q) : (heap₁ ∪ heap₂) l = val q := by
-  have : heap₁ l ≠ undef := by rw [h]; simp only [ne_eq, not_false_eq_true]
+  have : heap₁ l ≠ undef := by rw [h]; simp only [ne_eq, reduceCtorEq, not_false_eq_true]
   rw [union_val_iff_of_val this]
   exact h
 
@@ -209,11 +209,11 @@ theorem union_undef_iff_undef {heap₁ heap₂ : Heap} {l : PNat} :
   apply Iff.intro
   · intro h
     split at h
-    case h_1 _ => simp only at h
+    case h_1 _ => simp only [reduceCtorEq] at h
     case h_2 h_l => use h_l
   · intro h
     split
-    case h_1 h_l => rw [h_l] at h; simp only [false_and] at h
+    case h_1 h_l => rw [h_l] at h; simp only [reduceCtorEq, false_and] at h
     case h_2 _ => exact h.right
 
 theorem eq_of_union_of_union {heap₁ heap₂ heap₁₂ heap₂₁ : Heap}
@@ -314,7 +314,7 @@ theorem allocateLoc_union {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ} :
       rw [allocateLoc, if_pos h] at h_q
       exact h_q.symm
     case h_2 q h_q =>
-      simp only [allocateLoc, if_pos h] at h_q
+      simp only [allocateLoc, if_pos h, reduceCtorEq] at h_q
   case neg h =>
     rw [Union.union, union]
     simp only
@@ -347,7 +347,7 @@ theorem isAlloc_union {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ}
   specialize h l' h_le h_lt
   rw [neq_undef_iff_exists_val] at h
   obtain ⟨q, h_q⟩ := h
-  simp only [union_eq_of_left h_q, ne_eq, not_false_eq_true]
+  simp only [union_eq_of_left h_q, ne_eq, reduceCtorEq, not_false_eq_true]
 
 theorem union_freeLoc {heap₁ heap₂ : Heap} {l : ℕ+} {m : ℕ}
     (h_alloc : isAlloc heap₁ l m) (h_disjoint : disjoint heap₁ heap₂) :
@@ -442,7 +442,7 @@ lemma disjoint_singleton_removedHeap {l : ℕ+} {n : ℕ} {heap : Heap} :
     simp only [h, PNat.mk_coe, lt_self_iff_false] at h_lt
   case neg h =>
     apply Or.inl
-    simp only [singleton, ite_eq_right_iff, imp_false]
+    simp only [singleton, ite_eq_right_iff, reduceCtorEq, imp_false]
     exact (Ne.symm h)
 
 @[simp]
@@ -630,7 +630,7 @@ lemma singleton_eq_of_ne (h : l ≠ l') : singleton l q l' = undef := by
 lemma singleton_ne_emptyHeap : singleton l q ≠ ∅ := by
   intro h
   have := congrFun h l
-  simp only [singleton, ↓reduceIte, emptyHeap] at this
+  simp only [singleton, ↓reduceIte, emptyHeap, reduceCtorEq] at this
 
 lemma disjoint_singleton_of_disjoint_alloc {l : ℕ+} {q : ℚ} {heap₁ heap₂ : Heap}
     (h_disjoint : disjoint heap₁ heap₂) (h_alloc : heap₂ l ≠ undef) :
@@ -646,7 +646,7 @@ lemma disjoint_singleton_of_disjoint_alloc {l : ℕ+} {q : ℚ} {heap₁ heap₂
       exact h_alloc h₂
     | inr h_ne =>
       apply Or.inr
-      simp only [singleton, ite_eq_right_iff, imp_false]
+      simp only [singleton, ite_eq_right_iff, reduceCtorEq, imp_false]
       exact h_ne.symm
 
 lemma disjoint_singleton_of_disjoint_singleton {heap : Heap}
@@ -659,7 +659,7 @@ lemma disjoint_singleton_of_disjoint_singleton {heap : Heap}
     apply Or.inr
     simp only [singleton, ite_eq_right_iff, imp_false]
     rintro rfl
-    simp only [singleton, ↓reduceIte] at h
+    simp only [singleton, ↓reduceIte, reduceCtorEq] at h
 
 lemma singleton_eq_iff {heap : Heap} :
     singleton l q = heap ↔ heap l = q ∧ ∀ l' ≠ l, heap l' = undef := by
@@ -727,14 +727,22 @@ lemma subsituteLoc_eq_union_singleton {heap : Heap} (h : heap l = undef) :
 
 theorem bigSingleton_eq_undef_iff (l : PNat) (n : ℕ) (qs : ℕ → ℚ) (l' : PNat) :
     bigSingleton l n qs l' = undef ↔ l' < l ∨ l+n ≤ l' := by
-  simp only [bigSingleton, ite_eq_right_iff, imp_false, not_and_or, not_le, not_lt]
+  simp only [bigSingleton, ite_eq_right_iff, reduceCtorEq, imp_false, not_and, not_lt]
+  apply Iff.intro
+  · intro h
+    cases le_or_lt l l'
+    case inl h_l => right; exact h h_l
+    case inr h_l => left; exact h_l
+  · rintro (h|h)
+    · intro h'; exfalso; exact h'.not_lt h
+    · intro _;  exact h
 
 theorem bigSingleton_of_zero :
     bigSingleton l 0 qs = ∅ := by
   apply funext
   intro l'
-  simp only [bigSingleton, add_zero, PNat.coe_lt_coe, emptyHeap, ite_eq_right_iff, imp_false,
-    not_and, not_lt, imp_self]
+  simp only [bigSingleton, add_zero, PNat.coe_lt_coe, emptyHeap, ite_eq_right_iff, reduceCtorEq,
+    imp_false, not_and, not_lt, imp_self]
 
 lemma disjoint_bigSingleton_of_isNotAlloc {heap : Heap} (h : isNotAlloc heap l n) :
     disjoint heap (bigSingleton l n qs) := by
@@ -779,7 +787,7 @@ lemma union_singleton_bigSingle :
       apply lt_trans h_lt
       simp only [add_lt_add_iff_left, lt_add_iff_pos_right, zero_lt_one]
     case isFalse h_l' =>
-      simp only [if_neg h_l'] at h_q
+      simp only [if_neg h_l', reduceCtorEq] at h_q
   case h_2 q h_q =>
     split
     case isTrue h_l =>
@@ -793,7 +801,7 @@ lemma union_singleton_bigSingle :
       split
       case isTrue h_l' =>
         rw [if_pos] at h_q
-        · simp only at h_q
+        · simp only [reduceCtorEq] at h_q
         · apply And.intro h_l'.left
           have := Nat.le_of_lt_succ h_l'.right
           apply lt_of_le_of_ne this

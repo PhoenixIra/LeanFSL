@@ -217,11 +217,11 @@ lemma unit_div_eq_one_iff {i j : I} : i / j = 1 ↔ j ≤ i := by
   · intro h
     exact unit_div_of_le h
 
-@[norm_cast]
-lemma coe_pos {x : I} : (0 : ℝ) < x ↔ 0 < x := Iff.rfl
+-- @[norm_cast]
+-- lemma coe_pos {x : I} : (0 : ℝ) < x ↔ 0 < x := Iff.rfl
 
-@[norm_cast]
-lemma coe_lt_one {x : I} : (x : ℝ) < 1 ↔ x < 1 := Iff.rfl
+-- @[norm_cast]
+-- lemma coe_lt_one {x : I} : (x : ℝ) < 1 ↔ x < 1 := Iff.rfl
 
 lemma ne_zero_iff_pos {x : I} : x ≠ 0 ↔ 0 < x := by
   rw [← coe_ne_zero, ← coe_pos, lt_iff_le_and_ne, and_iff_right (nonneg x), ne_comm]
@@ -281,7 +281,7 @@ lemma div_mul_eq_div_div {i j k : I} : i / (j * k) = i / j / k := by
       have h_j_pos : 0 < (j : ℝ) := by {
         apply lt_of_le_of_lt nonneg' h_i_j
       }
-      rw [div_lt_iff h_j_pos, mul_comm]
+      rw [div_lt_iff₀ h_j_pos, mul_comm]
       exact h_i_jk
     case neg h_j_i =>
       exfalso
@@ -295,7 +295,7 @@ lemma div_mul_eq_div_div {i j k : I} : i / (j * k) = i / j / k := by
     rw [Subtype.mk_lt_mk, coe_div] at h_ij_k
     split_ifs at h_ij_k
     have h_j_pos : 0 < j := lt_of_le_of_lt nonneg' h_i_j
-    rw [div_lt_iff h_j_pos] at h_ij_k
+    rw [div_lt_iff₀ h_j_pos] at h_ij_k
     rw [Subtype.mk_le_mk] at h_jk_i
     have := lt_of_le_of_lt h_jk_i h_ij_k
     rw [coe_mul, mul_comm, ← not_le] at this
@@ -629,19 +629,19 @@ theorem truncatedAdd_assoc (i j k : I) :
     rw [if_pos]
     pick_goal 2
     · calc (1:ℝ)
-      _ = 1 + 0 := Eq.symm (AddLeftCancelMonoid.add_zero 1)
+      _ = 1 + 0 := Eq.symm (add_zero 1)
       _ ≤ 1 + k := add_le_add le_rfl nonneg'
     · split
       case isTrue h_jk =>
         rw [if_pos]
         calc (1:ℝ)
-        _ = 0 + 1 := Eq.symm (AddLeftCancelMonoid.zero_add 1)
+        _ = 0 + 1 := Eq.symm (zero_add 1)
         _ ≤ i + 1 := add_le_add nonneg' le_rfl
       case isFalse h_jk =>
         rw [if_pos]
         rw [← add_assoc]
         calc (1:ℝ)
-        _ = 1 + 0 := Eq.symm (AddLeftCancelMonoid.add_zero 1)
+        _ = 1 + 0 := Eq.symm (add_zero 1)
         _ ≤ i + j + k := add_le_add h_ij nonneg'
   case isFalse h_ij =>
     split
@@ -650,7 +650,7 @@ theorem truncatedAdd_assoc (i j k : I) :
       case isTrue h_jk =>
         rw [if_pos]
         calc (1:ℝ)
-        _ = 0 + 1 := Eq.symm (AddLeftCancelMonoid.zero_add 1)
+        _ = 0 + 1 := Eq.symm (zero_add 1)
         _ ≤ i + 1 := add_le_add nonneg' le_rfl
       case isFalse h_jk =>
         rw [← add_assoc, if_pos h_ijk]
@@ -661,7 +661,7 @@ theorem truncatedAdd_assoc (i j k : I) :
         rw [add_assoc] at h_ijk
         apply h_ijk
         calc (1:ℝ)
-        _ = 0 + 1 := Eq.symm (AddLeftCancelMonoid.zero_add 1)
+        _ = 0 + 1 := Eq.symm (zero_add 1)
         _ ≤ i + (j + k) := add_le_add nonneg' h_jk
       case isFalse h_jk =>
         rw [← add_assoc, if_neg h_ijk]
@@ -809,7 +809,7 @@ theorem right_distrib_of_unit (i j k : I) (h_unit : (i:ℝ) + (j:ℝ) ≤ 1) :
   rw [Subtype.mk_eq_mk]
   simp only [coe_mul, coe_truncatedAdd]
   rw [min_eq_right_iff.mpr h_unit, ← right_distrib, min_eq_right_iff.mpr]
-  exact mul_le_one h_unit nonneg' le_one'
+  exact mul_le_one₀ h_unit nonneg' le_one'
 
 theorem left_distrib_of_unit (i j k : I) (h_unit : (i:ℝ) + (j:ℝ) ≤ 1) :
     k * (i + j) = k * i + k * j := by

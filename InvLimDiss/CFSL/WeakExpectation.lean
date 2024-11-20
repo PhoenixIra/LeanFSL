@@ -87,23 +87,14 @@ theorem wrle_def (program : Program Var) (post : StateRV Var) (resource : StateR
   | [Prog| ↯ ] => `[fsl| fFalse]
   | program => `[fsl| [[resource]] -⋆ [[step program
     (fun c => `[fsl| wrle [c] ([[post]] | [[resource]]) ⋆ [[resource]] ]) ]] ] := by
-  rw [wrle', wrleStepHom, ← map_gfp, coe_mk, wrleStep]
   split
-  case h_1 =>
-    split
-    case h_1 => rfl
-    case h_2 h => cases h
-    case h_3 => rfl
-  case h_2 =>
-    split
-    case h_1 h => cases h
-    case h_2 => rfl
-    case h_3 => rfl
+  case h_1 => rw [wrle', wrleStepHom, ← map_gfp, coe_mk, wrleStep]
+  case h_2 => rw [wrle', wrleStepHom, ← map_gfp, coe_mk, wrleStep]
   case h_3 h_n_term h_n_err =>
-    split
-    case h_1 => exfalso; apply h_n_term; rfl
-    case h_2 => exfalso; apply h_n_err; rfl
-    case h_3 => rfl
+    rw [wrle', wrleStepHom, ← map_gfp, coe_mk, wrleStep]
+    rfl
+    · exact h_n_term
+    · exact h_n_err
 
 theorem wrle_eq_of_not_final {program : Program Var} (h_not_final : ¬ finalProgram program)
     (post : StateRV Var) (resource : StateRV Var) : `[fsl| wrle [program] ([[post]] | [[resource]])]

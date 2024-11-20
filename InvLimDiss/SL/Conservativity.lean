@@ -16,7 +16,7 @@ theorem conservative_true : `[fsl Var| fTrue] = `[fsl Var| ⁅`[sl Var| sTrue]�
 theorem conservative_false : `[fsl Var| fFalse] = `[fsl Var| ⁅`[sl Var| sFalse]⁆] := by
   apply funext
   intro _
-  simp only [fslFalse, fslIverson, slFalse, unitInterval.iteOneZero_false]
+  simp only [fslFalse, fslIverson, slFalse, Bool.false_eq_true, iteOneZero_false]
 
 theorem conservative_emp : `[fsl Var| emp] = `[fsl Var| ⁅`[sl Var| emp]⁆] := by
   apply funext

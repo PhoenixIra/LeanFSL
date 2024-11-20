@@ -183,7 +183,7 @@ theorem range_of_fslEmp : Set.range `[fsl Var| emp] = {0,1} := by
       simp only [fslEmp, iteOneZero_eq_zero_def]
       intro h
       have := congrFun h 1
-      simp only [↓reduceIte] at this
+      simp only [↓reduceIte, reduceCtorEq] at this
     | inr h =>
       rw [h]
       use inhabited_state.default

@@ -134,12 +134,13 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
         use j, h_j
       · simp only [coe_mk]
         rw [Pi.le_def]; intro c
-        rw [wrleStep, bellman_step]
+        unfold wrleStep bellman_step
         split
         case a.h.a.h.h_1 => rfl
         case a.h.a.h.h_2 => rfl
         case a.h.a.h.h_3 =>
-          simp only [fslSepMul_fslEmp_eq, fslEmp_fslSepDiv_eq]
+          unfold wrleStep bellman_step at ih
+          simp only [fslSepMul_fslEmp_eq, fslEmp_fslSepDiv_eq] at ih ⊢
           apply step_le_bstep
           rw [Pi.le_def]; intro c
           exact ih j h_j c
@@ -155,12 +156,13 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
         forall_apply_eq_imp_iff₂, true_and]
       intro j h_j
       rw [Pi.le_def]; intro c
-      rw [bellman_step, wrleStep]
+      unfold bellman_step wrleStep
       split
       case a.h.a.h_1 => rfl
       case a.h.a.h_2 => rfl
       case a.h.a.h_3 =>
-        simp only [fslSepMul_fslEmp_eq, fslEmp_fslSepDiv_eq]
+        unfold bellman_step wrleStep at ih
+        simp only [fslSepMul_fslEmp_eq, fslEmp_fslSepDiv_eq] at ih ⊢
         apply bstep_le_step
         · rw [Pi.le_def]; intro c
           apply sInf_le_of_le
@@ -174,7 +176,6 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
           simp only [Set.coe_setOf, Set.mem_setOf_eq, Set.mem_range, Subtype.exists, exists_prop,
             exists_exists_and_eq_and]
           use j, h_j
-          simp only [bellman_step]
           rfl
 
 theorem wrle_of_emp_eq_bellman {c : Program Var} {post : StateRV Var} :

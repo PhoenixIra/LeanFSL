@@ -37,7 +37,7 @@ theorem finite_of_subheaps {heap : Heap} (h_finite : Heap.Finite heap) :
     obtain h_heap := congrFun h_heap n
     simp only [Union.union, h_heap₁] at h_heap
     rw [← h_heap]
-    simp only [not_false_eq_true]
+    simp only [reduceCtorEq, not_false_eq_true]
   · apply funext
     intro n
     obtain h_heap := congrFun h_heap n

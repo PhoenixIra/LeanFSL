@@ -28,7 +28,9 @@ theorem step_concurrent_term (s : State Var) (inner : Program Var → StateRV Va
   apply le_antisymm
   · apply sInf_le
     use deterministic
-    simp only [enabledAction, or_false, ↓reduceIte, Set.mem_singleton_iff, true_and]
+    simp only [enabledAction, and_self, reduceCtorEq, or_self, or_false, ↓reduceIte,
+      Set.mem_singleton_iff, Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq,
+      reachState.state, true_and]
     exact tsum_concurrent_term_of_deterministic s inner
   · apply le_sInf
     rintro _ ⟨a, h_a, rfl⟩
@@ -119,8 +121,8 @@ theorem tsum_concurrent_cont_left (s : State Var) (inner : Program Var → State
       Subtype.mk.injEq, Prod.mk.injEq, Program.concurrent.injEq, and_true, exists_and_left,
       exists_prop, exists_eq_right_right, exists_eq_left]
     unfold programSmallStepSemantics at h_sem
-    simp only [false_and, and_self, iteOneZero_false, and_false, ↓reduceIte, ne_eq, ite_eq_left_iff,
-      not_and, not_or, and_imp, Classical.not_imp] at h_sem
+    simp only [reduceCtorEq, false_and, and_self, iteOneZero_false, and_false, ↓reduceIte, ne_eq,
+      ite_eq_left_iff, not_and, not_or, and_imp, Classical.not_imp] at h_sem
     obtain ⟨_, _, _, h_abort, h_sem⟩ := h_sem
     exact ⟨⟨h_sem, h_inner⟩, h_abort⟩
   · intro cs
@@ -129,7 +131,7 @@ theorem tsum_concurrent_cont_left (s : State Var) (inner : Program Var → State
       iteOneZero_false, ite_mul, zero_mul, Set.coe_setOf]
     rw [if_neg (by simp only [h_term, false_and, not_false_eq_true])]
     rw [if_neg (by simp only [h_abort₁, h_abort₂, or_self, not_false_eq_true])]
-    rw [inj_left, if_neg (by simp only [ne_eq, Set.mem_setOf_eq, not_false_eq_true])]
+    rw [inj_left, if_neg (by simp only [reduceCtorEq, not_false_eq_true])]
     simp only [↓reduceIte, ite_mul, zero_mul, ite_eq_right_iff, zero_eq_mul]
     obtain ⟨⟨⟨c,s⟩,h⟩,h'⟩ := cs
     intro h_abort
@@ -150,23 +152,24 @@ theorem step_concurrent_cont_only_left (s : State Var) (inner : Program Var → 
     use a.concurrentLeft
     have : ¬(c₁ = [Prog| ↓] ∨ c₁ = [Prog| ↯]) := by simp only [h_term, h_abort, or_self,
       not_false_eq_true]
-    simp only [enabledAction, and_true, or_false, Set.mem_empty_iff_false, false_and, exists_false,
-      Set.setOf_false, Set.union_empty, if_neg this, Set.mem_setOf_eq, concurrentLeft.injEq,
-      exists_eq_right, h_a, Set.coe_setOf, ne_eq, reachState.prog, reachState.state, true_and]
+    simp only [enabledAction, and_true, reduceCtorEq, or_false, Set.mem_empty_iff_false, false_and,
+      exists_false, Set.setOf_false, Set.union_empty, if_neg this, Set.mem_setOf_eq,
+      concurrentLeft.injEq, exists_eq_right, h_a, Set.coe_setOf, ne_eq, reachState.prog,
+      reachState.state, true_and]
     apply tsum_concurrent_cont_left s inner h_term h_abort
-    simp only [ne_eq,not_false_eq_true]
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true]
   · apply le_sInf
     rintro _ ⟨a, h_a, rfl⟩
     have : ¬(c₁ = [Prog| ↓] ∨ c₁ = [Prog| ↯]) := by simp only [h_term, h_abort, or_self,
       not_false_eq_true]
-    simp only [enabledAction, and_true, or_false, Set.mem_empty_iff_false, false_and, exists_false,
-      Set.setOf_false, Set.union_empty, if_neg this, Set.mem_setOf_eq] at h_a
+    simp only [enabledAction, and_true, reduceCtorEq, or_false, Set.mem_empty_iff_false, false_and,
+      exists_false, Set.setOf_false, Set.union_empty, if_neg this, Set.mem_setOf_eq] at h_a
     obtain ⟨a', h_a', rfl⟩ := h_a
     apply sInf_le
     use a', h_a'
     simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state]
     exact (tsum_concurrent_cont_left s inner h_term h_abort
-      (by simp only [ne_eq, not_false_eq_true])).symm
+      (by simp only [ne_eq, reduceCtorEq, not_false_eq_true])).symm
 
 end cont_left
 
@@ -203,8 +206,8 @@ theorem tsum_concurrent_cont_right (s : State Var) (inner : Program Var → Stat
       Subtype.mk.injEq, Prod.mk.injEq, Program.concurrent.injEq, true_and, exists_and_left,
       exists_prop, exists_eq_right_right, exists_eq_left]
     unfold programSmallStepSemantics at h_sem
-    simp only [false_and, and_self, iteOneZero_false, and_false, ↓reduceIte, ne_eq, ite_eq_left_iff,
-      not_and, not_or, and_imp, Classical.not_imp] at h_sem
+    simp only [reduceCtorEq, false_and, and_self, iteOneZero_false, and_false, ↓reduceIte, ne_eq,
+      ite_eq_left_iff, not_and, not_or, and_imp, Classical.not_imp] at h_sem
     obtain ⟨_, _, _, h_abort, h_sem⟩ := h_sem
     exact ⟨⟨h_sem, h_inner⟩, h_abort⟩
   · intro cs
@@ -213,7 +216,7 @@ theorem tsum_concurrent_cont_right (s : State Var) (inner : Program Var → Stat
       iteOneZero_false, ite_mul, zero_mul, Set.coe_setOf]
     rw [if_neg (by simp only [h_term, and_false, not_false_eq_true])]
     rw [if_neg (by simp only [h_abort₁, h_abort₂, or_self, not_false_eq_true])]
-    rw [inj_right, if_neg (by simp only [ne_eq, Set.mem_setOf_eq, not_false_eq_true])]
+    rw [inj_right, if_neg (by simp only [reduceCtorEq, not_false_eq_true])]
     simp only [↓reduceIte, ite_mul, zero_mul, ite_eq_right_iff, zero_eq_mul]
     obtain ⟨⟨⟨c,s⟩,h⟩,h'⟩ := cs
     intro h_abort
@@ -234,23 +237,24 @@ theorem step_concurrent_cont_only_right (s : State Var) (inner : Program Var →
     use a.concurrentRight
     have : ¬(c₂ = [Prog| ↓] ∨ c₂ = [Prog| ↯]) := by simp only [h_term, h_abort, or_self,
       not_false_eq_true]
-    simp only [enabledAction, true_and, false_or, Set.mem_empty_iff_false, false_and, exists_false,
-      Set.setOf_false, Set.empty_union, if_neg this, Set.mem_setOf_eq, concurrentRight.injEq,
-      exists_eq_right, h_a, Set.coe_setOf, ne_eq, reachState.prog, reachState.state]
+    simp only [enabledAction, true_and, reduceCtorEq, false_or, Set.mem_empty_iff_false, false_and,
+      exists_false, Set.setOf_false, Set.empty_union, if_neg this, Set.mem_setOf_eq,
+      concurrentRight.injEq, exists_eq_right, h_a, Set.coe_setOf, ne_eq, reachState.prog,
+      reachState.state]
     refine tsum_concurrent_cont_right s inner h_term ?_ h_abort
-    simp only [ne_eq,not_false_eq_true]
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true]
   · apply le_sInf
     rintro _ ⟨a, h_a, rfl⟩
     have : ¬(c₂ = [Prog| ↓] ∨ c₂ = [Prog| ↯]) := by simp only [h_term, h_abort, or_self,
       not_false_eq_true]
-    simp only [enabledAction, true_and, false_or, Set.mem_empty_iff_false, false_and, exists_false,
-      Set.setOf_false, Set.empty_union, if_neg this, Set.mem_setOf_eq] at h_a
+    simp only [enabledAction, true_and, reduceCtorEq, false_or, Set.mem_empty_iff_false, false_and,
+      exists_false, Set.setOf_false, Set.empty_union, if_neg this, Set.mem_setOf_eq] at h_a
     obtain ⟨a', h_a', rfl⟩ := h_a
     apply sInf_le
     use a', h_a'
     simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state]
     exact (tsum_concurrent_cont_right s inner h_term
-      (by simp only [ne_eq, not_false_eq_true]) h_abort).symm
+      (by simp only [ne_eq, reduceCtorEq, not_false_eq_true]) h_abort).symm
 
 end cont_right
 
@@ -270,7 +274,7 @@ theorem step_concurrent_cont (s : State Var) (inner : Program Var → StateRV Va
       apply And.intro
       · simp only [enabledAction, h_term₁, h_term₂, and_self, h_abort₁, h_abort₂, or_self,
         ↓reduceIte, Set.mem_union, Set.mem_setOf_eq, concurrentLeft.injEq, exists_eq_right,
-        and_false, exists_false, or_false]
+        reduceCtorEq, and_false, exists_false, or_false]
         exact h_a
       · exact tsum_concurrent_cont_left s _ h_term₁ h_abort₁ h_abort₂
     · apply le_sInf
@@ -279,8 +283,8 @@ theorem step_concurrent_cont (s : State Var) (inner : Program Var → StateRV Va
       use a.concurrentRight
       apply And.intro
       · simp only [enabledAction, h_term₁, h_term₂, and_self, h_abort₁, h_abort₂, or_self,
-        ↓reduceIte, Set.mem_union, Set.mem_setOf_eq, and_false, exists_false, concurrentRight.injEq,
-        exists_eq_right, false_or]
+        ↓reduceIte, Set.mem_union, Set.mem_setOf_eq, reduceCtorEq, and_false, exists_false,
+        concurrentRight.injEq, exists_eq_right, false_or]
         exact h_a
       · exact tsum_concurrent_cont_right s _ h_term₂ h_abort₁ h_abort₂
   · apply le_sInf

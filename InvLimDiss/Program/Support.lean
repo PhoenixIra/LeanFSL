@@ -139,7 +139,7 @@ theorem tsum_lookup_support_superset (s : State Var)
     · intro l' h_l' h_alloc'
       rw [h_l', Nat.cast_inj, PNat.coe_inj] at h_l
       rw [← h_l, h_alloc'] at h_alloc
-      simp only [ne_eq, not_true_eq_false] at h_alloc
+      simp only [reduceCtorEq] at h_alloc
     · intro h'
       apply h' l h_l
   case h_3 _ =>
@@ -159,7 +159,7 @@ theorem tsum_lookup_abort_support_superset (s : State Var)
     obtain ⟨l', h_l', q, h_alloc', _⟩ := h'
     exfalso
     rw [(h l' h_l'.symm)] at h_alloc'
-    simp only at h_alloc'
+    simp only [reduceCtorEq] at h_alloc'
   case h_2 h_c =>
     exfalso
     exact cs.prop h_c
@@ -197,7 +197,7 @@ theorem tsum_cas_of_eq_support_superset (s : State Var)
     · intro l' h_l' h_alloc'
       rw [h_l', Nat.cast_inj, PNat.coe_inj] at h_l
       rw [← h_l, h_alloc'] at h_alloc
-      simp only [ne_eq, not_true_eq_false] at h_alloc
+      simp only [reduceCtorEq] at h_alloc
     · exact h_l
   case h_3 _ =>
     simp only [not_true_eq_false] at h
@@ -253,7 +253,7 @@ theorem tsum_cas_abort_support_superset (s : State Var)
     obtain ⟨l', h_l', q, h_alloc', _⟩ := h'
     exfalso
     rw [(h l' h_l'.symm)] at h_alloc'
-    simp only at h_alloc'
+    simp only [reduceCtorEq] at h_alloc'
   case h_2 h_c =>
     exfalso
     exact cs.prop h_c
@@ -294,8 +294,8 @@ theorem tsum_alloc_abort_support_superset (s : State Var) :
   unfold programSmallStepSemantics allocateSmallStepSemantics at h'
   split at h'
   case h_1 _ =>
-    simp only [substituteStack, allocateHeap, false_and, exists_const, iteOneZero_false,
-      not_true_eq_false] at h'
+    simp only [reduceCtorEq, substituteStack, allocateHeap, reachState.state, ne_eq,
+      Set.mem_setOf_eq, false_and, exists_const, iteOneZero_false, not_true_eq_false] at h'
   case h_2 h_c =>
     exfalso
     exact cs.prop h_c
@@ -425,7 +425,7 @@ theorem tsum_condChoice_right_support_superset (s : State Var) (h : (e s.stack) 
     iteOneZero_eq_zero_def, Decidable.not_not] at h'
   simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq]
   obtain ⟨h_s, ⟨h', _⟩ | ⟨_, h'⟩⟩ := h'
-  · simp only [h, Bool.true_eq_false] at h'
+  · simp only [h, Bool.false_eq_true] at h'
   · rw [h', dif_neg cs.prop]
     simp only [h_s, Prod.mk.eta, Subtype.coe_eta, Set.mem_singleton_iff]
 
@@ -482,8 +482,8 @@ theorem tsum_sequential_abort_support_superset (s : State Var) :
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
   unfold programSmallStepSemantics at h'
-  simp only [↓reduceIte, reachState.state, ne_eq, Set.mem_setOf_eq, reachState.prog, true_and,
-    iteOneZero_eq_zero_def, not_and, Classical.not_imp, Decidable.not_not] at h'
+  simp only [reduceCtorEq, ↓reduceIte, reachState.state, ne_eq, Set.mem_setOf_eq, reachState.prog,
+    true_and, iteOneZero_eq_zero_def, not_and, Classical.not_imp, Decidable.not_not] at h'
   exfalso
   exact cs.prop h'.right
 
@@ -550,8 +550,8 @@ theorem tsum_concurrent_abort_left_support_superset (s : State Var) :
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
   unfold programSmallStepSemantics at h'
-  simp only [false_and, ↓reduceIte, true_or, reachState.state, ne_eq, Set.mem_setOf_eq,
-    reachState.prog, true_and, iteOneZero_eq_zero_def, not_and, Classical.not_imp,
+  simp only [reduceCtorEq, false_and, ↓reduceIte, true_or, reachState.state, ne_eq,
+    Set.mem_setOf_eq, reachState.prog, true_and, iteOneZero_eq_zero_def, not_and, Classical.not_imp,
     Decidable.not_not] at h'
   exfalso
   exact cs.prop h'.right
@@ -562,8 +562,8 @@ theorem tsum_concurrent_abort_right_support_superset (s : State Var) :
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
   unfold programSmallStepSemantics at h'
-  simp only [and_false, ↓reduceIte, or_true, reachState.state, ne_eq, Set.mem_setOf_eq,
-    reachState.prog, true_and, iteOneZero_eq_zero_def, not_and, Classical.not_imp,
+  simp only [reduceCtorEq, and_false, ↓reduceIte, or_true, reachState.state, ne_eq,
+    Set.mem_setOf_eq, reachState.prog, true_and, iteOneZero_eq_zero_def, not_and, Classical.not_imp,
     Decidable.not_not] at h'
   exfalso
   exact cs.prop h'.right
@@ -581,8 +581,8 @@ theorem tsum_concurrent_cont_left_support_superset {a : Action}
   simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
     Function.mem_support] at h'
   unfold programSmallStepSemantics at h'
-  simp only [false_and, and_false, iteOneZero_false, ite_mul, zero_mul, ite_eq_left_iff, not_and,
-    not_or, and_imp, Classical.not_imp] at h'
+  simp only [reduceCtorEq, false_and, and_false, iteOneZero_false, ite_mul, zero_mul,
+    ite_eq_left_iff, not_and, not_or, and_imp, Classical.not_imp] at h'
   obtain ⟨h_term', _, _, h⟩ := h'
   simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq]
   split at h
@@ -607,7 +607,7 @@ theorem tsum_concurrent_cont_left_support_superset {a : Action}
             trivial
           · apply And.intro
             · unfold programSmallStepSemantics
-              simp only [false_and, and_self, iteOneZero_false, and_false, ↓reduceIte,
+              simp only [reduceCtorEq, false_and, and_self, iteOneZero_false, and_false, ↓reduceIte,
                 ite_eq_left_iff, not_and, not_or, and_imp, Classical.not_imp]
               use h_term', h_abort₁, h_abort₂, h_c₁', h.left
             · rw [h_cs] at h
@@ -628,8 +628,8 @@ theorem tsum_concurrent_cont_right_support_superset {a : Action}
   simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
     Function.mem_support] at h'
   unfold programSmallStepSemantics at h'
-  simp only [false_and, and_false, iteOneZero_false, ite_mul, zero_mul, ite_eq_left_iff, not_and,
-    not_or, and_imp, Classical.not_imp] at h'
+  simp only [reduceCtorEq, false_and, and_false, iteOneZero_false, ite_mul, zero_mul,
+    ite_eq_left_iff, not_and, not_or, and_imp, Classical.not_imp] at h'
   obtain ⟨h_term', _, _, h⟩ := h'
   simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq]
   split at h
@@ -653,7 +653,7 @@ theorem tsum_concurrent_cont_right_support_superset {a : Action}
             trivial
           · apply And.intro
             · unfold programSmallStepSemantics
-              simp only [false_and, and_self, iteOneZero_false, and_false, ↓reduceIte,
+              simp only [reduceCtorEq, false_and, and_self, iteOneZero_false, and_false, ↓reduceIte,
                 ite_eq_left_iff, not_and, not_or, and_imp, Classical.not_imp]
               use h_term', h_abort₁, h_abort₂, h_c₁', h.left
             · rw [h_cs] at h

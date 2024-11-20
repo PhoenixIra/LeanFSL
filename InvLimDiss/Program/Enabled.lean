@@ -126,7 +126,8 @@ theorem zero_probability_of_not_enabledAction
       obtain rfl := h_term₁
       rw [iteOneZero_eq_zero_def]
       rintro ⟨rfl, _⟩
-      simp only [enabledAction, or_false, ↓reduceIte, Set.mem_singleton_iff, not_true_eq_false] at h
+      simp only [enabledAction, reduceCtorEq, or_false, ↓reduceIte, Set.mem_singleton_iff,
+        not_true_eq_false] at h
     case isFalse h_n_term =>
       simp only [enabledAction, if_neg h_n_term] at h
       split
@@ -177,13 +178,13 @@ theorem zero_probability_of_not_enabledAction
         cases h_abort with
         | inl h_c₁ =>
           obtain rfl := h_c₁
-          simp only [programSmallStepSemantics, false_and, ↓reduceIte, true_or,
+          simp only [programSmallStepSemantics, reduceCtorEq, false_and, ↓reduceIte, true_or,
             iteOneZero_eq_zero_def, not_and]
           intro ha _ _
           exact h ha
         | inr h_c₂ =>
           obtain rfl := h_c₂
-          simp only [programSmallStepSemantics, and_false, ↓reduceIte, or_true,
+          simp only [programSmallStepSemantics, reduceCtorEq, and_false, ↓reduceIte, or_true,
             iteOneZero_eq_zero_def, not_and]
           intro ha _ _
           exact h ha

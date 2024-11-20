@@ -49,8 +49,6 @@ example : False := by
   have := (atLeast_fslSepDiv_iff h_min h_finite).mp this
   obtain ⟨j₁, h_j₁, j₂, h_j₂, _, h⟩ := this
   rw [slSepImp] at h
-  unfold_let s at h
-  simp only at h
   obtain ⟨s_j₂, h_j₂⟩ := h_j₂
   unfold_let f₂ at h_j₂
   simp only [Rat.cast_nonneg] at h_j₂
@@ -66,8 +64,8 @@ example : False := by
       rw [← h_j₁] at h
       specialize h emptyHeap_disjoint' nonneg'
       rw [← h_j₂] at h
-      unfold_let f₂ at h
-      simp only [Rat.cast_div, Rat.cast_ofNat] at h
+      unfold_let f₂ heap_small at h
+      simp only [emptyHeap_union, ↓reduceIte, Rat.cast_div, Rat.cast_ofNat, Nat.ofNat_pos] at h
       have : (0:ℝ) < ↑x / 2 ∧ ↑x / 2 ≤ (1:ℝ) := by {
           norm_cast
           apply And.intro
@@ -90,11 +88,12 @@ example : False := by
       rw [← h_j₁] at h
       specialize h emptyHeap_disjoint' nonneg'
       rw [← h_j₂] at h
-      unfold_let f₂ at h
-      simp only [one_div, Rat.cast_inv, Rat.cast_ofNat, inv_pos, Nat.ofNat_pos, true_and] at h
-      have : (2:ℝ)⁻¹ ≤ 1 := by rw [inv_le zero_lt_two zero_lt_one, inv_one]; exact one_le_two
+      unfold_let f₂ heap_small at h
+      simp only [one_div, emptyHeap_union, ↓reduceIte, Rat.cast_inv, Rat.cast_ofNat, inv_pos,
+        Nat.ofNat_pos, true_and] at h
+      have : (2:ℝ)⁻¹ ≤ 1 := by rw [inv_le_comm₀ zero_lt_two zero_lt_one, inv_one]; exact one_le_two
       rw [dif_pos this] at h
-      rw [Subtype.mk_le_mk, Set.Icc.coe_one, le_inv zero_lt_one zero_lt_two, inv_one, ← not_lt] at h
+      rw [Subtype.mk_le_mk, Set.Icc.coe_one, le_inv_comm₀ zero_lt_one zero_lt_two, inv_one, ← not_lt] at h
       exact h one_lt_two
   case h_2 h_ne =>
     let heap_small : Heap := fun l => if l = 1 then HeapValue.val (1/2) else HeapValue.undef
@@ -105,11 +104,12 @@ example : False := by
     rw [← h_j₁] at h
     specialize h emptyHeap_disjoint' nonneg'
     rw [← h_j₂] at h
-    unfold_let f₂ at h
-    simp only [one_div, Rat.cast_inv, Rat.cast_ofNat, inv_pos, Nat.ofNat_pos, true_and] at h
-    have : (2:ℝ)⁻¹ ≤ 1 := by rw [inv_le zero_lt_two zero_lt_one, inv_one]; exact one_le_two
+    unfold_let f₂ heap_small at h
+    simp only [one_div, emptyHeap_union, ↓reduceIte, Rat.cast_inv, Rat.cast_ofNat, inv_pos,
+      Nat.ofNat_pos, true_and] at h
+    have : (2:ℝ)⁻¹ ≤ 1 := by rw [inv_le_comm₀ zero_lt_two zero_lt_one, inv_one]; exact one_le_two
     rw [dif_pos this] at h
-    rw [Subtype.mk_le_mk, Set.Icc.coe_one, le_inv zero_lt_one zero_lt_two, inv_one, ← not_lt] at h
+    rw [Subtype.mk_le_mk, Set.Icc.coe_one, le_inv_comm₀ zero_lt_one zero_lt_two, inv_one, ← not_lt] at h
     exact h one_lt_two
 
 
