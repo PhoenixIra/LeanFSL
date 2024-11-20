@@ -1,4 +1,5 @@
 import Mathlib.SetTheory.Ordinal.FixedPointApproximants
+import Mathlib.Order.OmegaCompletePartialOrder
 
 variable [CompleteLattice α]
 
@@ -20,3 +21,29 @@ theorem OrdinalApprox.gfpApprox_le_gfpApprox_of_le (f g : α →o α) (h : f ≤
       simp only [OrderHom.toFun_eq_coe]
       apply g.monotone
       exact ih i' h_lt
+
+open OmegaCompletePartialOrder
+
+lemma ωSup_eq_iSup (c : Chain α) : ωSup c = ⨆ n : ℕ, c n := rfl
+lemma ofDual_dual_chain (c : Chain αᵒᵈ) (n : ℕ) : OrderDual.ofDual (c n) = c.toFun n := rfl
+
+theorem dual_continuous_is_co_continuous (f : α →o α) :
+    ωScottContinuous (OrderHom.dual f) ↔
+    ∀ c : ℕ → α, Antitone c → f (⨅ n : ℕ, c n) = ⨅ n : ℕ, f (c n) := by
+  apply Iff.intro
+  · intro h c h_c
+    rw [ωScottContinuous_iff_map_ωSup_of_orderHom] at h
+    let c' : Chain αᵒᵈ := ⟨c, h_c⟩
+    specialize h c'
+    simp only [ωSup_eq_iSup, OrderHom.dual_apply_coe, Function.comp_apply, ofDual_iSup,
+      ofDual_dual_chain, OrderHom.toFun_eq_coe, Chain.map_coe, OrderHom.coe_mk] at h
+    rw [← toDual_iInf, OrderDual.toDual_inj] at h
+    exact h
+  · intro h
+    rw [ωScottContinuous_iff_map_ωSup_of_orderHom]
+    intro c'
+    specialize h c'.toFun c'.monotone
+    simp only [ωSup_eq_iSup, OrderHom.dual_apply_coe, Function.comp_apply, ofDual_iSup,
+      ofDual_dual_chain, OrderHom.toFun_eq_coe, Chain.map_coe]
+    rw [← toDual_iInf, OrderDual.toDual_inj]
+    exact h
