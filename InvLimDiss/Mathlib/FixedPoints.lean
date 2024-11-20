@@ -27,7 +27,7 @@ open OmegaCompletePartialOrder
 lemma ωSup_eq_iSup (c : Chain α) : ωSup c = ⨆ n : ℕ, c n := rfl
 lemma ofDual_dual_chain (c : Chain αᵒᵈ) (n : ℕ) : OrderDual.ofDual (c n) = c.toFun n := rfl
 
-theorem dual_continuous_is_co_continuous (f : α →o α) :
+theorem dual_continuous_iff_co_continuous (f : α →o α) :
     ωScottContinuous (OrderHom.dual f) ↔
     ∀ c : ℕ → α, Antitone c → f (⨅ n : ℕ, c n) = ⨅ n : ℕ, f (c n) := by
   apply Iff.intro
