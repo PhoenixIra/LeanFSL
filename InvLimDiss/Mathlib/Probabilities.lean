@@ -16,6 +16,7 @@ This file is features the following content:
 * Section `Symm` featuring lemmas about the symmetrie on the unitInterval, i.e. 1-x
 * Section `Ite` featuring definitions for quantitative if then else expressions, especially iverson brackets, i.e. if then else to one and zero, here called `IteZeroOne` and respective lemmas.
 * Section `AddSub` featuring truncated add (truncated to 1) and truncated sub (truncated to 0), lemmas involving them as well as lemmas around infinite additions, especially their existence.
+* Section `Quantifiers` featuring additional theorems about infimum and supremum
 -/
 
 
@@ -586,6 +587,19 @@ theorem le_truncatedAdd (i j k : I) : i ≤ j + k ↔ i ≤ (j:ℝ) + k := by
     simp only [le_min_iff]
     exact ⟨le_one', h⟩
 
+theorem le_truncatedAdd_of_unit (i j k : I) : ((j:ℝ) + k ≤ 1 → i ≤ (j:ℝ) + k) → i ≤ j + k := by
+  intro h
+  rw [Subtype.mk_le_mk, coe_truncatedAdd]
+  by_cases (j:ℝ)+k ≤ 1
+  case pos h_unit =>
+    apply le_min
+    · exact le_one'
+    · exact h h_unit
+  case neg h_nunit =>
+    simp only [not_le] at h_nunit
+    rw [min_eq_left h_nunit.le]
+    exact le_one'
+
 @[simp]
 theorem zero_truncatedAdd (i : I) : 0 + i = i := by
   rw [Subtype.mk_eq_mk, coe_truncatedAdd]
@@ -747,6 +761,38 @@ theorem le_self_truncatedAdd (i j : I) : i ≤ i + j := by
   simp only [coe_truncatedAdd, le_min_iff, le_add_iff_nonneg_right]
   exact ⟨le_one', nonneg'⟩
 
+theorem le_truncatedAdd_iff_truncatedSub_le (i j k : I) :
+    truncatedSub i j ≤ k ↔ i ≤ k + j := by
+  apply Iff.intro
+  · intro h
+    rw [le_truncatedAdd]
+    rw [Subtype.mk_le_mk, coe_truncatedSub, max_le_iff] at h
+    obtain ⟨_, h⟩ := h
+    linarith
+  · intro h
+    rw [Subtype.mk_le_mk, coe_truncatedSub, max_le_iff]
+    rw [le_truncatedAdd] at h
+    use nonneg'
+    linarith
+
+theorem iInf_add_le_add_iInf_of_antitone [LinearOrder ι] [Nonempty ι]
+    {c₁ c₂ : ι → I} (h₁ : Antitone c₁) (h₂ : Antitone c₂) :
+    ⨅ (i : ι), c₁ i + c₂ i ≤ (⨅ (i : ι), c₁ i) + ⨅ (i : ι), c₂ i := by
+  rw [← le_truncatedAdd_iff_truncatedSub_le]
+  apply le_iInf
+  intro i₁
+  rw [le_truncatedAdd_iff_truncatedSub_le, truncatedAdd_comm,
+    ← le_truncatedAdd_iff_truncatedSub_le]
+  apply le_iInf
+  intro i₂
+  rw [le_truncatedAdd_iff_truncatedSub_le, truncatedAdd_comm]
+  apply iInf_le_of_le (max i₁ i₂)
+  apply truncatedAdd_le_truncatedAdd
+  · apply h₁
+    apply le_max_left
+  · apply h₂
+    apply le_max_right
+
 noncomputable instance : CanonicallyOrderedAddCommMonoid unitInterval where
   exists_add_of_le := exists_truncatedAdd_of_le
   le_self_add := le_self_truncatedAdd
@@ -755,6 +801,27 @@ theorem hasSum (f : α → I) : HasSum f (⨆ s : Finset α, ∑ a ∈ s, f a) :
   tendsto_atTop_iSup fun _ _ => Finset.sum_le_sum_of_subset
 
 theorem isSummable (f : α → I) : Summable f := ⟨_,hasSum f⟩
+
+theorem iInf_finsetsum_le_finsetsum_iInf_of_antitone [LinearOrder ι] [Nonempty ι]
+    {s : Finset α} { c : α → ι → I} (h : ∀ a, Antitone (c a)) :
+    ⨅ (i : ι), ∑ (a ∈ s), c a i ≤ ∑ (a ∈ s), ⨅ (i : ι), c a i := by
+  induction s using Finset.induction with
+  | empty => simp only [Finset.sum_empty, ciInf_const, le_refl]
+  | insert h_a ih =>
+    rw [Finset.sum_insert h_a]
+    conv => left; right; intro i; rw [Finset.sum_insert h_a]
+    apply le_trans
+    swap
+    · apply truncatedAdd_le_truncatedAdd
+      · exact le_rfl
+      · exact ih
+    · apply iInf_add_le_add_iInf_of_antitone
+      · apply h
+      · intro i₁ i₂ h_i
+        simp only
+        apply Finset.sum_le_sum
+        intro a _
+        exact h a h_i
 
 theorem add_symm_mem_unitInterval_of_self (i j : I) : (i : ℝ) * j + (1 - (i : ℝ)) * j ∈ I := by
   rw [← right_distrib, add_sub_cancel, one_mul]
@@ -898,7 +965,6 @@ theorem sInf_smul_of_nonneg (a : I) {s : Set I} (h : s.Nonempty) :
     }
     rw [← coe_sInf this, Subtype.coe_le_coe]
     apply le_rfl
-
 
 end Quantifier
 

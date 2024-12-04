@@ -32,8 +32,8 @@ def enabledAction : (Program Variable) → (State Variable) → Set Action
   | [Prog| [[c₁]] || [[c₂]]], s
     => if (c₁ = [Prog| ↓] ∧ c₂ = [Prog| ↓]) ∨ c₁ = [Prog| ↯] ∨ c₂ = [Prog| ↯]
       then { Action.deterministic } else
-      { Action.concurrentLeft a | a ∈ enabledAction c₁ s }
-      ∪ { Action.concurrentRight a | a ∈ enabledAction c₂ s }
+      { a' | ∃ a, a' = Action.concurrentLeft a ∧ c₁ ≠ [Prog| ↓] ∧ a ∈ enabledAction c₁ s }
+      ∪ { a' | ∃ a, a' = Action.concurrentRight a ∧ c₂ ≠ [Prog| ↓] ∧ a ∈ enabledAction c₂ s }
 
 /-- Disabled actions have trivial subdistributions. -/
 theorem zero_probability_of_not_enabledAction
@@ -208,43 +208,61 @@ theorem zero_probability_of_not_enabledAction
         case isFalse h_term' h_abort =>
           split
           case h_1 a₂ a₁ =>
-            have ha₁ : a₁ ∉ enabledAction c₁ s := by {
-              intro h
-              specialize h_left a₁ h
-              simp only [not_true_eq_false] at h_left
-            }
-            split
-            case isTrue h_abort =>
-              exact ih₁ ha₁ _
-            case isFalse h_ne_abort =>
+            cases eq_or_ne c₁ [Prog| ↓]
+            case inl h =>
+              rw [h]
+              simp only [programSmallStepSemantics, Pi.zero_apply, ite_self, ite_eq_left_iff]
+              intro _
               split
-              case h_1 =>
+              · rfl
+              · rfl
+            case inr h =>
+              have ha₁ : a₁ ∉ enabledAction c₁ s := by {
+                intro h'
+                specialize h_left a₁ rfl h
+                exact h_left h'
+              }
+              split
+              case isTrue h_abort =>
+                exact ih₁ ha₁ _
+              case isFalse h_ne_abort =>
                 split
-                case isTrue => rfl
-                case isFalse =>
-                  simp only [ite_eq_right_iff]
-                  intro _
-                  exact ih₁ ha₁ _
-              case h_2 => rfl
+                case h_1 =>
+                  split
+                  case isTrue => rfl
+                  case isFalse =>
+                    simp only [ite_eq_right_iff]
+                    intro _
+                    exact ih₁ ha₁ _
+                case h_2 => rfl
           case h_2 a₁ a₂ =>
-            have ha₂ : a₂ ∉ enabledAction c₂ s := by {
-              intro h
-              specialize h_right a₂ h
-              simp only [not_true_eq_false] at h_right
-            }
-            split
-            case isTrue h_abort =>
-              exact ih₂ ha₂ _
-            case isFalse h_ne_abort =>
+            cases eq_or_ne c₂ [Prog| ↓]
+            case inl h =>
+              rw [h]
+              simp only [programSmallStepSemantics, Pi.zero_apply, ite_self, ite_eq_left_iff]
+              intro _
               split
-              case h_1 =>
+              · rfl
+              · rfl
+            case inr h =>
+              have ha₂ : a₂ ∉ enabledAction c₂ s := by {
+                intro h'
+                specialize h_right a₂ rfl h
+                exact h_right h'
+              }
+              split
+              case isTrue h_abort =>
+                exact ih₂ ha₂ _
+              case isFalse h_ne_abort =>
                 split
-                case isTrue => rfl
-                case isFalse =>
-                  simp only [ite_eq_right_iff]
-                  rintro _
-                  exact ih₂ ha₂ _
-              case h_2 => rfl
+                case h_1 =>
+                  split
+                  case isTrue => rfl
+                  case isFalse =>
+                    simp only [ite_eq_right_iff]
+                    rintro _
+                    exact ih₂ ha₂ _
+                case h_2 => rfl
           case h_3 => rfl
 
 end Semantics

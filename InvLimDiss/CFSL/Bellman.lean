@@ -86,15 +86,15 @@ theorem bstep_le_step {c : Program Var} (h : cp₁ ≤ cp₂) (h_abort : ∀ s, 
       simp only [mul_zero, le_refl]
 
 /-- The bellman-operator.-/
-noncomputable def bellman_step (post : StateRV Var) :
+noncomputable def bellmanStep (post : StateRV Var) :
     (Program Var → StateRV Var) → (Program Var → StateRV Var)
   | _, [Prog| ↓ ] => post
   | _, [Prog| ↯ ] => `[fsl| fFalse]
   | X, program => `[fsl| [[bstep program (fun c => `[fsl| [[X c]]]) ]] ]
 
-theorem bellman_monotone (post : StateRV Var) : Monotone (bellman_step post) := by
+theorem bellman_monotone (post : StateRV Var) : Monotone (bellmanStep post) := by
   intro X X' h_X
-  unfold bellman_step
+  unfold bellmanStep
   rw [Pi.le_def]
   intro c
   split
@@ -104,23 +104,23 @@ theorem bellman_monotone (post : StateRV Var) : Monotone (bellman_step post) := 
     apply bstep_mono c
     exact h_X
 
-noncomputable def bellman_step_hom (post : StateRV Var) :
+noncomputable def bellmanStepHom (post : StateRV Var) :
     (Program Var → StateRV Var) →o (Program Var → StateRV Var) :=
-  ⟨bellman_step post, bellman_monotone post⟩
+  ⟨bellmanStep post, bellman_monotone post⟩
 
 /-- greatest solution of the bellman equation -/
-noncomputable def bellman_solution (post : StateRV Var) : (Program Var → StateRV Var) :=
-    gfp (bellman_step_hom post)
+noncomputable def bellmanSolution (post : StateRV Var) : (Program Var → StateRV Var) :=
+    gfp (bellmanStepHom post)
 
 open OrderHom
 
 open OrdinalApprox in
 theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
     gfp (wrleStepHom post `[fsl|emp])
-    = gfp (bellman_step_hom post) := by
+    = gfp (bellmanStepHom post) := by
   apply le_antisymm
   · rw [← gfpApprox_ord_eq_gfp, ← gfpApprox_ord_eq_gfp]
-    simp only [wrleStepHom, bellman_step_hom]
+    simp only [wrleStepHom, bellmanStepHom]
     induction (Order.succ (Cardinal.mk _)).ord using Ordinal.induction with
     | h i ih =>
       unfold gfpApprox
@@ -134,19 +134,19 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
         use j, h_j
       · simp only [coe_mk]
         rw [Pi.le_def]; intro c
-        unfold wrleStep bellman_step
+        unfold wrleStep bellmanStep
         split
         case a.h.a.h.h_1 => rfl
         case a.h.a.h.h_2 => rfl
         case a.h.a.h.h_3 =>
-          unfold wrleStep bellman_step at ih
+          unfold wrleStep bellmanStep at ih
           simp only [fslSepMul_fslEmp_eq, fslEmp_fslSepDiv_eq] at ih ⊢
           apply step_le_bstep
           rw [Pi.le_def]; intro c
           exact ih j h_j c
   · rw [← OrderHom.map_gfp]
     rw [← gfpApprox_ord_eq_gfp, ← gfpApprox_ord_eq_gfp]
-    simp only [wrleStepHom, bellman_step_hom]
+    simp only [wrleStepHom, bellmanStepHom]
     induction (Order.succ (Cardinal.mk _)).ord using Ordinal.induction with
     | h i ih =>
       unfold gfpApprox
@@ -156,12 +156,12 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
         forall_apply_eq_imp_iff₂, true_and]
       intro j h_j
       rw [Pi.le_def]; intro c
-      unfold bellman_step wrleStep
+      unfold bellmanStep wrleStep
       split
       case a.h.a.h_1 => rfl
       case a.h.a.h_2 => rfl
       case a.h.a.h_3 =>
-        unfold bellman_step wrleStep at ih
+        unfold bellmanStep wrleStep at ih
         simp only [fslSepMul_fslEmp_eq, fslEmp_fslSepDiv_eq] at ih ⊢
         apply bstep_le_step
         · rw [Pi.le_def]; intro c
@@ -179,9 +179,11 @@ theorem gfp_wrle_eq_gfp_bellman {post : StateRV Var} :
           rfl
 
 theorem wrle_of_emp_eq_bellman {c : Program Var} {post : StateRV Var} :
-    `[fsl| wrle [c] ([[post]] | emp)] = bellman_solution post c := by
-  unfold wrle' bellman_solution
+    `[fsl| wrle [c] ([[post]] | emp)] = bellmanSolution post c := by
+  unfold wrle' bellmanSolution
   apply congrFun
   exact gfp_wrle_eq_gfp_bellman
+
+
 
 end Bellman
