@@ -154,34 +154,34 @@ macro_rules
 open Lean PrettyPrinter Delaborator
 
 @[app_unexpander fslTrue]
-def unexpandQslTrue : Unexpander
+def unexpandFslTrue : Unexpander
   | `($_) => `(`[fsl| fTrue])
 
 @[app_unexpander fslFalse]
-def unexpandQslFalse : Unexpander
+def unexpandFslFalse : Unexpander
   | `($_) => `(`[fsl| fFalse])
 
 @[app_unexpander fslEmp]
-def unexpandQslEmp : Unexpander
+def unexpandFslEmp : Unexpander
   | `($_) => `(`[fsl| emp])
 
 @[app_unexpander fslPointsTo]
-def unexpandQslPointsTo : Unexpander
+def unexpandFslPointsTo : Unexpander
   | `($_ $l $r) => `(`[fsl| $l:term ↦ $r:term])
   | _ => throw ()
 
 @[app_unexpander fslEquals]
-def unexpandQslEquals : Unexpander
+def unexpandFslEquals : Unexpander
   | `($_ $l $r) => `(`[fsl| $l:term = $r:term])
   | _ => throw ()
 
 @[app_unexpander fslReal]
-def unexpandQslReal : Unexpander
+def unexpandFslReal : Unexpander
   | `($_ $t) => `(`[fsl| < $t:term >])
   | _ => throw ()
 
 @[app_unexpander fslIverson]
-def unexpandQslIverson : Unexpander
+def unexpandFslIverson : Unexpander
   | `($_ `[sl| $l:sl]) => `(`[fsl| ⁅$l:sl⁆])
   | `($_ $t:term) => `(`[fsl| ⁅$t:term⁆])
   | _ => throw ()
@@ -197,14 +197,14 @@ def isAtom : TSyntax `fsl → Bool
   | `(fsl| $_ ) => false
 
 @[app_unexpander fslNot]
-def unexpandQslNot : Unexpander
+def unexpandFslNot : Unexpander
   | `($_ `[fsl|$t]) =>
     if isAtom t then `(`[fsl| ~ $t]) else `(`[fsl| ~ ($t)])
   | `($_ $t) => `(`[fsl| ~ [[$t]]])
   | _ => throw ()
 
 @[app_unexpander fslSubst]
-def unexpandQslSubst : Unexpander
+def unexpandFslSubst : Unexpander
   | `($_ `[fsl|$f] $v:term $e:term) =>
     if isAtom f then `(`[fsl| $f( $v ↦ $e) ]) else `(`[fsl| ($f)( $v:term ↦ $e:term) ])
   | `($_ $f $v $e) => `(`[fsl| [[$f]]( $v ↦ $e) ])
@@ -232,7 +232,7 @@ def bracketsMin_left [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term �
   | `(term| $t:term) => `(fsl|[[$t]])
 
 @[app_unexpander fslMin]
-def unexpandQslMin : Unexpander
+def unexpandFslMin : Unexpander
   | `($_ $l $r) => do `(`[fsl| $(← bracketsMin_left l) ⊓ $(← bracketsMin r)])
   | _ => throw ()
 
@@ -255,41 +255,41 @@ def bracketsMax_left [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term �
   | `(term| $t:term) => `(fsl|[[$t]])
 
 @[app_unexpander fslMax]
-def unexpandQslMax : Unexpander
+def unexpandFslMax : Unexpander
   | `($_ $l $r) => do `(`[fsl| $(← bracketsMax_left l) ⊔ $(← bracketsMax r)])
   | _ => throw ()
 
 @[app_unexpander fslAdd]
-def unexpandQslAdd : Unexpander
+def unexpandFslAdd : Unexpander
   | `($_ $l $r) => do `(`[fsl| $(← bracketsMax_left l) + $(← bracketsMax r)])
   | _ => throw ()
 
 @[app_unexpander fslMul]
-def unexpandQslMul : Unexpander
+def unexpandFslMul : Unexpander
   | `($_ $l $r) => do `(`[fsl| $(← bracketsMin_left l) ⬝ $(← bracketsMin r)])
   | _ => throw ()
 
 @[app_unexpander fslSup]
-def unexpandQslSup : Unexpander
+def unexpandFslSup : Unexpander
   | `($_ fun $x:ident => `[fsl| S $y:ident $[$z:ident]*. $f]) =>
     `(`[fsl| S $x:ident $y:ident $[$z:ident]*. $f])
   | `($_ fun $x:ident => `[fsl|$f:fsl]) => `(`[fsl| S $x:ident. $f])
   | _ => throw ()
 
 @[app_unexpander fslInf]
-def unexpandQslInf : Unexpander
+def unexpandFslInf : Unexpander
   | `($_ fun $x:ident => `[fsl| I $y:ident $[$z:ident]*. $f]) =>
     `(`[fsl| I $x:ident $y:ident $[$z:ident]*. $f])
   | `($_ fun $x:ident => `[fsl|$f:fsl]) => `(`[fsl| I $x:ident. $f])
   | _ => throw ()
 
 @[app_unexpander fslSepMul]
-def unexpandQslSepMul : Unexpander
+def unexpandFslSepMul : Unexpander
   | `($_ $l $r) => do `(`[fsl| $(← bracketsMin_left l) ⋆ $(← bracketsMin r)])
   | _ => throw ()
 
 @[app_unexpander fslBigSepMul]
-def unexpandBigSepCon : Unexpander
+def unexpandFigSepCon : Unexpander
   | `($_ $n fun $x:ident => $f) => do
       `(`[fsl| [⋆] $x:ident ∈ { ... $n}. $(← bracketsMin f)])
   | _ => throw ()
@@ -322,7 +322,7 @@ def bracketsSepDiv_left [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term
   | `(term| $t:term) => `(fsl|[[$t]])
 
 @[app_unexpander fslSepDiv]
-def unexpandQslSepDiv : Unexpander
+def unexpandFslSepDiv : Unexpander
   | `($_ `[fsl|$l -⋆ $r] $f) => do `(`[fsl| ($l -⋆ $r) -⋆ $(← bracketsSepDiv f)])
   | `($_ $l $r) => do `(`[fsl| $(← bracketsSepDiv_left l) -⋆ $(← bracketsSepDiv r)])
   | _ => throw ()

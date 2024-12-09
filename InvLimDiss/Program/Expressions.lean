@@ -1,5 +1,6 @@
 import InvLimDiss.Program.State
-import Mathlib.Topology.UnitInterval
+import InvLimDiss.Mathlib.Probabilities
+import InvLimDiss.Mathlib.Ennreal
 
 /-!
 This file contains definitions and lemmas about expressions in our programming language.
@@ -64,6 +65,23 @@ noncomputable def substProb {Var : Type}
 /-- Variables in the expression that do not matter (or do not occure)-/
 @[simp]
 noncomputable def varsProb {Var : Type} (e : ProbExp Var) : Set Var :=
+  {x | ∃ s q, e (substituteVar s x q) ≠ e s}
+
+/-- Quantitative expressions, i.e. mappings to `ENNReal`. -/
+def QuantExp := (Stack Variable) → ENNReal
+
+instance : Coe ENNReal (QuantExp Variable) where
+  coe i := fun _ => i
+
+/-- Substitution of values in the expression, which we leave unevaluated. -/
+@[simp]
+noncomputable def substQuant {Var : Type}
+    (e : QuantExp Var) (v : Var) (e' : ValueExp Var) : QuantExp Var :=
+  fun s => e (substituteVar s v (e' s))
+
+/-- Variables in the expression that do not matter (or do not occure)-/
+@[simp]
+noncomputable def varsQuant {Var : Type} (e : QuantExp Var) : Set Var :=
   {x | ∃ s q, e (substituteVar s x q) ≠ e s}
 
 end Syntax
