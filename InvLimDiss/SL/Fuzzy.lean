@@ -186,87 +186,40 @@ def unexpandFslIverson : Unexpander
   | `($_ $t:term) => `(`[fsl| ⁅$t:term⁆])
   | _ => throw ()
 
-def isAtom : TSyntax `fsl → Bool
-  | `(fsl| emp) => true
-  | `(fsl| $_:term ↦ $_:term) => true
-  | `(fsl| $_:term = $_:term) => true
-  | `(fsl| <$_:term>) => true
-  | `(fsl| ⁅$_:term⁆) => true
-  | `(fsl| ~$_:fsl) => true
-  | `(fsl| $_:fsl( $_ ↦ $_)) => true
-  | `(fsl| $_ ) => false
-
 @[app_unexpander fslNot]
 def unexpandFslNot : Unexpander
-  | `($_ `[fsl|$t]) =>
-    if isAtom t then `(`[fsl| ~ $t]) else `(`[fsl| ~ ($t)])
+  | `($_ `[fsl|$t]) => `(`[fsl| ~ $t])
   | `($_ $t) => `(`[fsl| ~ [[$t]]])
   | _ => throw ()
 
 @[app_unexpander fslSubst]
 def unexpandFslSubst : Unexpander
-  | `($_ `[fsl|$f] $v:term $e:term) =>
-    if isAtom f then `(`[fsl| $f( $v ↦ $e) ]) else `(`[fsl| ($f)( $v:term ↦ $e:term) ])
+  | `($_ `[fsl|$f] $v:term $e:term) => `(`[fsl| $f( $v ↦ $e) ])
   | `($_ $f $v $e) => `(`[fsl| [[$f]]( $v ↦ $e) ])
   | _ => throw ()
 
-def requireBracketsMin : TSyntax `fsl → Bool
-  | `(fsl| ~ $_:fsl) => false
-  | `(fsl| $_:fsl ⋆ $_:fsl) => false
-  | `(fsl| $_:fsl ⊓ $_:fsl) => false
-  | `(fsl| $_:fsl ⬝ $_:fsl) => false
-  | `(fsl| [⋆] $_ ∈ { ... $_ }. $_) => false
-  | `(fsl| $f:fsl) => !isAtom f
-
-def requireBracketsMin_left : TSyntax `fsl → Bool
-  | `(fsl| ~ $_:fsl) => false
-  | `(fsl| [⋆] $_ ∈ { ... $_ }. $_) => false
-  | `(fsl| $f:fsl) => !isAtom f
-
-def bracketsMin [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `fsl)
-  | `(term| `[fsl|$f:fsl]) => if requireBracketsMin f then `(fsl| ( $f ) ) else `(fsl| $f )
-  | `(term| $t:term) => `(fsl|[[$t]])
-
-def bracketsMin_left [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `fsl)
-  | `(term| `[fsl|$f:fsl]) => if requireBracketsMin_left f then `(fsl| ( $f ) ) else `(fsl| $f )
+def brackets [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `fsl)
+  | `(term| `[fsl|$f:fsl]) => `(fsl| $f )
   | `(term| $t:term) => `(fsl|[[$t]])
 
 @[app_unexpander fslMin]
 def unexpandFslMin : Unexpander
-  | `($_ $l $r) => do `(`[fsl| $(← bracketsMin_left l) ⊓ $(← bracketsMin r)])
+  | `($_ $l $r) => do `(`[fsl| $(← brackets l) ⊓ $(← brackets r)])
   | _ => throw ()
-
-def requireBracketsMax : TSyntax `fsl → Bool
-  | `(fsl| ~ $_:fsl) => false
-  | `(fsl| $_:fsl ⊔ $_:fsl) => false
-  | `(fsl| $f:fsl) => !isAtom f
-
-def requireBracketsMax_left : TSyntax `fsl → Bool
-  | `(fsl| ~ $_:fsl) => false
-  | `(fsl| $_:fsl ⊔ $_:fsl) => false
-  | `(fsl| $f:fsl) => !isAtom f
-
-def bracketsMax [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `fsl)
-  | `(term| `[fsl|$f:fsl]) => if requireBracketsMax f then `(fsl| ( $f ) ) else `(fsl| $f )
-  | `(term| $t:term) => `(fsl|[[$t]])
-
-def bracketsMax_left [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `fsl)
-  | `(term| `[fsl|$f:fsl]) => if requireBracketsMax f then `(fsl| ( $f ) ) else `(fsl| $f )
-  | `(term| $t:term) => `(fsl|[[$t]])
 
 @[app_unexpander fslMax]
 def unexpandFslMax : Unexpander
-  | `($_ $l $r) => do `(`[fsl| $(← bracketsMax_left l) ⊔ $(← bracketsMax r)])
+  | `($_ $l $r) => do `(`[fsl| $(← brackets l) ⊔ $(← brackets r)])
   | _ => throw ()
 
 @[app_unexpander fslAdd]
 def unexpandFslAdd : Unexpander
-  | `($_ $l $r) => do `(`[fsl| $(← bracketsMax_left l) + $(← bracketsMax r)])
+  | `($_ $l $r) => do `(`[fsl| $(← brackets l) + $(← brackets r)])
   | _ => throw ()
 
 @[app_unexpander fslMul]
 def unexpandFslMul : Unexpander
-  | `($_ $l $r) => do `(`[fsl| $(← bracketsMin_left l) ⬝ $(← bracketsMin r)])
+  | `($_ $l $r) => do `(`[fsl| $(← brackets l) ⬝ $(← brackets r)])
   | _ => throw ()
 
 @[app_unexpander fslSup]
@@ -285,47 +238,25 @@ def unexpandFslInf : Unexpander
 
 @[app_unexpander fslSepMul]
 def unexpandFslSepMul : Unexpander
-  | `($_ $l $r) => do `(`[fsl| $(← bracketsMin_left l) ⋆ $(← bracketsMin r)])
+  | `($_ $l $r) => do `(`[fsl| $(← brackets l) ⋆ $(← brackets r)])
   | _ => throw ()
 
 @[app_unexpander fslBigSepMul]
 def unexpandFigSepCon : Unexpander
   | `($_ $n fun $x:ident => $f) => do
-      `(`[fsl| [⋆] $x:ident ∈ { ... $n}. $(← bracketsMin f)])
+      `(`[fsl| [⋆] $x:ident ∈ { ... $n}. $(← brackets f)])
   | _ => throw ()
-
-def requireBracketsSepDiv : TSyntax `fsl → Bool
-  | `(fsl| ~ $_:fsl) => false
-  | `(fsl| $_:fsl -⋆ $_:fsl) => false
-  | `(fsl| $_:fsl ⊓ $_:fsl) => false
-  | `(fsl| $_:fsl ⋆ $_:fsl) => false
-  | `(fsl| $_:fsl ⬝ $_:fsl) => false
-  | `(fsl| $_:fsl ⊔ $_:fsl) => false
-  | `(fsl| $_:fsl + $_:fsl) => false
-  | `(fsl| $f:fsl) => !isAtom f
-
-def bracketsSepDiv [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `fsl)
-  | `(term| `[fsl|$f:fsl]) => if requireBracketsSepDiv f then `(fsl| ( $f ) ) else `(fsl| $f )
-  | `(term| $t:term) => `(fsl|[[$t]])
-
-def requireBracketsSepDiv_left : TSyntax `fsl → Bool
-  | `(fsl| ~ $_:fsl) => false
-  | `(fsl| $_:fsl ⊓ $_:fsl) => false
-  | `(fsl| $_:fsl ⋆ $_:fsl) => false
-  | `(fsl| $_:fsl ⬝ $_:fsl) => false
-  | `(fsl| $_:fsl ⊔ $_:fsl) => false
-  | `(fsl| $_:fsl + $_:fsl) => false
-  | `(fsl| $f:fsl) => !isAtom f
-
-def bracketsSepDiv_left [Monad m] [MonadRef m] [MonadQuotation m]: TSyntax `term → m (TSyntax `fsl)
-  | `(term| `[fsl|$f:fsl]) => if requireBracketsSepDiv_left f then `(fsl| ( $f ) ) else `(fsl| $f )
-  | `(term| $t:term) => `(fsl|[[$t]])
 
 @[app_unexpander fslSepDiv]
 def unexpandFslSepDiv : Unexpander
-  | `($_ `[fsl|$l -⋆ $r] $f) => do `(`[fsl| ($l -⋆ $r) -⋆ $(← bracketsSepDiv f)])
-  | `($_ $l $r) => do `(`[fsl| $(← bracketsSepDiv_left l) -⋆ $(← bracketsSepDiv r)])
+  | `($_ `[fsl|$l -⋆ $r] $f) => do `(`[fsl| ($l -⋆ $r) -⋆ $(← brackets f)])
+  | `($_ $l $r) => do `(`[fsl| $(← brackets l) -⋆ $(← brackets r)])
   | _ => throw ()
+
+@[category_parenthesizer fsl]
+def fsl_parenthesizer : CategoryParenthesizer | prec => do
+  Parenthesizer.maybeParenthesize `fsl false (fun stx => Unhygienic.run `(fsl|($(⟨stx⟩)))) prec $
+    Parenthesizer.parenthesizeCategoryCore `fsl prec
 
 
 def precise (P : StateRV Var) : Prop :=

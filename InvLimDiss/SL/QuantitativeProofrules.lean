@@ -540,7 +540,7 @@ end Separating
 section Precise
 
 theorem qslSepMul_qslMin_distr_of_precise (P Q R : StateRVInf Var) (h : precise P) :
-    `[qsl| [[P]] ⋆ ([[Q]] ⊓ [[R]])] = `[qsl| ([[P]] ⋆ [[Q]]) ⊓ ([[P]] ⋆ [[R]])] := by
+    `[qsl| [[P]] ⋆ [[Q]] ⊓ [[R]]] = `[qsl| ([[P]] ⋆ [[Q]]) ⊓ ([[P]] ⋆ [[R]])] := by
   apply le_antisymm (qslSepMul_qslMin_subdistr P Q R)
   intro s
   obtain ⟨heap₁, h_subset, h⟩ := h s
