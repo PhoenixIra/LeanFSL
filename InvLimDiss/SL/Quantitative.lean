@@ -35,6 +35,9 @@ noncomputable def qslPointsTo (loc val : ValueExp Var) : StateRVInf Var :=
 noncomputable def qslEquals (e e' : ValueExp Var) : StateRVInf Var :=
     λ ⟨s,_⟩ => iteOneZero (e s = e' s)
 
+noncomputable def qslDisEquals (e e' : ValueExp Var) : StateRVInf Var :=
+    λ ⟨s,_⟩ => iteOneZero (e s ≠ e' s)
+
 noncomputable def qslReal (e : QuantExp Var) : StateRVInf Var :=
     λ ⟨s,_⟩ => e s
 
@@ -79,6 +82,7 @@ syntax "∞" : qsl
 syntax "emp" : qsl
 syntax term " ↦ " term : qsl
 syntax term:51 " = " term:51 : qsl
+syntax term:51 " ≠ " term:51 : qsl
 syntax "<" term:51 ">" : qsl
 syntax "[[" term "]]" : qsl
 syntax "⁅" term "⁆" : qsl
@@ -109,6 +113,7 @@ macro_rules
   | `(term| `[qsl| emp]) => `(qslEmp)
   | `(term| `[qsl| $l:term ↦ $r:term]) => `(qslPointsTo $l $r)
   | `(term| `[qsl| $l:term = $r:term]) => `(qslEquals $l $r)
+  | `(term| `[qsl| $l:term ≠ $r:term]) => `(qslDisEquals $l $r)
   | `(term| `[qsl| [[$t:term]]]) => `($t)
   | `(term| `[qsl| < $t:term >]) => `(qslReal $t)
   | `(term| `[qsl| ⁅$t:term⁆]) => `(qslIverson $t)
@@ -135,6 +140,7 @@ macro_rules
   | `(term| `[qsl $v:term| emp]) => `(@qslEmp $v)
   | `(term| `[qsl $v:term| $l:term ↦ $r:term]) => `(@qslPointsTo $v $l $r)
   | `(term| `[qsl $v:term| $l:term = $r:term]) => `(@qslEquals $v $l $r)
+  | `(term| `[qsl $v:term| $l:term ≠ $r:term]) => `(@qslDisEquals $v $l $r)
   | `(term| `[qsl $_| [[$t:term]]]) => `($t)
   | `(term| `[qsl $v:term| <$t:term>]) => `(@qslReal $v $t)
   | `(term| `[qsl $v:term| ⁅$t:term⁆]) => `(@qslIverson $v $t)
@@ -182,6 +188,11 @@ def unexpandQslPointsTo : Unexpander
 @[app_unexpander qslEquals]
 def unexpandQslEquals : Unexpander
   | `($_ $l $r) => `(`[qsl| $l:term = $r:term])
+  | _ => throw ()
+
+@[app_unexpander qslDisEquals]
+def unexpandQslDisEquals : Unexpander
+  | `($_ $l $r) => `(`[qsl| $l:term ≠ $r:term])
   | _ => throw ()
 
 @[app_unexpander qslReal]

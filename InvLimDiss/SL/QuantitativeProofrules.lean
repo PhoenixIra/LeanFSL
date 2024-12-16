@@ -43,6 +43,11 @@ theorem qslMax_assoc (P Q R : StateRVInf Var) :
   simp only [qslMax]
   exact sup_assoc P Q R
 
+theorem qslMax_mono (P₁ P₂ Q₁ Q₂ : StateRVInf Var) (hP : P₁ ≤ P₂) (hQ : Q₁ ≤ Q₂) :
+    `[qsl| [[P₁]] ⊔ [[Q₁]] ⊢ [[P₂]] ⊔ [[Q₂]]] := by
+  simp only [qslMax, sup_le_iff]
+  exact ⟨le_sup_of_le_left hP, le_sup_of_le_right hQ⟩
+
 theorem qslMin_comm (P Q : StateRVInf Var) :
     `[qsl| [[P]] ⊓ [[Q]]] = `[qsl| [[Q]] ⊓ [[P]]] := by
   simp only [qslMin]
@@ -52,6 +57,11 @@ theorem qslMin_assoc (P Q R : StateRVInf Var) :
     `[qsl| ([[P]] ⊓ [[Q]]) ⊓ [[R]]] = `[qsl| [[P]] ⊓ [[Q]] ⊓ [[R]]] := by
   simp only [qslMin]
   exact inf_assoc P Q R
+
+theorem qslMin_mono (P₁ P₂ Q₁ Q₂ : StateRVInf Var) (hP : P₁ ≤ P₂) (hQ : Q₁ ≤ Q₂) :
+    `[qsl| [[P₁]] ⊓ [[Q₁]] ⊢ [[P₂]] ⊓ [[Q₂]]] := by
+  simp only [qslMin, le_inf_iff]
+  exact ⟨inf_le_of_left_le hP, inf_le_of_right_le hQ⟩
 
 theorem qslMax_entailment_iff (P Q R : StateRVInf Var) :
     `[qsl| [[P]] ⊔ [[Q]] ⊢ [[R]]] ↔ P ⊢ R ∧ Q ⊢ R := by

@@ -31,6 +31,9 @@ noncomputable def substVal {Var : Type}
 noncomputable def varsValue {Var : Type} (e : ValueExp Var) : Set Var :=
   {x | ∃ s q, e (substituteVar s x q) ≠ e s}
 
+instance : Coe Var (ValueExp Var) where
+  coe x := λ s => s x
+
 
 /-- Boolean expressions, i.e. mappings to `Bool`. -/
 def BoolExp := (Stack Variable) → Bool
@@ -70,8 +73,14 @@ noncomputable def varsProb {Var : Type} (e : ProbExp Var) : Set Var :=
 /-- Quantitative expressions, i.e. mappings to `ENNReal`. -/
 def QuantExp := (Stack Variable) → ENNReal
 
-instance : Coe ENNReal (QuantExp Variable) where
+instance : Coe ENNReal (QuantExp Var) where
   coe i := fun _ => i
+
+instance : Coe NNRat NNReal where
+  coe i := ⟨(i.val : ℝ), by {norm_cast; apply le_trans i.prop; rfl}⟩
+
+instance : Coe NNRat (QuantExp Var) where
+  coe r := fun _ => r
 
 /-- Substitution of values in the expression, which we leave unevaluated. -/
 @[simp]
