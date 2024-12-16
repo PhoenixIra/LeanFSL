@@ -108,6 +108,13 @@ lemma iteOneZero_le {P : Prop} {i : ENNReal} :
     case isTrue h_P => exact h_imp h_P
     case isFalse => exact bot_le
 
+lemma one_le_iteOneZero {P : Prop} :
+    1 ≤ iteOneZero P ↔ iteOneZero P = 1 := by
+  simp only [iteOneZero, ite_unit, ite_eq_left_iff, zero_ne_one, imp_false, Decidable.not_not]
+  split
+  case isTrue h => simp only [le_refl, h]
+  case isFalse h => simp only [nonpos_iff_eq_zero, one_ne_zero, h]
+
 lemma iteOneZero_mul_self {P : Prop} :
     iteOneZero P * iteOneZero P = iteOneZero P := by
   simp only [iteOneZero_eq_ite, mul_ite, mul_one, mul_zero, ite_eq_left_iff]
