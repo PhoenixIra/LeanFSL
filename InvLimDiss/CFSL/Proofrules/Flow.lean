@@ -55,6 +55,7 @@ theorem wrle_conditionalBranching {e : BoolExp Var} :
     simp only [wrtStmt, Set.empty_inter]
   · refine fslSepMul_mono ?_ le_rfl
     intro s
+    show `[fsl| ⁅<e>⁆ ⬝ [[_]]] s ⊔ `[fsl| ~⁅<e>⁆ ⬝ [[_]]] s ≤ _
     by_cases e s.stack
     case pos h_e =>
       rw [step_condChoice_left _ _ h_e]
@@ -124,9 +125,9 @@ theorem wrle_while {e : BoolExp Var}
               rintro _ (rfl | ⟨_, _, rfl⟩)
               · exact le_one'
               · apply le_trans (h_inv s)
-                simp only [fslMax, Sup.sup, fslMul, fslIverson, slExp, h, Bool.false_eq_true,
-                  iteOneZero_false, zero_mul, fslNot, symm_zero, one_mul, zero_le, sup_of_le_right,
-                  wrleStep, le_refl]
+                show `[fsl| ⁅<e>⁆ ⬝ [[Q]]] s ⊔ `[fsl|~⁅<e>⁆ ⬝ [[P]]] s ≤ _
+                simp only [fslMul, fslIverson, slExp, h, Bool.false_eq_true, iteOneZero_false,
+                  zero_mul, fslNot, symm_zero, one_mul, zero_le, sup_of_le_right, wrleStep, le_refl]
             case pos h =>
               rw [step_loop_cont _ _ h]
               apply le_trans ?_ (gfpApprox_wrleStep_seq s)
@@ -137,6 +138,7 @@ theorem wrle_while {e : BoolExp Var}
                 apply wrleStep_mono_of_le_RV
                 exact ih i' h_i'
               · apply le_trans (h_inv s)
+                show `[fsl| ⁅<e>⁆ ⬝ [[Q]] ] s ⊔ `[fsl| ~⁅<e>⁆ ⬝ [[P]] ] s ≤ _
                 simp only [fslMax, Sup.sup, fslMul, fslIverson, slExp, h, iteOneZero_true, one_mul,
                   fslNot, symm_one, zero_mul, zero_le, sup_of_le_left]
                 apply le_trans (h_Q s)

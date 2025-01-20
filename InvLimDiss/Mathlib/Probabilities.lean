@@ -27,7 +27,8 @@ open Classical Set.Icc
 /--
 The unitInterval forms a complete lattice with a linear order.
 -/
-noncomputable instance unit_cl : CompleteLinearOrder I := Set.Icc.completeLinearOrder (by simp)
+instance : Fact ((0:Real) ≤ 1) := by constructor; exact zero_le_one
+noncomputable instance unit_cl : CompleteLinearOrder I := instCompleteLinearOrderElemIccOfFactLe
 
 theorem unit_top_eq_one : (⊤ : I) = (1 : I) := rfl
 
@@ -86,7 +87,7 @@ instance : MulOneClass I where
 lemma div_le_one {a b : ℝ} (h_b_pos : 0 < b) (h_ab : a ≤ b): a/b ≤ 1 := by
   have h_b_nonneg : 0 ≤ b := by apply le_iff_lt_or_eq.mpr; left; exact h_b_pos
   have : b ≤ b := by apply le_iff_lt_or_eq.mpr; right; rfl
-  calc a / b ≤ b / b    := by exact (div_le_div h_b_nonneg h_ab h_b_pos this)
+  calc a / b ≤ b / b    := by exact (div_le_div₀ h_b_nonneg h_ab h_b_pos this)
            _ = 1        := (div_eq_one_iff_eq (ne_of_gt h_b_pos)).mpr rfl
 
 lemma div_mem_unit {a b : ℝ} (h_a_nonneg : 0 ≤ a) (h_ab : a < b): a/b ∈ I := by
@@ -118,7 +119,7 @@ lemma unit_div_le_div {i j k l : I} (hik : i ≤ k) (hlj : l ≤ j) : i / j ≤ 
         rw [h_eq, ← not_le] at h_kl
         exact h_kl nonneg'
       | inr h_ne =>
-        apply div_le_div
+        apply div_le_div₀
         · exact nonneg'
         · exact hik
         · apply lt_of_le_of_ne nonneg'
@@ -331,7 +332,7 @@ theorem unit_mul_div {i j k : I} : i * (j / k) ≤ i * j / k := by
 
 theorem mul_iInf [Nonempty α] {i : I} {j : α → I} : i * ⨅ a : α, j a = ⨅ a : α, i * j a := by
   rw [Subtype.mk_eq_mk]
-  simp only [coe_mul, coe_iInf]
+  simp only [coe_mul, zero_le_one, coe_iInf]
   rw [Real.mul_iInf_of_nonneg nonneg']
 
 end MulDiv
@@ -918,7 +919,8 @@ theorem hSMul_emp (i : I) : i • (∅ : Set I) = ∅ := by
 
 theorem coe_sInf {s : Set I} (h : Set.Nonempty s) : (sInf s) = sInf (s : Set ℝ) := by
   rw [Set.Icc.coe_sInf]
-  exact h
+  · exact zero_le_one' ℝ
+  · exact h
 
 open Pointwise in
 theorem smul_real_eq_smul_unit (i : I) (s : Set I) :

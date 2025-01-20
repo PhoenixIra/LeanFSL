@@ -1,5 +1,5 @@
 import InvLimDiss.Program.State.Basic
-import Mathlib.Data.Set.Finite
+import Mathlib.Data.Set.Finite.Powerset
 
 namespace Finite
 

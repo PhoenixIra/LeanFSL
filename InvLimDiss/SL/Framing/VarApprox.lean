@@ -138,24 +138,24 @@ theorem varRV_of_fslMin :
     varRV `[fsl Var| [[f]] ⊓ [[g]]] ⊆ varRV f ∪ varRV g := by
   intro v h_v
   contrapose h_v
-  simp only [varRV, fslMin, Inf.inf, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists,
-    Decidable.not_not]
+  simp only [varRV, fslMin, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not]
   intro s q
   simp only [varRV, substituteStack, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or, not_exists,
     Decidable.not_not] at h_v
   obtain ⟨h_f, h_g⟩ := h_v
+  show f _ ⊓ g _ = f _ ⊓ g _
   rw [h_f s q, h_g s q]
 
 theorem varRV_of_fslMax :
     varRV `[fsl Var| [[f]] ⊔ [[g]]] ⊆ varRV f ∪ varRV g := by
   intro v h_v
   contrapose h_v
-  simp only [varRV, fslMax, Sup.sup, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists,
-    Decidable.not_not]
+  simp only [varRV, fslMax, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not]
   intro s q
   simp only [varRV, substituteStack, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or, not_exists,
     Decidable.not_not] at h_v
   obtain ⟨h_f, h_g⟩ := h_v
+  show f _ ⊔ g _ = f _ ⊔ g _
   rw [h_f s q, h_g s q]
 
 theorem varRV_of_fslAdd :

@@ -50,37 +50,42 @@ theorem conservative_min (P Q : StateProp Var) :
     `[fsl Var| ⁅P⁆ ⊓ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var| [[P]] ∧ [[Q]]]⁆] := by
   apply funext
   intro _
-  simp only [fslMin, Inf.inf, fslIverson, iteOneZero_eq_ite, slAnd]
+  simp only [fslMin, fslIverson, slAnd, iteOneZero_eq_ite]
+  classical
+  show _ = if P _ ⊓ Q _ then 1 else 0
   split
-  case isTrue h_p =>
-    split
-    case isTrue h_q =>
-      simp only [ge_iff_le, le_refl, inf_of_le_left]
-      rw [if_pos ⟨h_p, h_q⟩]
-    case isFalse h_q =>
-      simp only [ge_iff_le, zero_le, inf_of_le_right]
-      rw [if_neg]
-      simp only [h_q, and_false, not_false_eq_true]
-  case isFalse h_q =>
-    simp only [ge_iff_le, zero_le, inf_of_le_left]
-    rw [if_neg]
-    simp only [h_q, false_and, not_false_eq_true]
+  case isTrue h =>
+    obtain ⟨h_p, h_q⟩ := h
+    show `[fsl| ⁅P⁆ ] _ ⊓ `[fsl| ⁅Q⁆ ] _ = 1
+    simp only [fslIverson, iteOneZero_pos h_p, iteOneZero_pos h_q, min_self]
+  case isFalse h =>
+    simp only [inf_Prop_eq, not_and_or] at h
+    show `[fsl| ⁅P⁆ ] _ ⊓ `[fsl| ⁅Q⁆ ] _ = 0
+    cases h
+    case inl h =>
+      simp only [fslIverson, iteOneZero_neg h, zero_le, inf_of_le_left]
+    case inr h =>
+      simp only [fslIverson, iteOneZero_neg h, zero_le, inf_of_le_right]
 
 theorem conservative_max (P Q : StateProp Var) :
     `[fsl Var| ⁅P⁆ ⊔ ⁅Q⁆] = `[fsl Var| ⁅`[sl Var| [[P]] ∨ [[Q]]]⁆] := by
   apply funext
   intro _
+  show `[fsl| ⁅P⁆ ] _ ⊔ `[fsl| ⁅Q⁆ ] _ = _
   simp only [fslMax, Sup.sup, fslIverson, iteOneZero_eq_ite, slOr]
+  classical
+  show _ = if P _ ⊔ Q _ then 1 else 0
   split
   case isTrue h_p =>
+    simp only [sup_Prop_eq]
     rw [sup_of_le_left le_one', if_pos (Or.inl h_p)]
   case isFalse h_p =>
     split
     case isTrue h_q =>
-      simp only [ge_iff_le, zero_le, sup_of_le_right]
+      simp only [zero_le, sup_of_le_right, sup_Prop_eq]
       rw [if_pos (Or.inr h_q)]
     case isFalse h_q =>
-      simp only [ge_iff_le, le_refl, sup_of_le_left]
+      simp only [max_self, sup_Prop_eq]
       rw [if_neg]
       simp only [h_p, h_q, or_self, not_false_eq_true]
 
@@ -101,6 +106,7 @@ theorem conservative_add (P Q : StateProp Var) :
       exact Or.inr h_q
     case isFalse h_q =>
       rw [if_neg]
+      show ¬(P _ ∨ Q _)
       simp only [h_p, h_q, or_self, not_false_eq_true]
 
 theorem conservative_mul (P Q : StateProp Var) :
@@ -115,9 +121,11 @@ theorem conservative_mul (P Q : StateProp Var) :
       rw [if_pos ⟨h_p, h_q⟩]
     case isFalse h_p =>
       rw [if_neg]
+      show ¬(P _ ∧ Q _)
       simp only [h_p, false_and, not_false_eq_true]
   case isFalse h_q =>
     rw [if_neg]
+    show ¬(P _ ∧ Q _)
     simp only [h_q, and_false, not_false_eq_true]
 
 theorem conservative_sup (P : α → StateProp Var) :
@@ -264,9 +272,10 @@ theorem conservative_subst (P : StateProp Var) :
 theorem conservative_min (P Q : StateProp Var) :
     `[qsl Var| ⁅P⁆ ⊓ ⁅Q⁆] s = 1 ↔ `[sl Var| [[P]] ∧ [[Q]]] s := by
   simp only [qslMin, slAnd]
+  show `[qsl| ⁅P⁆ ] s ⊓ `[qsl| ⁅Q⁆ ] s = 1 ↔ P s ⊓ Q s
   apply Iff.intro
   · intro h
-    simp only [Inf.inf, qslIverson, min_eq_iff, iteOneZero_eq_one_def] at h
+    simp only [qslIverson, min_eq_iff, iteOneZero_eq_one_def] at h
     cases h
     case inl h =>
       rw [iteOneZero_pos h.left, one_le_iteOneZero] at h
@@ -284,6 +293,7 @@ theorem conservative_min (P Q : StateProp Var) :
 theorem conservative_max (P Q : StateProp Var) :
     `[qsl Var| ⁅P⁆ ⊔ ⁅Q⁆] s = 1 ↔ `[sl Var| [[P]] ∨ [[Q]]] s := by
   simp only [qslMax, slOr]
+  show `[qsl| ⁅P⁆ ] s ⊔ `[qsl| ⁅Q⁆ ] s = 1 ↔ P s ⊔ Q s
   apply Iff.intro
   · intro h
     simp only [Sup.sup, qslIverson, max_eq_iff, iteOneZero_eq_one_def] at h

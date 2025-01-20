@@ -1,7 +1,7 @@
 import InvLimDiss.SL.ClassicalProofrules
 import InvLimDiss.SL.FuzzyProofrules
 import InvLimDiss.Program.State.Finite
-import Mathlib.Data.Set.Pointwise.Finite
+-- import Mathlib.Data.Set.Pointwise.Finite
 
 /-!
 This file contains the transformation from (static) quantitative separation logic
@@ -579,7 +579,7 @@ theorem atLeast_fslMin_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
   rw [ fslMin, slAnd, Pi.inf_apply, Pi.inf_apply ]
   apply Iff.intro
   · intro h
-    rw [inf_eq_min, min_def] at h
+    rw [min_def] at h
     split at h
     case isTrue h_le =>
       apply And.intro
@@ -591,7 +591,7 @@ theorem atLeast_fslMin_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
       · exact le_of_lt <| lt_of_le_of_lt h h_lt
       · exact h
   · rintro ⟨h₁, h₂⟩
-    rw [inf_eq_min, min_def]
+    rw [min_def]
     split
     case isTrue h_le => exact h₁
     case isFalse h_lt => exact h₂
@@ -601,7 +601,7 @@ theorem atLeast_fslMax_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
   rw [ fslMax, slOr, Pi.sup_apply, Pi.sup_apply ]
   apply Iff.intro
   · intro h
-    rw [sup_eq_max, max_def] at h
+    rw [max_def] at h
     split at h
     case isTrue h_le =>
       apply Or.inr
@@ -611,11 +611,11 @@ theorem atLeast_fslMax_iff {i : I} {f₁ f₂ : StateRV Var} {s : State Var} :
       rw [not_le] at h_lt
       exact h
   · rintro (h | h)
-    · rw [sup_eq_max, max_def]
+    · rw [max_def]
       split
       case isTrue h_le => refine le_trans h h_le
       case isFalse h_lt => exact h
-    · rw [sup_eq_max, max_def]
+    · rw [max_def]
       split
       case isTrue h_le => exact h
       case isFalse h_lt => rw [not_le] at h_lt; refine le_trans h (le_of_lt h_lt)

@@ -54,13 +54,13 @@ noncomputable def wrleStepHom (post : StateRV Var) (resource : StateRV Var) :
 noncomputable def wrle' (program : Program Var) (post : StateRV Var) (resource : StateRV Var) :=
   gfp (wrleStepHom post resource) program
 
-syntax "wrle [" term "] (" fsl " | " fsl ")" : fsl
+syntax "wrle" "[" term "]" "(" fsl " | " fsl ")" : fsl
 macro_rules
   | `(term| `[fsl| wrle [$c:term] ($p:fsl | $r:fsl)]) => `(wrle' $c `[fsl| $p] `[fsl| $r])
   | `(term| `[fsl $v| wrle [$c:term] ($p:fsl | $r:fsl)]) => `(wrle' $c `[fsl $v| $p] `[fsl $v| $r])
 
 
-syntax "wrle [" program "] (" fsl " | " fsl ")" : fsl
+syntax "wrle" "[" program "]" "(" fsl " | " fsl ")" : fsl
 macro_rules
   | `(term| `[fsl| wrle [$c:program] ($p:fsl | $r:fsl)]) =>
     `(wrle' [Prog| $c] `[fsl| $p] `[fsl| $r])

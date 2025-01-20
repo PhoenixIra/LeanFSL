@@ -71,17 +71,17 @@ theorem qslMax_entailment_iff (P Q R : StateRVInf Var) :
     · intro s
       rw [Pi.le_def] at h
       specialize h s
-      simp only [qslMax, Sup.sup, max_le_iff] at h
-      exact h.left
+      simp only [qslMax] at h
+      exact le_of_max_le_left h
     · intro s
       rw [Pi.le_def] at h
       specialize h s
-      simp only [qslMax, Sup.sup, max_le_iff] at h
-      exact h.right
+      simp only [qslMax] at h
+      exact le_of_max_le_right h
   · rintro ⟨h_P, h_Q⟩
     intro s
-    simp only [qslMax, Sup.sup, max_le_iff]
-    exact ⟨h_P s, h_Q s⟩
+    simp only [qslMax]
+    exact max_le (h_P s) (h_Q s)
 
 
 end MaxMin
@@ -325,14 +325,16 @@ theorem qslSepMul_qslMin_subdistr (P Q R : StateRVInf Var) :
   · apply le_sSup_of_le
     · use heap₁, heap₂, h_disjoint, h_union
     · apply ennreal_mul_le_mul le_rfl ?_
-      simp only [qslMin, Inf.inf]
+      simp only [qslMin]
+      show Q _ ⊓ R _ ≤ _
       rw [min_le_iff]
       left
       rfl
   · apply le_sSup_of_le
     · use heap₁, heap₂, h_disjoint, h_union
     · apply ennreal_mul_le_mul le_rfl ?_
-      simp only [qslMin, Inf.inf]
+      simp only [qslMin]
+      show Q _ ⊓ R _ ≤ _
       rw [min_le_iff]
       right
       rfl
@@ -346,12 +348,16 @@ theorem qslSepMul_qslMax_distr (P Q R : StateRVInf Var) :
     rw [mul_comm, ← le_div'_iff_mul_le]
     apply sup_le
     · rw [le_div'_iff_mul_le, mul_comm]
-      simp only [qslMax, Sup.sup, le_max_iff]
+      simp only [qslMax]
+      show _ ≤ `[qsl| [[P]] ⋆ [[Q]] ] s ⊔ `[qsl| [[P]] ⋆ [[R]] ] s
+      rw [le_max_iff]
       left
       apply le_sSup
       use heap₁, heap₂, h_disjoint, h_union
     · rw [le_div'_iff_mul_le, mul_comm]
-      simp only [qslMax, Sup.sup, le_max_iff]
+      simp only [qslMax]
+      show _ ≤ `[qsl| [[P]] ⋆ [[Q]] ] s ⊔ `[qsl| [[P]] ⋆ [[R]] ] s
+      rw [le_max_iff]
       right
       apply le_sSup
       use heap₁, heap₂, h_disjoint, h_union
@@ -362,13 +368,17 @@ theorem qslSepMul_qslMax_distr (P Q R : StateRVInf Var) :
       apply le_sSup_of_le
       · use heap₁, heap₂, h_disjoint, h_union
       · apply ennreal_mul_le_mul le_rfl ?_
-        simp only [qslMax, Sup.sup, le_max_left]
+        simp only [qslMax]
+        show _ ≤ Q _ ⊔ R _
+        exact le_max_left _ _
     · apply sSup_le
       rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
       apply le_sSup_of_le
       · use heap₁, heap₂, h_disjoint, h_union
       · apply ennreal_mul_le_mul le_rfl ?_
-        simp only [qslMax, Sup.sup, le_max_right]
+        simp only [qslMax]
+        show _ ≤ Q _ ⊔ R _
+        exact le_max_right _ _
 
 theorem qslSepMul_qslAdd_subdistr (P Q R : StateRVInf Var) :
     `[qsl| [[P]] ⋆ ([[Q]] + [[R]])] ⊢ `[qsl| ([[P]] ⋆ [[Q]]) + ([[P]] ⋆ [[R]])] := by
@@ -444,7 +454,7 @@ theorem qslSepMul_qslInf_subdistr (P : StateRVInf Var) (Q : α → StateRVInf Va
   apply le_sSup_of_le
   · use heap₁, heap₂, h_disjoint, h_union
   · apply ennreal_mul_le_mul le_rfl
-    exact iInf_le' _ _
+    exact iInf_le _ _
 
 theorem qslSepDiv_qslMax_supdistr (P Q R : StateRVInf Var) :
     `[qsl| ([[P]] -⋆ [[Q]]) ⊔ ([[P]] -⋆ [[R]])] ⊢ `[qsl| [[P]] -⋆ ([[Q]] ⊔ [[R]])] := by
@@ -455,11 +465,13 @@ theorem qslSepDiv_qslMax_supdistr (P Q R : StateRVInf Var) :
   · apply sInf_le_of_le
     · use heap, h_disjoint
     · apply div'_le_div' ?_ le_rfl
-      simp only [qslMax, Sup.sup, le_max_left]
+      simp only [qslMax]
+      exact le_max_left _ _
   · apply sInf_le_of_le
     · use heap, h_disjoint
     · apply div'_le_div' ?_ le_rfl
-      simp only [qslMax, Sup.sup, le_max_right]
+      simp only [qslMax]
+      exact le_max_right _ _
 
 theorem qslSepDiv_qslMin_distr (P Q R : StateRVInf Var) :
     `[qsl| ([[P]] -⋆ [[Q]]) ⊓ ([[P]] -⋆ [[R]])] = `[qsl| [[P]] -⋆ ([[Q]] ⊓ [[R]])] := by
@@ -470,12 +482,16 @@ theorem qslSepDiv_qslMin_distr (P Q R : StateRVInf Var) :
     rw [le_div'_iff_mul_le]
     apply le_inf
     · rw [← le_div'_iff_mul_le]
-      simp only [qslMin, Inf.inf, min_le_iff]
+      simp only [qslMin]
+      show `[qsl| [[P]] -⋆ [[Q]] ] s ⊓ `[qsl| [[P]] -⋆ [[R]] ] s ≤ _
+      rw [min_le_iff]
       left
       apply sInf_le
       use heap, h_disjoint
     · rw [← le_div'_iff_mul_le]
-      simp only [qslMin, Inf.inf, min_le_iff]
+      simp only [qslMin]
+      show `[qsl| [[P]] -⋆ [[Q]] ] s ⊓ `[qsl| [[P]] -⋆ [[R]] ] s ≤ _
+      rw [min_le_iff]
       right
       apply sInf_le
       use heap, h_disjoint
@@ -486,13 +502,15 @@ theorem qslSepDiv_qslMin_distr (P Q R : StateRVInf Var) :
       apply sInf_le_of_le
       · use heap, h_disjoint
       · apply div'_le_div' ?_ le_rfl
-        simp only [qslMin, Inf.inf, min_le_left]
+        simp only [qslMin]
+        exact min_le_left _ _
     · apply le_sInf
       rintro _ ⟨heap, h_disjoint, rfl⟩
       apply sInf_le_of_le
       · use heap, h_disjoint
       · apply div'_le_div' ?_ le_rfl
-        simp only [qslMin, Inf.inf, min_le_right]
+        simp only [qslMin]
+        exact min_le_right _ _
 
 -- theorem qslSepDiv_qslAdd_supdistr (P Q R : StateRVInf Var) :
 --     `[qsl| ([[P]] -⋆ [[Q]]) + ([[P]] -⋆ [[R]]) ⊢ [[P]] -⋆ ([[Q]] + [[R]])] := by
@@ -558,6 +576,8 @@ theorem qslSepMul_qslMin_distr_of_precise (P Q R : StateRVInf Var) (h : precise 
   apply le_sSup_of_le
   · use heap₁, heap₂, h_disjoint, h_union.symm
   · simp only [qslMin, Inf.inf]
+    show `[qsl| [[P]] ⋆ [[Q]] ] s ⊓ `[qsl| [[P]] ⋆ [[R]] ] s
+      ≤ _ * (Q _ ⊓ R _)
     cases le_total (Q ⟨s.stack, heap₂⟩) (R ⟨s.stack, heap₂⟩)
     case inl h_le =>
       rw [min_eq_left h_le, min_le_iff]

@@ -112,7 +112,7 @@ lemma gfpApprox_wrleStep_seq :
 
 theorem wrle_seq {P resource : StateRV Vars} :
     `[fsl| wrle [c₁] (wrle [c₂] ([[P]] | [[resource]]) | [[resource]])
-      ⊢ wrle [[[c₁]] ; [[c₂]]] ([[P]] | [[resource]])] := by
+      ⊢ wrle [ [[c₁]] ; [[c₂]]] ([[P]] | [[resource]])] := by
   unfold wrle'
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
   rw [← OrdinalApprox.gfpApprox_eq_of_mem_fixedPoints]
@@ -335,8 +335,8 @@ theorem gfpApprox_wrleStep_concur_symmetric
 
 theorem wrle_concur_symmetric
     (c₁ c₂ : Program Var) (P resource : StateRV Var) :
-    `[fsl| wrle [[[c₁]] || [[c₂]]] ([[P]] | [[resource]])]
-    = `[fsl| wrle [[[c₂]] || [[c₁]]] ([[P]] | [[resource]])] := by
+    `[fsl| wrle [ [[c₁]] || [[c₂]]] ([[P]] | [[resource]])]
+    = `[fsl| wrle [ [[c₂]] || [[c₁]]] ([[P]] | [[resource]])] := by
   unfold wrle'
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
   exact gfpApprox_wrleStep_concur_symmetric c₁ c₂ P resource _
@@ -554,7 +554,7 @@ private lemma wrle_concur_cont_of_left
     (h_disjoint : disjoint heap₁ heap₂) (h_union : heap₁ ∪ heap₂ = heap)
     (h_disjoint' : disjoint heap heap')
     (h_c₁_neq_abort : c₁ ≠ [Prog| ↯]) (h_c₁_neq_term : c₁ ≠ [Prog| ↓])
-    (h_c₂_neq_abort : c₂ ≠ [Prog| ↯]) (h_c₂_neq_term : c₂ ≠ [Prog| ↓])
+    -- (h_c₂_neq_abort : c₂ ≠ [Prog| ↯]) (h_c₂_neq_term : c₂ ≠ [Prog| ↓])
     (h_vars₁  : wrtProg c₁ ∩ (varProg c₂ ∪ varRV P₂ ∪ varRV resource) = ∅)
     (h_vars₂  : wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁ ∪ varRV resource) = ∅)
     (h_ind : ∀ k < i, ∀ {c₁ c₂ : Program Var},
@@ -677,7 +677,7 @@ private lemma wrle_concur_cont
     rw [unit_le_div_iff_mul_le]
     apply le_min
     · apply wrle_concur_cont_of_left h_i' h_disjoint h_union h_disjoint'
-        h_c₁_neq_abort h_c₁_neq_term h_c₂_neq_abort h_c₂_neq_term
+        h_c₁_neq_abort h_c₁_neq_term
         h_vars₁ h_vars₂ h_ind
     · nth_rw 2 [mul_comm]
       rw [fslSepMul_comm]
@@ -685,7 +685,7 @@ private lemma wrle_concur_cont
       rw [union_comm _ _ h_disjoint] at h_union
       rw [disjoint_comm _ _] at h_disjoint
       apply wrle_concur_cont_of_left h_i' h_disjoint h_union h_disjoint'
-        h_c₂_neq_abort h_c₂_neq_term h_c₁_neq_abort h_c₁_neq_term
+        h_c₂_neq_abort h_c₂_neq_term
         h_vars₂ h_vars₁
       intro i'' h_i'' c₁' c₂' h_vars₁' h_vars₂'
       rw [gfpApprox_wrleStep_concur_symmetric]
@@ -700,7 +700,7 @@ theorem wrle_concur
     (h_vars₂  : wrtProg c₂ ∩ (varProg c₁ ∪ varRV P₁ ∪ varRV resource) = ∅) :
     `[fsl| wrle [c₁] ([[P₁]] | [[resource]]) ⋆
            wrle [c₂] ([[P₂]] | [[resource]])
-      ⊢ wrle [[[c₁]] || [[c₂]]] ([[P₁]] ⋆ [[P₂]] | [[resource]])] := by
+      ⊢ wrle [ [[c₁]] || [[c₂]]] ([[P₁]] ⋆ [[P₂]] | [[resource]])] := by
   unfold wrle'
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]
   rw [← OrdinalApprox.gfpApprox_ord_eq_gfp]

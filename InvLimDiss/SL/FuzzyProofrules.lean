@@ -61,18 +61,17 @@ theorem fslMax_entailment_iff (P Q R : StateRV Var) :
     · intro s
       rw [Pi.le_def] at h
       specialize h s
-      simp only [fslMax, Sup.sup, sup_le_iff] at h
-      exact h.left
+      simp only [fslMax] at h
+      exact le_of_max_le_left h
     · intro s
       rw [Pi.le_def] at h
       specialize h s
-      simp only [fslMax, Sup.sup, sup_le_iff] at h
-      exact h.right
+      simp only [fslMax] at h
+      exact le_of_max_le_right h
   · rintro ⟨h_P, h_Q⟩
     intro s
-    simp only [fslMax, Sup.sup, sup_le_iff]
-    exact ⟨h_P s, h_Q s⟩
-
+    simp only [fslMax]
+    exact max_le (h_P s) (h_Q s)
 
 end MaxMin
 
@@ -374,16 +373,12 @@ theorem fslSepMul_fslMin_subdistr (P Q R : StateRV Var) :
     · use heap₁, heap₂, h_disjoint, h_union
     · apply unit_mul_le_mul le_rfl ?_
       simp only [fslMin, Inf.inf]
-      rw [inf_le_iff]
-      left
-      rfl
+      exact min_le_left _ _
   · apply le_sSup_of_le
     · use heap₁, heap₂, h_disjoint, h_union
     · apply unit_mul_le_mul le_rfl ?_
       simp only [fslMin, Inf.inf]
-      rw [inf_le_iff]
-      right
-      rfl
+      exact min_le_right _ _
 
 theorem fslSepMul_fslMax_distr (P Q R : StateRV Var) :
     `[fsl| [[P]] ⋆ ([[Q]] ⊔ [[R]])] = `[fsl| ([[P]] ⋆ [[Q]]) ⊔ ([[P]] ⋆ [[R]])] := by
@@ -394,12 +389,16 @@ theorem fslSepMul_fslMax_distr (P Q R : StateRV Var) :
     rw [mul_comm, ← unit_le_div_iff_mul_le]
     apply sup_le
     · rw [unit_le_div_iff_mul_le, mul_comm]
-      simp only [fslMax, Sup.sup, le_sup_iff]
+      simp only [fslMax]
+      show _ ≤ ( `[fsl| [[P]] ⋆ [[Q]]] s) ⊔ (`[fsl| [[P]] ⋆ [[R]]] s)
+      rw [le_max_iff]
       left
       apply le_sSup
       use heap₁, heap₂, h_disjoint, h_union
     · rw [unit_le_div_iff_mul_le, mul_comm]
-      simp only [fslMax, Sup.sup, le_sup_iff]
+      simp only [fslMax]
+      show _ ≤ `[fsl| [[P]] ⋆ [[Q]] ] s ⊔ `[fsl| [[P]] ⋆ [[R]] ] s
+      rw [le_max_iff]
       right
       apply le_sSup
       use heap₁, heap₂, h_disjoint, h_union
@@ -410,13 +409,21 @@ theorem fslSepMul_fslMax_distr (P Q R : StateRV Var) :
       apply le_sSup_of_le
       · use heap₁, heap₂, h_disjoint, h_union
       · apply unit_mul_le_mul le_rfl ?_
-        simp only [fslMax, Sup.sup, le_sup_left]
+        simp only [fslMax]
+        show _ ≤ Q ⟨s.stack, heap₂⟩ ⊔ R ⟨s.stack, heap₂⟩
+        rw [le_max_iff]
+        left
+        rfl
     · apply sSup_le
       rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
       apply le_sSup_of_le
       · use heap₁, heap₂, h_disjoint, h_union
       · apply unit_mul_le_mul le_rfl ?_
-        simp only [fslMax, Sup.sup, le_sup_right]
+        simp only [fslMax]
+        show _ ≤ Q ⟨s.stack, heap₂⟩ ⊔ R ⟨s.stack, heap₂⟩
+        rw [le_max_iff]
+        right
+        rfl
 
 theorem fslSepMul_fslAdd_subdistr (P Q R : StateRV Var) :
     `[fsl| [[P]] ⋆ ([[Q]] + [[R]])] ⊢ `[fsl| ([[P]] ⋆ [[Q]]) + ([[P]] ⋆ [[R]])] := by
@@ -510,7 +517,7 @@ theorem fslSepMul_fslInf_subdistr (P : StateRV Var) (Q : α → StateRV Var) :
   apply le_sSup_of_le
   · use heap₁, heap₂, h_disjoint, h_union
   · apply unit_mul_le_mul le_rfl
-    exact iInf_le' _ _
+    exact iInf_le _ _
 
 theorem fslSepDiv_fslMax_supdistr (P Q R : StateRV Var) :
     `[fsl| ([[P]] -⋆ [[Q]]) ⊔ ([[P]] -⋆ [[R]])] ⊢ `[fsl| [[P]] -⋆ ([[Q]] ⊔ [[R]])] := by
@@ -521,11 +528,15 @@ theorem fslSepDiv_fslMax_supdistr (P Q R : StateRV Var) :
   · apply sInf_le_of_le
     · use heap, h_disjoint
     · apply unit_div_le_div ?_ le_rfl
-      simp only [fslMax, Sup.sup, le_sup_left]
+      simp only [fslMax]
+      show _ ≤ Q ⟨s.stack, s.heap ∪ heap⟩ ⊔ R ⟨s.stack, s.heap ∪ heap⟩
+      exact le_max_left _ _
   · apply sInf_le_of_le
     · use heap, h_disjoint
     · apply unit_div_le_div ?_ le_rfl
-      simp only [fslMax, Sup.sup, le_sup_right]
+      simp only [fslMax]
+      show _ ≤ Q ⟨s.stack, s.heap ∪ heap⟩ ⊔ R ⟨s.stack, s.heap ∪ heap⟩
+      exact le_max_right _ _
 
 theorem fslSepDiv_fslMin_distr (P Q R : StateRV Var) :
     `[fsl| ([[P]] -⋆ [[Q]]) ⊓ ([[P]] -⋆ [[R]])] = `[fsl| [[P]] -⋆ ([[Q]] ⊓ [[R]])] := by
@@ -536,12 +547,16 @@ theorem fslSepDiv_fslMin_distr (P Q R : StateRV Var) :
     rw [unit_le_div_iff_mul_le]
     apply le_inf
     · rw [← unit_le_div_iff_mul_le]
-      simp only [fslMin, Inf.inf, inf_le_iff]
+      simp only [fslMin]
+      show `[fsl| [[P]] -⋆ [[Q]] ] s ⊓ `[fsl| [[P]] -⋆ [[R]] ] s ≤ _
+      rw [min_le_iff]
       left
       apply sInf_le
       use heap, h_disjoint
     · rw [← unit_le_div_iff_mul_le]
-      simp only [fslMin, Inf.inf, inf_le_iff]
+      simp only [fslMin]
+      show `[fsl| [[P]] -⋆ [[Q]] ] s ⊓ `[fsl| [[P]] -⋆ [[R]] ] s ≤ _
+      rw [min_le_iff]
       right
       apply sInf_le
       use heap, h_disjoint
@@ -552,13 +567,17 @@ theorem fslSepDiv_fslMin_distr (P Q R : StateRV Var) :
       apply sInf_le_of_le
       · use heap, h_disjoint
       · apply unit_div_le_div ?_ le_rfl
-        simp only [fslMin, Inf.inf, inf_le_left]
+        simp only [fslMin]
+        show Q ⟨s.stack, s.heap ∪ heap⟩ ⊓ R ⟨s.stack, s.heap ∪ heap⟩ ≤ _
+        exact min_le_left _ _
     · apply le_sInf
       rintro _ ⟨heap, h_disjoint, rfl⟩
       apply sInf_le_of_le
       · use heap, h_disjoint
       · apply unit_div_le_div ?_ le_rfl
-        simp only [fslMin, Inf.inf, inf_le_right]
+        simp only [fslMin]
+        show Q ⟨s.stack, s.heap ∪ heap⟩ ⊓ R ⟨s.stack, s.heap ∪ heap⟩ ≤ _
+        exact min_le_right _ _
 
 theorem fslSepDiv_fslAdd_supdistr (P Q R : StateRV Var) :
     `[fsl| ([[P]] -⋆ [[Q]]) + ([[P]] -⋆ [[R]]) ⊢ [[P]] -⋆ ([[Q]] + [[R]])] := by
@@ -646,6 +665,8 @@ theorem fslSepMul_fslMin_distr_of_precise (P Q R : StateRV Var) (h : precise P) 
   apply le_sSup_of_le
   · use heap₁, heap₂, h_disjoint, h_union.symm
   · simp only [fslMin, Inf.inf]
+    show `[fsl| [[P]] ⋆ [[Q]] ] s ⊓ `[fsl| [[P]] ⋆ [[R]] ] s
+        ≤ _ * (Q ⟨s.stack, heap₂⟩ ⊓ R ⟨s.stack, heap₂⟩)
     cases le_total (Q ⟨s.stack, heap₂⟩) (R ⟨s.stack, heap₂⟩)
     case inl h_le =>
       rw [inf_of_le_left h_le, inf_le_iff]

@@ -211,10 +211,18 @@ noncomputable def semantics
     (vars : (p : Symbols) → {l : List Var | l.length = Length p}) : StateRVInf Var :=
   q.semanticsNonRec (OrderHom.lfp <| predicate_chara_hom defs vars)
 
+def Entailment (Var : Type) (Symbols : Type) (Length : Symbols → ℕ) :=
+  QSLFormula Var Symbols Length × QSLFormula Var Symbols Length
 
+def semanticsEntailment
+    (q : Entailment Var Symbols Length)
+    (defs : Symbols → QSLFormula Var Symbols Length)
+    (vars : (p : Symbols) → {l : List Var | l.length = Length p})
+    (σ : State Var) : Prop :=
+  (semantics q.1 defs vars) σ ≤ (semantics q.2 defs vars) σ
 
-
-
+def Sequent (Var : Type) (Symbols : Type) (Length : Symbols → ℕ) :=
+    Entailment Var Symbols Length × (List (Entailment Var Symbols Length))
 
 
 end QSLFormula
