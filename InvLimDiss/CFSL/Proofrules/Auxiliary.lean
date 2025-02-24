@@ -234,7 +234,7 @@ theorem wrle_weightedSum (h : precise R) (h_vars : (wrtProg c) ∩ (varRV (fslRe
         · have h_stmt : wrtStmt c ∩ varRV (fslReal e) = ∅ := wrtStmt_inter_varRV_eq_emptyset_of_wrtProg h_vars
           apply le_trans ?_ (step_fslAdd_weighted_superdistr _ _ _ h_stmt)
           rw [← le_fslSepDiv_iff_fslSepMul_le]
-          apply le_trans ?_ (fslSepdiv_weight_fslAdd_subdistr _ _ _)
+          apply le_trans ?_ (fslSepDiv_weight_fslAdd_subdistr _ _ _)
           apply fslAdd_mono
           · apply fslMul_mono le_rfl
             apply sInf_le_of_le

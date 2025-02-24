@@ -53,25 +53,33 @@ theorem fslMin_assoc (P Q R : StateRV Var) :
   simp only [fslMin]
   exact inf_assoc P Q R
 
-theorem fslMax_entailment_iff (P Q R : StateRV Var) :
+theorem fslMax_le_iff (P Q R : StateRV Var) :
     `[fsl| [[P]] ⊔ [[Q]] ⊢ [[R]]] ↔ P ⊢ R ∧ Q ⊢ R := by
-  apply Iff.intro
-  · intro h
-    apply And.intro
-    · intro s
-      rw [Pi.le_def] at h
-      specialize h s
-      simp only [fslMax] at h
-      exact le_of_max_le_left h
-    · intro s
-      rw [Pi.le_def] at h
-      specialize h s
-      simp only [fslMax] at h
-      exact le_of_max_le_right h
-  · rintro ⟨h_P, h_Q⟩
-    intro s
-    simp only [fslMax]
-    exact max_le (h_P s) (h_Q s)
+  unfold fslMax
+  exact sup_le_iff
+
+theorem le_fslMax (P Q R : StateRV Var) (h : P ⊢ Q ∨ P ⊢ R) :
+    `[fsl| [[P]] ⊢ [[Q]] ⊔ [[R]]] := by
+  unfold fslMax
+  intro s
+  rw [Pi.sup_apply, le_sup_iff]
+  cases h
+  case inl h => left; exact h s
+  case inr h => right; exact h s
+
+theorem fslMin_le (P Q R : StateRV Var) (h : P ⊢ R ∨ Q ⊢ R) :
+    `[fsl| [[P]] ⊓ [[Q]] ⊢ [[R]]] := by
+  unfold fslMin
+  intro s
+  rw [Pi.inf_apply, inf_le_iff]
+  cases h
+  case inl h => left; exact h s
+  case inr h => right; exact h s
+
+theorem le_fslMin_iff (P Q R : StateRV Var) :
+    `[fsl| [[P]] ⊢ [[Q]] ⊓ [[R]]] ↔ P ⊢ Q ∧ P ⊢ R := by
+  unfold fslMin
+  exact le_inf_iff
 
 end MaxMin
 
@@ -109,6 +117,41 @@ theorem fslSup_apply (P : α → StateRV Var) (s : State Var) :
 theorem fslInf_apply (P : α → StateRV Var) (s : State Var) :
     `[fsl| I x. [[P x]]] s = ⨅ x, P x s := by
   rw [fslInf, iInf_apply]
+
+theorem fslSup_le (P : α → StateRV Var) (Q : StateRV Var)
+    (h : ∀ x : α, P x ⊢ Q) :
+    `[fsl| S x. [[P x]] ⊢ [[Q]]] := by
+  intro s
+  rw [fslSup_apply]
+  apply iSup_le
+  intro x
+  exact h x s
+
+theorem le_fslSup (P : α → StateRV Var) (Q : StateRV Var)
+    (x : α) (h : Q ⊢ P x) :
+    `[fsl| [[Q]] ⊢ S x. [[P x]]] := by
+  intro s
+  rw [fslSup_apply]
+  apply le_trans (h s)
+  apply le_iSup _ x
+
+theorem fslInf_le (P : α → StateRV Var) (Q : StateRV Var)
+    (x : α) (h : P x ⊢ Q) :
+    `[fsl| I x. [[P x]] ⊢ [[Q]]] := by
+  intro s
+  rw [fslInf_apply]
+  apply le_trans (iInf_le _ x)
+  exact h s
+
+theorem le_fslInf (P : α → StateRV Var) (Q : StateRV Var)
+    (h : ∀ x : α, Q ⊢ P x) :
+    `[fsl| [[Q]] ⊢ I x. [[P x]]] := by
+  intro s
+  rw [fslInf_apply]
+  apply le_iInf
+  intro x
+  exact h x s
+
 
 end Quantifiers
 
@@ -317,6 +360,18 @@ theorem fslSepMul_fslEmp_eq (f : StateRV Var) : `[fsl| [[f]] ⋆ emp] = f := by
   · apply le_sSup
     use s.heap, ∅, disjoint_emptyHeap', union_emptyHeap'
     simp only [fslEmp, iteOneZero_true, mul_one]
+
+open Syntax
+theorem fslReal_fslSepMul_fslTrue (r : ProbExp Var) : `[fsl| <r> ⋆ fTrue] = `[fsl| <r>] := by
+  apply le_antisymm
+  · intro s
+    apply sSup_le
+    rintro _ ⟨h₁, h₂, h_disjoint, h_union, rfl⟩
+    simp only [fslReal, fslTrue, mul_one, le_refl]
+  · intro s
+    apply le_sSup
+    use s.heap, ∅, disjoint_emptyHeap _, union_emptyHeap _
+    simp only [fslReal, fslTrue, mul_one]
 
 theorem fslEmp_fslMul_fslSepMul_distr (f g : StateRV Var) :
     `[fsl| emp ⬝ ([[f]] ⋆ [[g]])] = `[fsl| (emp ⬝ [[f]]) ⋆ (emp ⬝ [[g]])] := by
@@ -592,7 +647,7 @@ theorem fslSepDiv_fslAdd_supdistr (P Q R : StateRV Var) :
   · apply sInf_le
     use heap
 
-theorem fslSepdiv_weight_fslAdd_subdistr (P Q R : StateRV Var) :
+theorem fslSepDiv_weight_fslAdd_subdistr (P Q R : StateRV Var) :
     `[fsl| <e> ⬝ ([[P]] -⋆ [[Q]]) + ~<e> ⬝ ([[P]] -⋆ [[R]])]
     ⊢ `[fsl| [[P]] -⋆ (<e> ⬝ [[Q]] + ~<e> ⬝ [[R]])] := by
   intro s

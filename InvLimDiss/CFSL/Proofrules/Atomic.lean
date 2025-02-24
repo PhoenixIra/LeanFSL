@@ -388,7 +388,7 @@ theorem wrle_compareAndSet (h : v ∉ varRV RI) :
     `[fsl| (e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ))))
       ⊔ (S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ))))
           ⊢ wrle [v ≔ cas(e_loc, e_val, e_set)] ([[P]] | [[RI]])] := by
-  rw [fslMax_entailment_iff]
+  rw [fslMax_le_iff]
   apply And.intro
   · exact wrle_compareAndSet_true h
   · exact wrle_compareAndSet_false h

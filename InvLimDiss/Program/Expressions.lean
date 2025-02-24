@@ -28,7 +28,7 @@ noncomputable def substVal {Var : Type}
 
 /-- Variables in the expression that do not matter (or do not occure)-/
 @[simp]
-noncomputable def varsValue {Var : Type} (e : ValueExp Var) : Set Var :=
+noncomputable def varValue {Var : Type} (e : ValueExp Var) : Set Var :=
   {x | ∃ s q, e (substituteVar s x q) ≠ e s}
 
 instance : Coe Var (ValueExp Var) where
@@ -47,9 +47,9 @@ noncomputable def substBool {Var : Type}
     (e : BoolExp Var) (v : Var) (e' : ValueExp Var) : BoolExp Var :=
   fun s => e (substituteVar s v (e' s))
 
-/-- Variables in the expression that do not matter (or do not occure)-/
+/-- Variables in the expression that matter (or occure)-/
 @[simp]
-noncomputable def varsBool {Var : Type} (e : BoolExp Var) : Set Var :=
+noncomputable def varBool {Var : Type} (e : BoolExp Var) : Set Var :=
   {x | ∃ s q, e (substituteVar s x q) ≠ e s}
 
 
@@ -65,9 +65,9 @@ noncomputable def substProb {Var : Type}
     (e : ProbExp Var) (v : Var) (e' : ValueExp Var) : ProbExp Var :=
   fun s => e (substituteVar s v (e' s))
 
-/-- Variables in the expression that do not matter (or do not occure)-/
+/-- Variables in the expression that matter (or occure)-/
 @[simp]
-noncomputable def varsProb {Var : Type} (e : ProbExp Var) : Set Var :=
+noncomputable def varProb {Var : Type} (e : ProbExp Var) : Set Var :=
   {x | ∃ s q, e (substituteVar s x q) ≠ e s}
 
 /-- Quantitative expressions, i.e. mappings to `ENNReal`. -/
@@ -88,7 +88,7 @@ noncomputable def substQuant {Var : Type}
     (e : QuantExp Var) (v : Var) (e' : ValueExp Var) : QuantExp Var :=
   fun s => e (substituteVar s v (e' s))
 
-/-- Variables in the expression that do not matter (or do not occure)-/
+/-- Variables in the expression that matter (or occure)-/
 @[simp]
 noncomputable def varsQuant {Var : Type} (e : QuantExp Var) : Set Var :=
   {x | ∃ s q, e (substituteVar s x q) ≠ e s}

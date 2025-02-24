@@ -1,6 +1,7 @@
 import InvLimDiss.SL.FuzzyProofrules
 import InvLimDiss.SL.Classical
 import InvLimDiss.Program.Semantics
+import InvLimDiss.Program.Expressions
 
 /-! Framing is the act of removing a part of the separation logic objects out of the entailment.
   In its trivial case, we can just use the monotonicity of the operation.
@@ -50,40 +51,40 @@ def wrtProg : Program Var → Set Var
   | [Prog| while _ begin [[c]] fi] => wrtProg c
   | [Prog| [[c₁]] || [[c₂]]] => wrtProg c₁ ∪ wrtProg c₂
 
-def varValueExp (e : ValueExp Var) : Set Var := { v | ∃ s q, e s ≠ e (substituteVar s v q)}
-def varProbExp (e : ProbExp Var) : Set Var := { v | ∃ s q, e s ≠ e (substituteVar s v q)}
-def varBoolExp (e : BoolExp Var) : Set Var := { v | ∃ s q, e s ≠ e (substituteVar s v q)}
+-- def varValueExp (e : ValueExp Var) : Set Var := { v | ∃ s q, e s ≠ e (substituteVar s v q)}
+-- def varProbExp (e : ProbExp Var) : Set Var := { v | ∃ s q, e s ≠ e (substituteVar s v q)}
+-- def varBoolExp (e : BoolExp Var) : Set Var := { v | ∃ s q, e s ≠ e (substituteVar s v q)}
 
 def varStmt : Program Var → Set Var
   | [Prog| ↓] => ∅
   | [Prog| ↯] => ∅
   | [Prog| skip] => ∅
-  | [Prog| v ≔ e] => {v} ∪ varValueExp e
-  | [Prog| e *≔ e'] => varValueExp e ∪ varValueExp e'
-  | [Prog| v ≔* e] => {v} ∪ varValueExp e
-  | [Prog| v ≔ cas(e,e',e'')] => {v} ∪ varValueExp e ∪ varValueExp e' ∪ varValueExp e''
-  | [Prog| v ≔ alloc(e)] => {v} ∪ varValueExp e
-  | [Prog| free(e,e')] => varValueExp e ∪ varValueExp e'
-  | [Prog| if e then [[_]] else [[_]] fi] => varBoolExp e
-  | [Prog| pif e then [[_]] else [[_]] fi] => varProbExp e
+  | [Prog| v ≔ e] => {v} ∪ varValue e
+  | [Prog| e *≔ e'] => varValue e ∪ varValue e'
+  | [Prog| v ≔* e] => {v} ∪ varValue e
+  | [Prog| v ≔ cas(e,e',e'')] => {v} ∪ varValue e ∪ varValue e' ∪ varValue e''
+  | [Prog| v ≔ alloc(e)] => {v} ∪ varValue e
+  | [Prog| free(e,e')] => varValue e ∪ varValue e'
+  | [Prog| if e then [[_]] else [[_]] fi] => varBool e
+  | [Prog| pif e then [[_]] else [[_]] fi] => varProb e
   | [Prog| [[c]] ; [[_]]] => varStmt c
-  | [Prog| while e begin [[_]] fi] => varBoolExp e
+  | [Prog| while e begin [[_]] fi] => varBool e
   | [Prog| [[c₁]] || [[c₂]]] => varStmt c₁ ∪ varStmt c₂
 
 def varProg : Program Var → Set Var
   | [Prog| ↓] => ∅
   | [Prog| ↯] => ∅
   | [Prog| skip] => ∅
-  | [Prog| v ≔ e] => {v} ∪ varValueExp e
-  | [Prog| e *≔ e'] => varValueExp e ∪ varValueExp e'
-  | [Prog| v ≔* e] => {v} ∪ varValueExp e
-  | [Prog| v ≔ cas(e,e',e'')] => {v} ∪ varValueExp e ∪ varValueExp e' ∪ varValueExp e''
-  | [Prog| v ≔ alloc(e)] => {v} ∪ varValueExp e
-  | [Prog| free(e,e')] => varValueExp e ∪ varValueExp e'
-  | [Prog| if e then [[c₁]] else [[c₂]] fi] => varBoolExp e ∪ varProg c₁ ∪ varProg c₂
-  | [Prog| pif e then [[c₁]] else [[c₂]] fi] => varProbExp e ∪ varProg c₁ ∪ varProg c₂
+  | [Prog| v ≔ e] => {v} ∪ varValue e
+  | [Prog| e *≔ e'] => varValue e ∪ varValue e'
+  | [Prog| v ≔* e] => {v} ∪ varValue e
+  | [Prog| v ≔ cas(e,e',e'')] => {v} ∪ varValue e ∪ varValue e' ∪ varValue e''
+  | [Prog| v ≔ alloc(e)] => {v} ∪ varValue e
+  | [Prog| free(e,e')] => varValue e ∪ varValue e'
+  | [Prog| if e then [[c₁]] else [[c₂]] fi] => varBool e ∪ varProg c₁ ∪ varProg c₂
+  | [Prog| pif e then [[c₁]] else [[c₂]] fi] => varProb e ∪ varProg c₁ ∪ varProg c₂
   | [Prog| [[c₁]] ; [[c₂]]] => varProg c₁ ∪ varProg c₂
-  | [Prog| while e begin [[c]] fi] => varBoolExp e ∪ varProg c
+  | [Prog| while e begin [[c]] fi] => varBool e ∪ varProg c
   | [Prog| [[c₁]] || [[c₂]]] => varProg c₁ ∪ varProg c₂
 
 end Syntax

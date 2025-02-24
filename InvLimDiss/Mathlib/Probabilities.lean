@@ -794,7 +794,7 @@ theorem iInf_add_le_add_iInf_of_antitone [LinearOrder ι] [Nonempty ι]
   · apply h₂
     apply le_max_right
 
-noncomputable instance : CanonicallyOrderedAddCommMonoid unitInterval where
+noncomputable instance : CanonicallyOrderedAdd unitInterval where
   exists_add_of_le := exists_truncatedAdd_of_le
   le_self_add := le_self_truncatedAdd
 

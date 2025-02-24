@@ -28,10 +28,10 @@ theorem varRV_of_fslEmp : varRV `[fsl Var| emp] = ∅ := by
   intro _ _ _; rfl
 
 theorem varRV_of_fslPointsTo :
-    varRV `[fsl Var| e ↦ e'] ⊆ (varsValue e) ∪ (varsValue e') := by
+    varRV `[fsl Var| e ↦ e'] ⊆ (varValue e) ∪ (varValue e') := by
   intro v h_v
   contrapose h_v
-  simp only [varsValue, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or, not_exists,
+  simp only [varValue, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or, not_exists,
     Decidable.not_not] at h_v
   obtain ⟨h_e, h_e'⟩ := h_v
   simp only [varRV, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not]
@@ -40,10 +40,10 @@ theorem varRV_of_fslPointsTo :
   rw [h_e s.stack q, h_e' s.stack q]
 
 theorem varRV_of_fslEquals :
-    varRV `[fsl Var| e = e'] ⊆ (varsValue e) ∪ (varsValue e') := by
+    varRV `[fsl Var| e = e'] ⊆ (varValue e) ∪ (varValue e') := by
   intro v h_v
   contrapose h_v
-  simp only [varsValue, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or, not_exists,
+  simp only [varValue, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or, not_exists,
     Decidable.not_not] at h_v
   obtain ⟨h_e, h_e'⟩ := h_v
   simp only [varRV, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not]
@@ -52,13 +52,13 @@ theorem varRV_of_fslEquals :
   rw [h_e s.stack q, h_e' s.stack q]
 
 theorem varRV_of_fslReal :
-    varRV `[fsl Var| <e>] = varsProb e := by
+    varRV `[fsl Var| <e>] = varProb e := by
   apply Set.ext
   intro v
   apply Iff.intro
   · intro h_v
     contrapose h_v
-    simp only [varsProb, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not] at h_v
+    simp only [varProb, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not] at h_v
     simp only [varRV, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not]
     intro s q
     simp only [fslReal]
@@ -67,7 +67,7 @@ theorem varRV_of_fslReal :
     contrapose h_v
     simp only [varRV, fslReal, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists,
       Decidable.not_not] at h_v
-    simp only [varsProb, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not]
+    simp only [varProb, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not]
     intro s q
     rw [h_v ⟨s, ∅⟩ q]
 
@@ -93,7 +93,7 @@ theorem varRV_of_fslIverson :
     exact h_v s q
 
 theorem varRV_of_fslSubst :
-    varRV `[fsl Var| [[f]](v ↦ e)] ⊆ varRV f \ {v} ∪ varsValue e := by
+    varRV `[fsl Var| [[f]](v ↦ e)] ⊆ varRV f \ {v} ∪ varValue e := by
   intro v' h_v
   contrapose h_v
   simp only [varRV, substituteStack, ne_eq, Set.mem_setOf_eq, not_exists, Decidable.not_not]
@@ -101,13 +101,13 @@ theorem varRV_of_fslSubst :
   simp only [fslSubst, substituteStack]
   cases eq_or_ne v v' with
   | inl h_eq =>
-    simp only [varRV, substituteStack, ne_eq, h_eq, varsValue, Set.mem_union, Set.mem_diff,
+    simp only [varRV, substituteStack, ne_eq, h_eq, varValue, Set.mem_union, Set.mem_diff,
       Set.mem_setOf_eq, Set.mem_singleton_iff, not_true_eq_false, and_false, false_or, not_exists,
       Decidable.not_not] at h_v
     rw [substituteVar_substituteVar_of_eq h_eq.symm]
     rw [h_v s.stack q']
   | inr h_neq =>
-    simp only [varRV, substituteStack, ne_eq, varsValue, Set.mem_union, Set.mem_diff,
+    simp only [varRV, substituteStack, ne_eq, varValue, Set.mem_union, Set.mem_diff,
       Set.mem_setOf_eq, Set.mem_singleton_iff, h_neq.symm, not_false_eq_true, and_true, not_or,
       not_exists, Decidable.not_not] at h_v
     obtain ⟨h_f, h_e⟩ := h_v

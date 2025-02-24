@@ -18,6 +18,9 @@ noncomputable instance {Var : Type} : CompleteLattice (StateRV Var) := Pi.instCo
 
 instance : Entailment (StateRV Var) := ⟨fun P Q => P ≤ Q⟩
 
+theorem entail_iff_le (P Q : StateRV Var) : P ⊢ Q ↔ P ≤ Q := by
+  exact Eq.to_iff rfl
+
 variable {Var : Type}
 
 noncomputable def fslTrue : StateRV Var := λ _ => 1

@@ -95,7 +95,7 @@ theorem safeTuple_while
     ⊢ [[RI]] ⦃[[inv]]⦄ while e begin [[c]] fi ⦃[[P]]⦄ :=
   wrle_while h_Q h_inv
 
-theorem safeTuple_seq
+theorem safeTuple_seq (Q₂ : StateRV Var)
     (h₁ : ⊢ [[RI]] ⦃[[Q₁]]⦄ c₁ ⦃[[Q₂]]⦄)
     (h₂ : ⊢ [[RI]] ⦃[[Q₂]]⦄ c₂ ⦃[[P]]⦄):
     ⊢ [[RI]] ⦃[[Q₁]]⦄ [[c₁]] ; [[c₂]] ⦃[[P]]⦄ :=
@@ -127,6 +127,7 @@ theorem safeTuple_frame
   le_trans (fslSepMul_mono h le_rfl) (wrle_frame h_cut_free)
 
 theorem safeTuple_monotonicty
+    ( Q' P' : StateRV Vars)
     (h₁ : Q ⊢ Q') (h₂ : P' ⊢ P)
     (h : ⊢ [[RI]] ⦃[[Q']]⦄ c ⦃[[P']]⦄) :
     ⊢ [[RI]] ⦃[[Q]]⦄ c ⦃[[P]]⦄ :=
