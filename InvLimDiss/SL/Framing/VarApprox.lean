@@ -40,7 +40,7 @@ theorem varRV_of_fslPointsTo :
   rw [h_e s.stack q, h_e' s.stack q]
 
 theorem varRV_of_fslEquals :
-    varRV `[fsl Var| e = e'] ⊆ (varValue e) ∪ (varValue e') := by
+    varRV `[fsl Var| e === e'] ⊆ (varValue e) ∪ (varValue e') := by
   intro v h_v
   contrapose h_v
   simp only [varValue, ne_eq, Set.mem_union, Set.mem_setOf_eq, not_or, not_exists,

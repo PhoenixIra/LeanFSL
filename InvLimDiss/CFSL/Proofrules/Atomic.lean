@@ -302,7 +302,7 @@ theorem wrle_compareAndSet_true (h : v ∉ varRV RI) :
         simp only [State.singleton, ↓reduceIte, reduceCtorEq, false_and] at h_nalloc
 
 theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
-    `[fsl| S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))
+    `[fsl| S (q : ℚ). (e_loc ↦ q ⬝ ~(q === e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))
           ⊢ wrle [v ≔ cas(e_loc, e_val, e_set)] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
   rw [le_fslSepDiv_iff_fslSepMul_le]
@@ -386,7 +386,7 @@ theorem wrle_compareAndSet_false (h : v ∉ varRV RI) :
 
 theorem wrle_compareAndSet (h : v ∉ varRV RI) :
     `[fsl| (e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ))))
-      ⊔ (S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ))))
+      ⊔ (S (q : ℚ). (e_loc ↦ q ⬝ ~(q === e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ))))
           ⊢ wrle [v ≔ cas(e_loc, e_val, e_set)] ([[P]] | [[RI]])] := by
   rw [fslMax_le_iff]
   apply And.intro
@@ -394,7 +394,7 @@ theorem wrle_compareAndSet (h : v ∉ varRV RI) :
   · exact wrle_compareAndSet_false h
 
 theorem wrle_allocate (h : v ∉ varRV RI) :
-    `[fsl| S (n : ℕ). e_len = (n : ℚ) ⬝ I (l : ℕ+).
+    `[fsl| S (n : ℕ). e_len === (n : ℚ) ⬝ I (l : ℕ+).
           ([⋆] i ∈ { ... n}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))
           ⊢ wrle [ [Prog| v ≔ alloc(e_len)] ] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]
@@ -440,7 +440,7 @@ theorem wrle_allocate (h : v ∉ varRV RI) :
       simp only [fslEquals, h n, iteOneZero_false]
 
 theorem wrle_free :
-    `[fsl| S (n : ℕ). e_len = (n : ℚ) ⬝ S (l : ℕ+). e_loc = (l : ℚ) ⬝
+    `[fsl| S (n : ℕ). e_len === (n : ℚ) ⬝ S (l : ℕ+). e_loc === (l : ℚ) ⬝
           ([⋆] i ∈ { ... n}. S (q:ℚ). (l+i : ℚ) ↦ q) ⋆ [[P]]
           ⊢ wrle [free(e_loc, e_len)] ([[P]] | [[RI]])] := by
   rw [wrle_eq_of_not_final (by simp [finalProgram])]

@@ -29,7 +29,7 @@ theorem conservative_pointsTo : `[fsl Var| e ↦ e'] = `[fsl Var| ⁅`[sl Var| e
   intro _
   simp only [fslPointsTo, fslIverson, slPointsTo]
 
-theorem conservative_equals : `[fsl Var| e = e'] = `[fsl Var| ⁅`[sl Var| e = e']⁆] := by
+theorem conservative_equals : `[fsl Var| e === e'] = `[fsl Var| ⁅`[sl Var| e === e']⁆] := by
   apply funext
   intro _
   simp only [fslEquals, fslIverson, slEquals]
@@ -259,10 +259,10 @@ theorem conservative_emp : `[qsl Var| emp] s = 1 ↔ `[sl Var| emp] s := by
 theorem conservative_pointsTo : `[qsl Var| e ↦ e'] s = 1 ↔ `[sl Var| e ↦ e'] s := by
   simp only [qslPointsTo, iteOneZero_eq_one_def, slPointsTo]
 
-theorem conservative_equals : `[qsl Var| e = e'] s = 1 ↔ `[sl Var| e = e'] s := by
+theorem conservative_equals : `[qsl Var| e === e'] s = 1 ↔ `[sl Var| e === e'] s := by
   simp only [qslEquals, iteOneZero_eq_one_def, slEquals]
 
-theorem conservative_disequals : `[qsl Var| e ≠ e'] s = 1 ↔ `[sl Var| ¬ e = e'] s := by
+theorem conservative_disequals : `[qsl Var| e =≠= e'] s = 1 ↔ `[sl Var| ¬ (e === e')] s := by
   simp only [qslDisEquals, ne_eq, iteOneZero_eq_one_def, slNot, slEquals]
 
 theorem conservative_subst (P : StateProp Var) :

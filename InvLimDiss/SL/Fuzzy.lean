@@ -18,9 +18,6 @@ noncomputable instance {Var : Type} : CompleteLattice (StateRV Var) := Pi.instCo
 
 instance : Entailment (StateRV Var) := ⟨fun P Q => P ≤ Q⟩
 
-theorem entail_iff_le (P Q : StateRV Var) : P ⊢ Q ↔ P ≤ Q := by
-  exact Eq.to_iff rfl
-
 variable {Var : Type}
 
 noncomputable def fslTrue : StateRV Var := λ _ => 1
@@ -76,7 +73,7 @@ syntax "fTrue" : fsl
 syntax "fFalse" : fsl
 syntax "emp" : fsl
 syntax term " ↦ " term : fsl
-syntax term:51 " = " term:51 : fsl
+syntax term:51 " === " term:51 : fsl
 syntax "<" term:51 ">" : fsl
 syntax "[[" term "]]" : fsl
 syntax "⁅" term "⁆" : fsl
@@ -105,7 +102,7 @@ macro_rules
   | `(term| `[fsl| fFalse]) => `(fslFalse)
   | `(term| `[fsl| emp]) => `(fslEmp)
   | `(term| `[fsl| $l:term ↦ $r:term]) => `(fslPointsTo $l $r)
-  | `(term| `[fsl| $l:term = $r:term]) => `(fslEquals $l $r)
+  | `(term| `[fsl| $l:term === $r:term]) => `(fslEquals $l $r)
   | `(term| `[fsl| [[$t:term]]]) => `($t)
   | `(term| `[fsl| < $t:term >]) => `(fslReal $t)
   | `(term| `[fsl| ⁅$t:term⁆]) => `(fslIverson $t)
@@ -131,7 +128,7 @@ macro_rules
   | `(term| `[fsl $v:term | fFalse]) => `(@fslFalse $v)
   | `(term| `[fsl $v:term| emp]) => `(@fslEmp $v)
   | `(term| `[fsl $v:term| $l:term ↦ $r:term]) => `(@fslPointsTo $v $l $r)
-  | `(term| `[fsl $v:term| $l:term = $r:term]) => `(@fslEquals $v $l $r)
+  | `(term| `[fsl $v:term| $l:term === $r:term]) => `(@fslEquals $v $l $r)
   | `(term| `[fsl $_| [[$t:term]]]) => `($t)
   | `(term| `[fsl $v:term| <$t:term>]) => `(@fslReal $v $t)
   | `(term| `[fsl $v:term| ⁅$t:term⁆]) => `(@fslIverson $v $t)
@@ -175,7 +172,7 @@ def unexpandFslPointsTo : Unexpander
 
 @[app_unexpander fslEquals]
 def unexpandFslEquals : Unexpander
-  | `($_ $l $r) => `(`[fsl| $l:term = $r:term])
+  | `($_ $l $r) => `(`[fsl| $l:term === $r:term])
   | _ => throw ()
 
 @[app_unexpander fslReal]
@@ -267,5 +264,6 @@ def precise (P : StateRV Var) : Prop :=
     heap' ⊆ s.heap ∧ ∀ heap'', heap'' ⊆ s.heap → heap' ≠ heap''
     → P ⟨s.stack, heap''⟩ = 0
 
+noncomputable example := `[fsl Var| ((fun _ => 0) === (fun _ => 0)) ⊔ emp]
 
 end FSL

@@ -34,7 +34,8 @@ theorem fslSubst_of_fslPointsTo : `[fsl| e' ↦ e''(v ↦ e)] = `[fsl| (substVal
   rfl
 
 @[simp]
-theorem fslSubst_of_fslEquals : `[fsl| e' = e''(v ↦ e)] = `[fsl| (substVal e' v e) = (substVal e'' v e)] := by
+theorem fslSubst_of_fslEquals : `[fsl| e' === e''(v ↦ e)]
+    = `[fsl| (substVal e' v e) === (substVal e'' v e)] := by
   apply funext
   intro s
   rfl

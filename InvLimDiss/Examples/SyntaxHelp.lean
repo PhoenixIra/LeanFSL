@@ -30,6 +30,20 @@ theorem varValue_of_var : varValue (var v) = {v} := by
     use (fun _ => 0), 1
     simp only [var, State.substituteVar, ↓reduceIte, one_ne_zero, not_false_eq_true]
 
+theorem substVal_of_var_neq (h : v ≠ v') : substVal (var v) v' e = var v := by
+  unfold substVal
+  funext s
+  unfold var
+  unfold State.substituteVar
+  rw [if_neg h.symm]
+
+theorem substVal_of_var : substVal (var v) v e = e := by
+  unfold substVal
+  funext s
+  unfold var
+  unfold State.substituteVar
+  rw [if_pos rfl]
+
 theorem varValue_of_const : varValue (const r) = ∅ := by
   unfold varValue
   apply Set.Subset.antisymm
@@ -38,6 +52,8 @@ theorem varValue_of_const : varValue (const r) = ∅ := by
     unfold const at h
     exact h rfl
   · simp only [ne_eq, Set.empty_subset]
+
+theorem substVal_of_const : substVal (const q) v e = const q := rfl
 
 theorem varProb_of_one : varProb one = ∅ := by
   unfold varProb

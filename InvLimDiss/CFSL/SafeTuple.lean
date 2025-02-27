@@ -45,25 +45,25 @@ theorem safeTuple_cas_true (P : StateRV Var) (h : v ∉ varRV RI) :
   wrle_compareAndSet_true h
 
 theorem safeTuple_cas_false (P : StateRV Var) (h : v ∉ varRV RI) :
-    ⊢ [[RI]] ⦃S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))⦄
+    ⊢ [[RI]] ⦃S (q : ℚ). (e_loc ↦ q ⬝ ~(q === e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))⦄
     v ≔ cas(e_loc, e_val, e_set) ⦃[[P]]⦄ :=
   wrle_compareAndSet_false h
 
 theorem safeTuple_cas (P : StateRV Var) (h : v ∉ varRV RI) :
     ⊢ [[RI]] ⦃
       e_loc ↦ e_val ⋆ (e_loc ↦ e_set -⋆ [[P]](v ↦ (1:ℚ)))
-      ⊔ S (q : ℚ). (e_loc ↦ q ⬝ ~(q = e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))⦄
+      ⊔ S (q : ℚ). (e_loc ↦ q ⬝ ~(q === e_val)) ⋆ (e_loc ↦ q -⋆ [[P]](v ↦ (0:ℚ)))⦄
     v ≔ cas(e_loc, e_val, e_set) ⦃[[P]]⦄ :=
   wrle_compareAndSet h
 
 theorem safeTuple_allocate (P : StateRV Var) (h : v ∉ varRV RI) :
-    ⊢ [[RI]] ⦃S (n : ℕ). e_len = (n : ℚ) ⬝ I (l : ℕ+).
+    ⊢ [[RI]] ⦃S (n : ℕ). e_len === (n : ℚ) ⬝ I (l : ℕ+).
           ([⋆] i ∈ { ... n}. (l+i : ℚ) ↦ (0:ℚ)) -⋆ [[P]](v ↦ (l:ℚ))⦄
     v ≔ alloc(e_len) ⦃[[P]]⦄ :=
   wrle_allocate h
 
 theorem safeTuple_free (P : StateRV Var) :
-    ⊢ [[RI]] ⦃S (n : ℕ). e_len = (n : ℚ) ⬝ S (l : ℕ+). e_loc = (l : ℚ) ⬝
+    ⊢ [[RI]] ⦃S (n : ℕ). e_len === (n : ℚ) ⬝ S (l : ℕ+). e_loc === (l : ℚ) ⬝
           ([⋆] i ∈ { ... n}. S (q:ℚ). (l+i : ℚ) ↦ q) ⋆ [[P]]⦄
     free(e_loc, e_len) ⦃[[P]]⦄ :=
   wrle_free
@@ -89,7 +89,7 @@ theorem safeTuple_conditionalBranching
   · exact fslMul_mono le_rfl h₁
   · exact fslMul_mono le_rfl h₂
 
-theorem safeTuple_while
+theorem safeTuple_while (Q : StateRV Var)
     ( h_Q : ⊢ [[RI]] ⦃[[Q]]⦄ c ⦃[[inv]]⦄)
     ( h_inv : inv ⊢ `[fsl| ⁅<e>⁆ ⬝ [[Q]] ⊔ ~⁅<e>⁆ ⬝ [[P]]]) :
     ⊢ [[RI]] ⦃[[inv]]⦄ while e begin [[c]] fi ⦃[[P]]⦄ :=

@@ -200,7 +200,7 @@ theorem range_of_fslPointsTo : Set.range `[fsl Var| e ↦ e'] ⊆ {0,1} := by
   rw [Or.comm]
   exact Classical.em _
 
-theorem range_of_fslEquals : Set.range `[fsl Var| e = e'] ⊆ {0,1} := by
+theorem range_of_fslEquals : Set.range `[fsl Var| e === e'] ⊆ {0,1} := by
   rintro i ⟨s, rfl⟩
   rw [fslEquals]
   simp only [Set.mem_insert_iff, iteOneZero_eq_zero_def, Set.mem_singleton_iff,

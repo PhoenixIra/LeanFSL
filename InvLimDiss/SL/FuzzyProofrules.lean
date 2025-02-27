@@ -30,6 +30,27 @@ theorem entailment_iff_le {P Q : StateRV Var} : P ⊢ Q ↔ ∀ s, P s ≤ Q s :
 
 end Entailment
 
+section Atoms
+
+open Syntax
+
+theorem fslEquals_rfl (P : ValueExp Var) : `[fsl| P === P] = `[fsl| fTrue] := by
+  funext s
+  unfold fslEquals fslTrue
+  simp only [iteOneZero_true]
+
+theorem le_fslTrue (P : StateRV Var) : P ⊢ `[fsl| fTrue] := by
+  intro s
+  unfold fslTrue
+  exact le_one'
+
+theorem fslFalse_le (P : StateRV Var) : `[fsl| fFalse] ⊢ P := by
+  intro s
+  unfold fslFalse
+  exact nonneg'
+
+end Atoms
+
 /-! Proofrules for maxima and minima-/
 section MaxMin
 
@@ -80,6 +101,13 @@ theorem le_fslMin_iff (P Q R : StateRV Var) :
     `[fsl| [[P]] ⊢ [[Q]] ⊓ [[R]]] ↔ P ⊢ Q ∧ P ⊢ R := by
   unfold fslMin
   exact le_inf_iff
+
+theorem fslMax_fslTrue (P : StateRV Var) :
+    `[fsl| fTrue ⊔ [[P]]] = `[fsl| fTrue] := by
+  funext s
+  unfold fslMax fslTrue
+  rw [Pi.sup_apply, sup_eq_left]
+  exact le_one'
 
 end MaxMin
 
