@@ -523,6 +523,19 @@ lemma iteOneZero_le {P : Prop} {i : I} :
     case isFalse => exact bot_le
 
 @[simp]
+theorem zero_lt_iteOneZero {P : Prop} :
+    0 < iteOneZero P ↔ P := by
+  apply Iff.intro
+  · intro h
+    unfold iteOneZero ite_unit at h
+    split at h
+    case isTrue h_P => exact h_P
+    case isFalse => simp only [lt_self_iff_false] at h
+  · intro h
+    rw [iteOneZero_pos h]
+    simp only [zero_lt_one]
+
+@[simp]
 lemma sym_iteOneZero_eq {P : Prop} :
     σ (iteOneZero P) = iteOneZero (¬ P) := by
   simp only [iteOneZero_eq_ite]

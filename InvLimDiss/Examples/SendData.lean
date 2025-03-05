@@ -232,7 +232,17 @@ theorem sendData_right_proof :
         }
       · apply le_fslMax
         left
-        sorry
+        intro s
+        unfold fslEquals fslMul fslIverson fslMax SL.slExp var const eq
+        simp only [decide_eq_true_eq]
+        open unitInterval in {
+          rw [iteOneZero_le]
+          intro h
+          rw [iteOneZero_pos h, one_mul]
+          apply le_sup_of_le_right
+          simp only
+          rw [iteOneZero_pos h]
+        }
 
 
 theorem sendData_proof :
