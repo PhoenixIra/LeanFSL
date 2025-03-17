@@ -72,3 +72,8 @@ theorem varProb_of_half : varProb half = ∅ := by
     unfold half at h
     exact h rfl
   · simp only [ne_eq, Set.empty_subset]
+
+theorem half_le_one : half s ≤ one s := by
+  simp only [one]
+  open unitInterval in
+  exact le_one'

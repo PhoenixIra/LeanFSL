@@ -401,6 +401,32 @@ theorem fslReal_fslSepMul_fslTrue (r : ProbExp Var) : `[fsl| <r> ⋆ fTrue] = `[
     use s.heap, ∅, disjoint_emptyHeap _, union_emptyHeap _
     simp only [fslReal, fslTrue, mul_one]
 
+theorem fslTrue_fslSepMul_fslTrue : `[fsl Var| fTrue ⋆ fTrue] = `[fsl Var| fTrue] := by
+  funext s
+  simp only [fslSepMul, fslTrue, mul_one]
+  apply le_antisymm le_one'
+  apply le_sSup
+  use s.heap, ∅, disjoint_emptyHeap _, union_emptyHeap _
+
+theorem fslReal_fslMul_fslSepMul_assoc (r : ProbExp Var) (f g : StateRV Var) :
+    `[fsl|<r> ⬝ [[f]] ⋆ [[g]]] = `[fsl| (<r> ⬝ [[f]]) ⋆ [[g]]] := by
+  funext s
+  simp only [fslMul, fslReal, fslSepMul]
+  apply le_antisymm
+  · rw [mul_comm, ← unit_le_div_iff_mul_le]
+    apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    rw [unit_le_div_iff_mul_le]
+    apply le_sSup
+    use heap₁, heap₂, h_disjoint, h_union
+    rw [mul_comm, mul_assoc]
+  · apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    rw [mul_assoc]
+    apply unit_mul_le_mul le_rfl
+    apply le_sSup
+    use heap₁, heap₂
+
 theorem fslEmp_fslMul_fslSepMul_distr (f g : StateRV Var) :
     `[fsl| emp ⬝ ([[f]] ⋆ [[g]])] = `[fsl| (emp ⬝ [[f]]) ⋆ (emp ⬝ [[g]])] := by
   funext s
