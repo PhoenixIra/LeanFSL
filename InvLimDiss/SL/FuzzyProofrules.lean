@@ -109,6 +109,24 @@ theorem fslMax_fslTrue (P : StateRV Var) :
   rw [Pi.sup_apply, sup_eq_left]
   exact le_one'
 
+theorem fslMax_self (P : StateRV Var) :
+    `[fsl| [[P]] ⊔ [[P]]] = P := by
+  apply le_antisymm
+  · rw [fslMax_le_iff]
+    exact And.intro le_rfl le_rfl
+  · apply le_fslMax
+    left
+    exact le_rfl
+
+theorem fslMin_self (P : StateRV Var) :
+    `[fsl| [[P]] ⊓ [[P]]] = P := by
+  apply le_antisymm
+  · apply fslMin_le
+    left
+    exact le_rfl
+  · rw [le_fslMin_iff]
+    exact And.intro le_rfl le_rfl
+
 end MaxMin
 
 section Arithmetic

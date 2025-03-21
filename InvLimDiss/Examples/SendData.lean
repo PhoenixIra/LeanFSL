@@ -58,19 +58,19 @@ theorem sendData_left_proof :
     ⊢ (var "r" ↦ const 0) ⊔ (var "r" ↦ const (-1))
     ⦃ <half> ⦄
     pif half then var "r" *≔ const 0 else var "r" *≔ const 1 fi
-    ⦃ <one> ⦄ := by
+    ⦃ fTrue ⦄ := by
   apply safeTuple_monotonicty
-    `[fsl| <half> ⬝ <one> + ~<half> ⬝ fFalse]
+    `[fsl| <half> ⬝ fTrue + ~<half> ⬝ fFalse]
     _
   · intro s
     simp only [fslReal, half, one_div, fslAdd, fslMul, one, mul_one, fslFalse, mul_zero, add_zero,
-      le_refl]
+      le_refl, fslTrue]
   · exact le_rfl
   apply safeTuple_probabilisticBranching
   · apply safeTuple_atom
     · apply safeTuple_monotonicty
        `[fsl| (S (q : ℚ). var "r" ↦ q)
-        ⋆ (var "r" ↦ const 0 -⋆ <one> ⋆ ((var "r" ↦ const 0) ⊔ (var "r" ↦ const (-1))))]
+        ⋆ (var "r" ↦ const 0 -⋆ fTrue ⋆ ((var "r" ↦ const 0) ⊔ (var "r" ↦ const (-1))))]
         _
       · rw [fslSepMul_comm]
         apply fslSepMul_mono
@@ -93,10 +93,10 @@ theorem sendData_left_proof :
       apply safeTuple_mutate
     · simp only [Atom.atomicProgram]
   · apply safeTuple_monotonicty
-      `[fsl| (S (q : ℚ). var "r" ↦ q) ⋆ (var "r" ↦ const 1 -⋆ fFalse)]
-      `[fsl| fFalse]
+      `[fsl| (S (q : ℚ). var "r" ↦ q) ⋆ (var "r" ↦ const 1 -⋆ fTrue)]
+      `[fsl| fTrue]
     · exact fslFalse_le _
-    · exact fslFalse_le _
+    · exact le_rfl
     apply safeTuple_mutate
 
 theorem sendData_right_first_proof :
@@ -244,12 +244,11 @@ theorem sendData_right_proof :
           rw [iteOneZero_pos h]
         }
 
-
 theorem sendData_proof :
     ⊢ emp
     ⦃ <half> ⋆ S q. (var "r") ↦ (fun _ => q) ⦄
     sendDataProg
-    ⦃ <one> ⋆ (var "y") === (const 0) ⋆ ((var "r" ↦ const 0) ⊔ (var "r") ↦ (const (-1:ℚ))) ⦄ := by
+    ⦃ fTrue ⋆ (var "y") === (const 0) ⋆ ((var "r" ↦ const 0) ⊔ (var "r") ↦ (const (-1:ℚ))) ⦄ := by
   unfold sendDataProg
   apply safeTuple_seq `[fsl| <half> ⋆ (var "r") ↦ (const (-1:ℚ))]
   · rw [fslSepMul_comm]; nth_rw 2 [fslSepMul_comm]
