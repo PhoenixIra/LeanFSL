@@ -5,9 +5,9 @@ import InvLimDiss.SL.Framing.VarApprox
 open Syntax
 
 noncomputable def sendDataProg : Program String :=
-    [Prog| var "r" *≔ const (-1:ℚ) ;
-       (pif half then var "r" *≔ const 0 else var "r" *≔ const 1 fi)
-    || ("y" ≔* var "r" ; while eq (var "y") (const (-1:ℚ)) begin "y" ≔* var "r" fi)]
+  [Prog| var "r" *≔ const (-1:ℚ) ;
+      (pif half then var "r" *≔ const 0 else var "r" *≔ const 1 fi)
+  || ("y" ≔* var "r" ; while eq (var "y") (const (-1:ℚ)) begin "y" ≔* var "r" fi)]
 
 open CFSL FSL
 

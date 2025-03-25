@@ -151,6 +151,29 @@ theorem fslMul_fslFalse (P : StateRV Var) :
   funext s
   simp only [fslMul, fslFalse, mul_zero]
 
+open Syntax in
+theorem fslReal_fslMul_fslTrue (r : ProbExp Var) : `[fsl| <r> ⬝ fTrue] = `[fsl| <r>] := by
+  funext s
+  simp only [fslMul, fslTrue, mul_one]
+
+theorem fslMul_comm {P Q : StateRV Var} : `[fsl| [[P]] ⬝ [[Q]]] = `[fsl| [[Q]] ⬝ [[P]]] := by
+  funext s
+  simp only [fslMul, mul_comm]
+
+theorem fslMul_add {P Q : StateRV Var} : `[fsl| [[P]] + [[Q]]] = `[fsl| [[Q]] + [[P]]] := by
+  funext s
+  simp only [fslAdd, add_comm]
+
+theorem fslMul_assoc {P Q R : StateRV Var} :
+    `[fsl| [[P]] ⬝ [[Q]] ⬝ [[R]]] = `[fsl| ([[P]] ⬝ [[Q]]) ⬝ [[R]]] := by
+  funext s
+  simp only [fslMul, mul_assoc]
+
+theorem fslAdd_assoc {P Q R : StateRV Var} :
+    `[fsl| [[P]] + [[Q]] + [[R]]] = `[fsl| ([[P]] + [[Q]]) + [[R]]] := by
+  funext s
+  simp only [fslAdd, add_assoc]
+
 end Arithmetic
 
 /-! This features elimination rules for quantifiers in fsl. -/
@@ -425,6 +448,16 @@ theorem fslTrue_fslSepMul_fslTrue : `[fsl Var| fTrue ⋆ fTrue] = `[fsl Var| fTr
   apply le_antisymm le_one'
   apply le_sSup
   use s.heap, ∅, disjoint_emptyHeap _, union_emptyHeap _
+
+theorem fslTrue_fslSepMul_fslEquals : `[fsl| fTrue ⋆ e === e'] = `[fsl| e === e'] := by
+  funext s
+  apply le_antisymm
+  · apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    simp only [fslTrue, fslEquals, one_mul, le_refl]
+  · apply le_sSup_of_le
+    use s.heap, ∅, disjoint_emptyHeap', union_emptyHeap'
+    simp only [fslEquals, fslTrue, one_mul, le_refl]
 
 theorem fslReal_fslMul_fslSepMul_assoc (r : ProbExp Var) (f g : StateRV Var) :
     `[fsl|<r> ⬝ [[f]] ⋆ [[g]]] = `[fsl| (<r> ⬝ [[f]]) ⋆ [[g]]] := by

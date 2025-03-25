@@ -46,14 +46,20 @@ theorem fslSubst_of_fslReal : `[fsl| <r>(v ↦ e)] = `[fsl| <substProb r v e>] :
   intro s
   rfl
 
--- noncomputable def substProp (P : State Var → Prop) (v : Var) (e : ValueExp Var) : State Var → Prop :=
---   fun s => P (s.substituteStack v (e s.stack))
+noncomputable def substProp (P : State Var → Prop) (v : Var) (e : ValueExp Var) : State Var → Prop :=
+  fun s => P (s.substituteStack v (e s.stack))
 
--- @[simp]
--- theorem fslSubst_of_fslIverson : `[fsl| ⁅b⁆(v ↦ e)] = `[fsl| ⁅substProp b v e⁆] := by
---   apply funext
---   intro s
---   rfl
+@[simp]
+theorem fslSubst_of_fslIverson : `[fsl| ⁅P⁆(v ↦ e)] = `[fsl| ⁅substProp P v e⁆] := by
+  apply funext
+  intro s
+  rfl
+
+@[simp]
+theorem substProp_of_slExp : substProp `[sl| <e>] v e' = `[sl| <substBool e v e'>] := by
+  apply funext
+  intro s
+  rfl
 
 @[simp]
 theorem fslSubst_of_fslNot : `[fsl| (~[[f]])(v ↦ e)] = `[fsl| ~([[f]](v ↦ e))] := by
@@ -147,6 +153,7 @@ theorem fslSubst_of_fslSepDiv :
   intro s
   rfl
 
+@[simp]
 theorem fslSubst_of_fslBigSepMul {f : ℕ → StateRV Var} :
     `[fsl| ([⋆] i ∈ { ... n}. [[f i]])(v ↦ e) ]
     = `[fsl| [⋆] i ∈ { ... n}. [[f i]](v ↦ e) ] := by

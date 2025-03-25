@@ -1,4 +1,5 @@
 import InvLimDiss.CFSL.Proofrules
+import InvLimDiss.SL.Framing.VarApprox
 
 namespace CFSL
 
@@ -108,6 +109,70 @@ theorem safeTuple_concur
     (h₂ : ⊢ [[RI]] ⦃[[Q₂]]⦄ c₂ ⦃[[P₂]]⦄) :
     ⊢ [[RI]] ⦃[[Q₁]] ⋆ [[Q₂]]⦄ [[c₁]] || [[c₂]] ⦃[[P₁]] ⋆ [[P₂]]⦄ :=
   le_trans (fslSepMul_mono h₁ h₂) (wrle_concur h_vars₁ h_vars₂)
+
+theorem safeTuple_concur₃
+    (h_vars₁  : wrtProg c₁ ∩ (varProg c₂ ∪ varProg c₃ ∪ varRV P₂ ∪ varRV P₃ ∪ varRV RI) = ∅)
+    (h_vars₂  : wrtProg c₂ ∩ (varProg c₁ ∪ varProg c₃ ∪ varRV P₁ ∪ varRV P₃ ∪ varRV RI) = ∅)
+    (h_vars₃  : wrtProg c₃ ∩ (varProg c₁ ∪ varProg c₂ ∪ varRV P₁ ∪ varRV P₂ ∪ varRV RI) = ∅)
+    (h₁ : ⊢ [[RI]] ⦃[[Q₁]]⦄ c₁ ⦃[[P₁]]⦄)
+    (h₂ : ⊢ [[RI]] ⦃[[Q₂]]⦄ c₂ ⦃[[P₂]]⦄)
+    (h₃ : ⊢ [[RI]] ⦃[[Q₃]]⦄ c₃ ⦃[[P₃]]⦄) :
+    ⊢ [[RI]]
+    ⦃[[Q₁]] ⋆ [[Q₂]] ⋆ [[Q₃]]⦄
+    [[c₁]] || [[c₂]] || [[c₃]]
+    ⦃[[P₁]] ⋆ [[P₂]] ⋆ [[P₃]]⦄ := by
+  apply safeTuple_concur
+  · unfold varProg
+    apply subset_antisymm ?_ (Set.empty_subset _)
+    apply subset_trans
+    · apply Set.inter_subset_inter le_rfl
+      apply Set.union_subset_union ?_ le_rfl; swap
+      apply Set.union_subset_union le_rfl ?_; swap
+      apply varRV_of_fslSepMul
+    · rw [← h_vars₁]
+      rw [Set.union_assoc _ (varRV P₂) (varRV P₃)]
+  · unfold wrtProg
+    apply subset_antisymm ?_ (Set.empty_subset _)
+    rw [Set.union_inter_distrib_right, ← Set.union_empty ∅]
+    apply Set.union_subset_union
+    · rw [← h_vars₂]
+      apply Set.inter_subset_inter le_rfl
+      apply Set.union_subset_union ?_ le_rfl
+      rw [← Set.union_empty (varProg c₁ ∪ varRV P₁)]
+      apply Set.union_subset_union ?_ (Set.empty_subset _)
+      apply Set.union_subset_union ?_ le_rfl
+      nth_rw 1 [← Set.union_empty (varProg c₁)]
+      apply Set.union_subset_union le_rfl (Set.empty_subset _)
+    · rw [← h_vars₃]
+      apply Set.inter_subset_inter le_rfl
+      apply Set.union_subset_union ?_ le_rfl
+      rw [← Set.union_empty (varProg c₁ ∪ varRV P₁)]
+      apply Set.union_subset_union ?_ (Set.empty_subset _)
+      apply Set.union_subset_union ?_ le_rfl
+      nth_rw 1 [← Set.union_empty (varProg c₁)]
+      apply Set.union_subset_union le_rfl (Set.empty_subset _)
+  · exact h₁
+  apply safeTuple_concur
+  · apply subset_antisymm ?_ (Set.empty_subset _)
+    rw [← h_vars₂]
+    apply Set.inter_subset_inter le_rfl
+    apply Set.union_subset_union ?_ le_rfl
+    apply Set.union_subset_union ?_ le_rfl
+    nth_rw 1 [← Set.union_empty (varProg c₃)]
+    apply Set.union_subset_union ?_ (Set.empty_subset _)
+    nth_rw 1 [← Set.empty_union (varProg c₃)]
+    apply Set.union_subset_union (Set.empty_subset _) le_rfl
+  · apply subset_antisymm ?_ (Set.empty_subset _)
+    rw [← h_vars₃]
+    apply Set.inter_subset_inter le_rfl
+    apply Set.union_subset_union ?_ le_rfl
+    apply Set.union_subset_union ?_ le_rfl
+    nth_rw 1 [← Set.union_empty (varProg c₂)]
+    apply Set.union_subset_union ?_ (Set.empty_subset _)
+    nth_rw 1 [← Set.empty_union (varProg c₂)]
+    apply Set.union_subset_union (Set.empty_subset _) le_rfl
+  · exact h₂
+  · exact h₃
 
 theorem safeTuple_atom
     (h : ⊢ emp ⦃[[Q]] ⋆ [[RI]]⦄ c ⦃[[P]] ⋆ [[RI]]⦄)

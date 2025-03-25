@@ -3,6 +3,8 @@ import Mathlib.Tactic.Rify
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 import Mathlib.Topology.Order.MonotoneConvergence
 import Mathlib.Algebra.Field.Defs
+import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
+import Mathlib.Data.NNReal.Defs
 
 /-!
 # Extended unitInterval
@@ -82,6 +84,28 @@ instance : MulOneClass I where
   one_mul i := by rw[Subtype.mk_eq_mk, coe_mul]; exact one_mul (i:ℝ)
   mul_one i := by rw [unit_mul_comm]; exact one_mul i
 
+section pow
+
+open NNReal
+
+instance : Coe I ℝ≥0 where
+  coe i := ⟨i.val, nonneg'⟩
+
+theorem NNReal.nonneg (r : ℝ≥0) : 0 ≤ r := r.prop
+
+theorem rpow_in_unit (l : I) (r : ℝ≥0) : (NNReal.rpow (l : ℝ≥0) (r : ℝ)).val ∈ I := by
+  apply And.intro (NNReal.nonneg _)
+  apply NNReal.rpow_le_one
+  · exact le_one'
+  · exact r.prop
+
+noncomputable def rpow (l : I) (r : ℝ≥0) : I :=
+  ⟨NNReal.rpow (l : ℝ≥0) (r : ℝ), rpow_in_unit l r⟩
+
+noncomputable instance : Pow I ℝ≥0 where
+  pow := rpow
+
+end pow
 -- instance : CancelMonoidWithZero I := by infer_instance
 
 lemma div_le_one {a b : ℝ} (h_b_pos : 0 < b) (h_ab : a ≤ b): a/b ≤ 1 := by
