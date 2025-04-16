@@ -84,6 +84,9 @@ theorem substProp_of_exp :
 theorem substProp_of_constP :
     substProb (constP p) v e' = constP p := rfl
 
+theorem substProp_of_half :
+    substProb half v e' = half := rfl
+
 theorem varValue_of_var : varValue (var v) = {v} := by
   unfold varValue
   apply Set.Subset.antisymm

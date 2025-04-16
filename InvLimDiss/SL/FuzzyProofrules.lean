@@ -102,12 +102,29 @@ theorem le_fslMin_iff (P Q R : StateRV Var) :
   unfold fslMin
   exact le_inf_iff
 
-theorem fslMax_fslTrue (P : StateRV Var) :
+theorem fslTrue_fslMax (P : StateRV Var) :
     `[fsl| fTrue ⊔ [[P]]] = `[fsl| fTrue] := by
   funext s
   unfold fslMax fslTrue
   rw [Pi.sup_apply, sup_eq_left]
   exact le_one'
+
+theorem fslMax_fslTrue (P : StateRV Var) :
+    `[fsl| [[P]] ⊔ fTrue] = `[fsl| fTrue] := by
+  rw [fslMax_comm]
+  exact fslTrue_fslMax _
+
+theorem fslTrue_fslMin (P : StateRV Var) :
+    `[fsl| fTrue ⊓ [[P]]] = P := by
+  funext s
+  unfold fslMin fslTrue
+  rw [Pi.inf_apply, inf_eq_right]
+  exact le_one'
+
+theorem fslMin_fslTrue (P : StateRV Var) :
+    `[fsl| [[P]] ⊓ fTrue] = P := by
+  rw [fslMin_comm]
+  exact fslTrue_fslMin _
 
 theorem fslMax_self (P : StateRV Var) :
     `[fsl| [[P]] ⊔ [[P]]] = P := by
@@ -126,6 +143,20 @@ theorem fslMin_self (P : StateRV Var) :
     exact le_rfl
   · rw [le_fslMin_iff]
     exact And.intro le_rfl le_rfl
+
+theorem fslMin_fslMax_right (P Q R : StateRV Var) :
+    `[fsl| ([[P]] ⊔ [[Q]]) ⊓ [[R]]] = `[fsl| ([[P]] ⊓ [[R]]) ⊔ ([[Q]] ⊓ [[R]])] := by
+  funext s
+  simp only [fslMin, fslMax]
+  rw [Pi.sup_apply, Pi.inf_apply, Pi.sup_apply, Pi.inf_apply, Pi.inf_apply]
+  exact inf_sup_right (P s) (Q s) (R s)
+
+theorem fslMax_fslMin_right (P Q R : StateRV Var) :
+    `[fsl| ([[P]] ⊓ [[Q]]) ⊔ [[R]]] = `[fsl| ([[P]] ⊔ [[R]]) ⊓ ([[Q]] ⊔ [[R]])] := by
+  funext s
+  simp only [fslMin, fslMax]
+  rw [Pi.sup_apply, Pi.inf_apply, Pi.inf_apply, Pi.sup_apply, Pi.sup_apply]
+  exact sup_inf_right (P s) (Q s) (R s)
 
 end MaxMin
 
@@ -160,7 +191,7 @@ theorem fslMul_comm {P Q : StateRV Var} : `[fsl| [[P]] ⬝ [[Q]]] = `[fsl| [[Q]]
   funext s
   simp only [fslMul, mul_comm]
 
-theorem fslMul_add {P Q : StateRV Var} : `[fsl| [[P]] + [[Q]]] = `[fsl| [[Q]] + [[P]]] := by
+theorem fslAdd_comm {P Q : StateRV Var} : `[fsl| [[P]] + [[Q]]] = `[fsl| [[Q]] + [[P]]] := by
   funext s
   simp only [fslAdd, add_comm]
 
@@ -173,6 +204,12 @@ theorem fslAdd_assoc {P Q R : StateRV Var} :
     `[fsl| [[P]] + [[Q]] + [[R]]] = `[fsl| ([[P]] + [[Q]]) + [[R]]] := by
   funext s
   simp only [fslAdd, add_assoc]
+
+theorem fslAdd_weighted_self {P : StateRV Var} :
+    `[fsl| <e> ⬝ [[P]] + ~<e> ⬝ [[P]]] = P := by
+  funext s
+  simp only [fslAdd, fslMul, fslReal, fslNot]
+  exact truncatedAdd_sym_mul_eq _ _
 
 end Arithmetic
 
