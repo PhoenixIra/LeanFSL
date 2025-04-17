@@ -9,6 +9,16 @@ variable {Var : Type}
 
 open SL unitInterval
 
+theorem conservative_entail (P Q : StateProp Var) : `[fsl| ⁅P⁆] ⊢ `[fsl| ⁅Q⁆] ↔ P ⊢ Q := by
+  apply Iff.intro
+  · intro h s
+    specialize h s
+    simp only [fslIverson, iteOneZero_le_iteOneZero] at h
+    exact h
+  · intro h s
+    simp only [fslIverson, iteOneZero_le_iteOneZero]
+    exact h s
+
 theorem conservative_true : `[fsl Var| fTrue] = `[fsl Var| ⁅`[sl Var| sTrue]⁆] := by
   apply funext
   intro _

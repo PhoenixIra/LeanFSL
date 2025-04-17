@@ -12,7 +12,7 @@ noncomputable def init (y : ℕ) : Program String :=
 noncomputable def producer : Program String :=
   [Prog| while leq (const 0) (var "y1") begin
     pif half then "x1" ≔ (const 1) else "x1" ≔ (const 2) fi;
-    add (var "z1") (var "z1") *≔ (var "x1");
+    add (var "z1") (var "y1") *≔ (var "x1");
     "y1" ≔ dec <| var "y1"
   fi]
 
@@ -93,6 +93,56 @@ theorem substProp_ico_eq_dec_upper (v : String) (l : ℤ) (u : ℕ) (h : l < u) 
     apply And.intro
     · exact Int.le_sub_one_of_lt h
     · rfl
+
+theorem substProp_ico_dec_var (v : String) (y : ℕ):
+    substProp (is_in_ico v (-1) ↑y) v (dec (var v))
+    = is_in_ico v 0 ↑(y+1) := by
+  funext s
+  rw [← iff_eq_eq]
+  apply Iff.intro
+  · intro h
+    simp only [substProp, is_in_ico, Int.reduceNeg, State.substituteStack, dec, var, slExists_apply,
+      slEquals, const, State.substituteVar, ↓reduceIte, Subtype.exists, Set.mem_Ico,
+      exists_prop] at h
+    obtain ⟨i, ⟨h_l, h_u⟩, h_eq⟩ := h
+    simp only [is_in_ico, slExists_apply, slEquals, const, var, Subtype.exists, Nat.cast_add,
+      Nat.cast_one, Set.mem_Ico, exists_prop]
+    use i+1
+    apply And.intro
+    · apply And.intro
+      · rw [Int.le_add_iff_sub_le, zero_sub]
+        exact h_l
+      · rw [add_lt_add_iff_right]
+        exact h_u
+    · rw [Int.cast_add, Int.cast_one, h_eq, sub_add_cancel]
+  · intro h
+    simp only [is_in_ico, slExists_apply, slEquals, const, var, Subtype.exists, Nat.cast_add,
+      Nat.cast_one, Set.mem_Ico, exists_prop] at h
+    simp only [substProp, is_in_ico, Int.reduceNeg, State.substituteStack, dec, var, slExists_apply,
+      slEquals, const, State.substituteVar, ↓reduceIte, Subtype.exists, Set.mem_Ico, exists_prop]
+    obtain ⟨i, ⟨h_l, h_u⟩, h_eq⟩ := h
+    use i-1
+    apply And.intro
+    · apply And.intro
+      · rw [neg_le_sub_iff_le_add, le_add_iff_nonneg_left]
+        exact h_l
+      · rw [Int.sub_lt_iff]
+        exact h_u
+    · rw [Int.cast_sub, Int.cast_one, sub_left_inj]
+      exact h_eq
+
+theorem substProp_ico_le_up (v : String) (l : ℤ) {y y' : ℤ} (h : y ≤ y') :
+    (is_in_ico v l y) ⊢ (is_in_ico v l y') := by
+  intro s h_ico
+  simp only [is_in_ico, slExists_apply, slEquals, const, var, Subtype.exists, Set.mem_Ico,
+    exists_prop] at h_ico
+  simp only [is_in_ico, slExists_apply, slEquals, const, var, Subtype.exists, Set.mem_Ico,
+    exists_prop]
+  obtain ⟨i, ⟨h_l, h_u⟩, h_eq⟩ := h_ico
+  use i
+  apply And.intro ?_ h_eq
+  apply And.intro h_l
+  exact lt_of_lt_of_le h_u h
 
 theorem neg_one_le_nat (n : ℕ) : (-1 : ℤ) < n := by
   apply lt_of_lt_of_le
@@ -359,7 +409,7 @@ theorem producer_sound₁ (y : ℕ) :
 theorem producer_sound₂ (y : ℕ) :
     ⊢ [[rInv y]]
     ⦃ ((var "x1" === const 1) ⊔ (var "x1" === const 2)) ⊓ ⁅is_in_ico "y1" 0 ↑y⁆ ⦄
-    add (var "z1") (var "z1") *≔ var "x1"
+    add (var "z1") (var "y1") *≔ var "x1"
     ⦃ ⁅is_in_ico "y1" 0 ↑y⁆ ⦄ := by
   sorry
 
@@ -368,7 +418,17 @@ theorem producer_sound₃ (y : ℕ) :
     ⦃ ⁅is_in_ico "y1" 0 ↑y⁆ ⦄
     "y1" ≔ dec (var "y1")
     ⦃ ⁅is_in_ico "y1" (-1) ↑y⁆ ⦄ := by
-  sorry
+  apply safeTuple_monotonicty
+    `[fsl| ⁅is_in_ico "y1" (-1) ↑y⁆("y1" ↦ dec $ var "y1")]
+    _ ?_ le_rfl
+  swap
+  · simp only [Int.reduceNeg, fslSubst_of_fslIverson]
+    rw [substProp_ico_dec_var, conservative_entail]
+    apply substProp_ico_le_up
+    simp only [Nat.cast_add, Nat.cast_one, le_add_iff_nonneg_right, zero_le_one]
+  · apply safeTuple_assign
+    apply Set.not_mem_subset rInv_subset
+    decide
 
 theorem producer_sound (y : ℕ) :
     ⊢ [[rInv y]] ⦃ ⁅is_in_ico "y1" (-1) y⁆ ⦄ producer ⦃ fTrue ⦄ := by

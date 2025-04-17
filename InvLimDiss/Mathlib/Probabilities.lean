@@ -547,6 +547,30 @@ lemma iteOneZero_le {P : Prop} {i : I} :
     case isFalse => exact bot_le
 
 @[simp]
+theorem one_le_iteOneZero {P} :
+    1 ≤ iteOneZero P ↔ P := by
+  apply Iff.intro
+  · intro h
+    rw [iteOneZero_eq_ite] at h
+    split at h
+    case isTrue hP => exact hP
+    case isFalse hnP => simp only [le_zero_iff, one_ne_zero] at h
+  · intro hP
+    rw [iteOneZero_pos hP]
+
+@[simp]
+theorem iteOneZero_le_iteOneZero {P Q : Prop} :
+    iteOneZero P ≤ iteOneZero Q ↔ (P → Q) := by
+  apply Iff.intro
+  · intro h hP
+    rw [iteOneZero_pos hP, one_le_iteOneZero] at h
+    exact h
+  · intro h
+    rw [iteOneZero_le]
+    intro hP
+    rw [iteOneZero_pos (h hP)]
+
+@[simp]
 theorem zero_lt_iteOneZero {P : Prop} :
     0 < iteOneZero P ↔ P := by
   apply Iff.intro
