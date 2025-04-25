@@ -571,6 +571,21 @@ theorem iteOneZero_le_iteOneZero {P Q : Prop} :
     rw [iteOneZero_pos (h hP)]
 
 @[simp]
+theorem iteOneZero_eq_iteOneZero {P Q : Prop} :
+    iteOneZero P = iteOneZero Q ↔ (P ↔ Q) := by
+  apply Iff.intro
+  · intro h
+    apply Iff.intro
+    · rw [← iteOneZero_le_iteOneZero, h]
+    · rw [← iteOneZero_le_iteOneZero, h]
+  · intro h
+    apply le_antisymm
+    · rw [iteOneZero_le_iteOneZero]
+      exact h.mp
+    · rw [iteOneZero_le_iteOneZero]
+      exact h.mpr
+
+@[simp]
 theorem zero_lt_iteOneZero {P : Prop} :
     0 < iteOneZero P ↔ P := by
   apply Iff.intro

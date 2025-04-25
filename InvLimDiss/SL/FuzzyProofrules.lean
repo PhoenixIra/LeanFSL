@@ -158,6 +158,24 @@ theorem fslMax_fslMin_right (P Q R : StateRV Var) :
   rw [Pi.sup_apply, Pi.inf_apply, Pi.inf_apply, Pi.sup_apply, Pi.sup_apply]
   exact sup_inf_right (P s) (Q s) (R s)
 
+theorem fslMin_le_fslMin {P₁ P₂ Q₁ Q₂ : StateRV Var} (h₁ : P₁ ⊢ Q₁) (h₂ : P₂ ⊢ Q₂) :
+    `[fsl| [[P₁]] ⊓ [[P₂]]] ⊢ `[fsl| [[Q₁]] ⊓ [[Q₂]]] := by
+  rw [entailment_iff_pi_le, le_fslMin_iff]
+  apply And.intro
+  · apply fslMin_le
+    exact Or.inl h₁
+  · apply fslMin_le
+    exact Or.inr h₂
+
+theorem fslMax_le_fslMax {P₁ P₂ Q₁ Q₂ : StateRV Var} (h₁ : P₁ ⊢ Q₁) (h₂ : P₂ ⊢ Q₂) :
+    `[fsl| [[P₁]] ⊔ [[P₂]]] ⊢ `[fsl| [[Q₁]] ⊔ [[Q₂]]] := by
+  rw [entailment_iff_pi_le, fslMax_le_iff]
+  apply And.intro
+  · apply le_fslMax
+    exact Or.inl h₁
+  · apply le_fslMax
+    exact Or.inr h₂
+
 end MaxMin
 
 section Arithmetic
@@ -260,6 +278,27 @@ theorem le_fslInf (P : α → StateRV Var) (Q : StateRV Var)
 
 
 end Quantifiers
+
+section Iverson
+
+open SL
+
+theorem fslIverson_fslMin_eq_fslIverson_fslMul {Q : StateProp Var} {P : StateRV Var} :
+    `[fsl| ⁅Q⁆ ⊓ [[P]]] = `[fsl| ⁅Q⁆ ⬝ [[P]]] := by
+  funext s
+  simp only [fslMin, fslMul]
+  rw [Pi.inf_apply]
+  simp only [fslIverson, inf_le_iff]
+  by_cases (Q s)
+  case pos h =>
+    rw [iteOneZero_pos h]
+    simp only [one_mul, inf_eq_right]
+    exact le_one'
+  case neg h =>
+    rw [iteOneZero_neg h]
+    simp only [zero_le, inf_of_le_left, zero_mul]
+
+end Iverson
 
 section PointsTo
 
@@ -968,5 +1007,109 @@ theorem fslSepMul_fslInf_distr_of_precise
       simp only [h_prec, zero_mul, zero_le]
 
 end Precise
+
+section Pure
+
+theorem pure_fslEquals : pure `[fsl| e === e'] := by
+  intro s heap₁ heap₂
+  simp only [fslEquals]
+
+theorem pure_fslIverson_slEquals : pure `[fsl| ⁅e === e'⁆] := by
+  intro s heap₁ heap₂
+  simp only [fslIverson, SL.slEquals]
+
+theorem pure_fslIverson_slExp : pure `[fsl| ⁅<e>⁆] := by
+  intro s heap₁ heap₂
+  simp only [fslIverson, SL.slExp]
+
+theorem pure_fslMul (h_P : pure P) (h_Q : pure Q) : pure `[fsl| [[P]] ⬝ [[Q]]] := by
+  intro s heap₁ heap₂
+  simp only [fslMul, h_P s heap₁ heap₂, h_Q s heap₁ heap₂]
+
+theorem fslMul_fslSepMul_of_pure {P Q R : StateRV Var} (h : pure P) :
+    `[fsl| [[P]] ⬝ [[Q]] ⋆ [[R]]] = `[fsl| ([[P]] ⬝ [[Q]]) ⋆ [[R]]] := by
+  apply le_antisymm
+  · intro s
+    simp only [fslMul]
+    rw [mul_comm, ← unit_le_div_iff_mul_le]
+    apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    rw [unit_le_div_iff_mul_le, mul_comm, ← mul_assoc]
+    apply le_sSup
+    use heap₁, heap₂, h_disjoint, h_union
+    simp only [fslMul, mul_eq_mul_right_iff]
+    left; left
+    exact h s.stack s.heap heap₁
+  · intro s
+    apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_dijoint, h_union, rfl⟩
+    simp only [fslMul]
+    rw [mul_assoc]
+    apply unit_mul_le_mul
+    · rw [h]
+    · apply le_sSup
+      use heap₁, heap₂
+
+theorem fslMul_eq_emp_fslSepMul_of_pure {P Q : StateRV Var} (h : pure P) :
+    `[fsl| [[P]] ⬝ [[Q]]] = `[fsl| ([[P]] ⊓ emp) ⋆ [[Q]]] := by
+  apply le_antisymm
+  · intro s
+    apply le_sSup
+    use ∅, s.heap, emptyHeap_disjoint', emptyHeap_union'
+    rw [fslMin, Pi.inf_apply, fslEmp, iteOneZero_pos rfl, fslMul]
+    rw [h s.stack ∅ s.heap]
+    rw [mul_eq_mul_right_iff, left_eq_inf]
+    left; exact le_one'
+  · intro s
+    apply sSup_le
+    rintro i ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    rw [fslMin, Pi.inf_apply, fslEmp, iteOneZero_eq_ite, fslMul]
+    split_ifs
+    case pos h_emp =>
+      apply unit_mul_le_mul
+      · rw [inf_le_iff]
+        left
+        rw [h s.stack heap₁ s.heap]
+      · rw [h_emp, emptyHeap_union] at h_union
+        rw [h_union]
+    case neg =>
+      simp only [zero_le, inf_of_le_right, zero_mul]
+
+theorem fslSepMul_fslTrue_of_pure {P : StateRV Var} (h : pure P) :
+    `[fsl| [[P]] ⋆ fTrue] = P := by
+  apply le_antisymm
+  · intro s
+    apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    simp only [fslTrue, mul_one]
+    rw [h s.stack s.heap heap₁]
+  · intro s
+    apply le_sSup
+    use ∅, s.heap, emptyHeap_disjoint', emptyHeap_union'
+    simp only [fslTrue, mul_one]
+    rw [h s.stack s.heap ∅]
+
+theorem fslSepMul_eq_fslTrue_fslMul_of_pure {P Q : StateRV Var} (h : pure P) :
+    `[fsl| [[P]] ⋆ [[Q]]] = `[fsl| fTrue ⋆ ([[P]] ⬝ [[Q]])] := by
+  apply le_antisymm
+  · intro s
+    apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    apply le_sSup
+    use heap₁, heap₂, h_disjoint, h_union
+    simp only [fslTrue, fslMul, one_mul, mul_eq_mul_right_iff]
+    left
+    exact h s.stack heap₁ heap₂
+  · intro s
+    apply sSup_le
+    rintro _ ⟨heap₁, heap₂, h_disjoint, h_union, rfl⟩
+    apply le_sSup
+    use heap₁, heap₂, h_disjoint, h_union
+    simp only [fslTrue, fslMul, one_mul, mul_eq_mul_right_iff]
+    left
+    exact h s.stack heap₂ heap₁
+
+
+end Pure
 
 end FSL

@@ -206,3 +206,10 @@ theorem half_le_one : half s ≤ one s := by
   simp only [one]
   open unitInterval in
   exact le_one'
+
+theorem leq_le_leq_succ (n : ℕ) (e : ValueExp String) :
+    leq (const (↑n + 1)) e s → leq (const ↑n) e s := by
+  simp only [leq, const, decide_eq_true_eq]
+  intro h
+  apply le_trans ?_ h
+  simp only [le_add_iff_nonneg_right, zero_le_one]

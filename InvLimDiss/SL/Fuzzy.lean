@@ -264,6 +264,9 @@ def precise (P : StateRV Var) : Prop :=
     heap' ⊆ s.heap ∧ ∀ heap'', heap'' ⊆ s.heap → heap' ≠ heap''
     → P ⟨s.stack, heap''⟩ = 0
 
+def pure (P : StateRV Var) : Prop :=
+  ∀ s, ∀ heap₁ heap₂, P ⟨s, heap₁⟩ = P ⟨s, heap₂⟩
+
 noncomputable example := `[fsl Var| ((fun _ => 0) === (fun _ => 0)) ⊔ emp]
 
 end FSL
