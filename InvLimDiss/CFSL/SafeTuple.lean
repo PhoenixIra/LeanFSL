@@ -213,4 +213,8 @@ theorem safeTuple_weightedSum
   apply le_trans ?_ (wrle_weightedSum h_precise h_vars)
   exact fslAdd_mono (fslMul_mono le_rfl h₁) (fslMul_mono le_rfl h₂)
 
+theorem safeTuple_false_left :
+    ⊢ [[RI]] ⦃ fFalse ⦄ c ⦃ [[P]] ⦄ := by
+  exact fslFalse_le _
+
 end CFSL

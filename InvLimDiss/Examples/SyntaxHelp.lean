@@ -173,6 +173,21 @@ theorem varProb_of_constP : varProb (constP p) = ∅ := by
     exact h rfl
   · exact Set.empty_subset _
 
+theorem varProb_of_exp : varProb (exp e e') ⊆ varProb e ∪ varValue e' := by
+  unfold varProb varValue
+  rintro r ⟨s, q, h⟩
+  simp only [ne_eq, Set.mem_union, Set.mem_setOf_eq]
+  by_cases h' : e (State.substituteVar s r q) = e s
+  case neg => left; use s, q
+  case pos =>
+    right
+    use s, q
+    intro h''
+    apply h
+    unfold exp
+    rw [h', h'']
+
+
 theorem varBool_of_leq : varBool (leq l r) ⊆ varValue l ∪ varValue r := by
   simp only [varBool, ne_eq, varValue]
   intro a ⟨s, q, h⟩

@@ -105,6 +105,27 @@ noncomputable def rpow (l : I) (r : ℝ≥0) : I :=
 noncomputable instance : Pow I ℝ≥0 where
   pow := rpow
 
+theorem mul_rpow_eq_rpow_inc (l : I) (r : ℝ≥0) :
+    l * (rpow l r) = rpow l (r + 1) := by
+  unfold rpow
+  rw [← Subtype.coe_inj]
+  simp only [rpow_eq_pow, coe_rpow, coe_mk, coe_mul, NNReal.coe_add, NNReal.coe_one]
+  cases eq_or_ne l 0
+  case inl h =>
+    rw [h]
+    simp only [Set.Icc.coe_zero, zero_mul]
+    rw [Real.zero_rpow]
+    intro h
+    apply r.prop.not_lt
+    conv => right; rw [← h]
+    exact lt_add_one ↑r
+  case inr h =>
+    nth_rw 1 [← Real.rpow_one ↑l]
+    rw [← Real.rpow_add, add_comm]
+    apply lt_of_le_of_ne nonneg' h.symm
+
+
+
 end pow
 -- instance : CancelMonoidWithZero I := by infer_instance
 

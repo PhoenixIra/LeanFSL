@@ -200,6 +200,40 @@ theorem fslMul_fslFalse (P : StateRV Var) :
   funext s
   simp only [fslMul, fslFalse, mul_zero]
 
+theorem fslAdd_fslTrue (P : StateRV Var) :
+    `[fsl| [[P]] + fTrue] = fslTrue := by
+  funext s
+  simp only [fslAdd, fslTrue, truncatedAdd_one]
+
+theorem fslMul_fslTrue (P : StateRV Var) :
+    `[fsl| [[P]] ⬝ fTrue] = P := by
+  funext s
+  simp only [fslMul, fslTrue, mul_one]
+
+theorem fslMul_le (P Q : StateRV Var) :
+    `[fsl| [[P]] ⬝ [[Q]]] ⊢ P := by
+  intro s
+  rw [← mul_one (P s), fslMul]
+  exact unit_mul_le_mul le_rfl le_one'
+
+theorem le_fslAdd (P Q : StateRV Var) :
+    P ⊢ `[fsl| [[P]] + [[Q]]] := by
+  intro s
+  rw [← add_zero (P s), fslAdd]
+  exact truncatedAdd_le_truncatedAdd_left _ _ nonneg' _
+
+theorem fslMul_le_of_le (P Q R : StateRV Var) (h : P ⊢ R) :
+    `[fsl| [[P]] ⬝ [[Q]]] ⊢ R := by
+  intro s
+  rw [← mul_one (R s), fslMul]
+  exact unit_mul_le_mul (h s) le_one'
+
+theorem le_fslAdd_of_le (P Q R : StateRV Var) (h : P ⊢ R) :
+    P ⊢ `[fsl| [[R]] + [[Q]]] := by
+  intro s
+  rw [← add_zero (P s), fslAdd]
+  exact truncatedAdd_le_truncatedAdd _ _ _ _ (h s) nonneg'
+
 open Syntax in
 theorem fslReal_fslMul_fslTrue (r : ProbExp Var) : `[fsl| <r> ⬝ fTrue] = `[fsl| <r>] := by
   funext s
@@ -276,6 +310,40 @@ theorem le_fslInf (P : α → StateRV Var) (Q : StateRV Var)
   intro x
   exact h x s
 
+theorem fslMul_fslMax_distr (P Q R : StateRV Var) :
+    `[fsl| [[P]] ⬝ ([[Q]] ⊔ [[R]])] = `[fsl| [[P]] ⬝ [[Q]] ⊔ [[P]] ⬝ [[R]]] := by
+  apply le_antisymm
+  · intro s
+    simp only [fslMul, fslMax]
+    rw [Pi.sup_apply, Pi.sup_apply]
+    simp only [fslMul]
+    rw [le_sup_iff]
+    cases le_total (Q s) (R s)
+    case a.inl h =>
+      right
+      apply unit_mul_le_mul le_rfl
+      rw [sup_le_iff]
+      exact ⟨h, le_rfl⟩
+    case a.inr h =>
+      left
+      apply unit_mul_le_mul le_rfl
+      rw [sup_le_iff]
+      exact ⟨le_rfl, h⟩
+  · intro s
+    simp only [fslMax, fslMul]
+    rw [Pi.sup_apply, Pi.sup_apply]
+    simp only [fslMul]
+    rw [sup_le_iff]
+    apply And.intro
+    · apply unit_mul_le_mul le_rfl
+      rw [le_sup_iff]
+      left
+      trivial
+    · apply unit_mul_le_mul le_rfl
+      rw [le_sup_iff]
+      right
+      trivial
+
 
 end Quantifiers
 
@@ -297,6 +365,37 @@ theorem fslIverson_fslMin_eq_fslIverson_fslMul {Q : StateProp Var} {P : StateRV 
   case neg h =>
     rw [iteOneZero_neg h]
     simp only [zero_le, inf_of_le_left, zero_mul]
+
+theorem eq_fslMax_fslIverson_cases (P : StateProp Var) (Q : StateRV Var) :
+    Q = `[fsl| ⁅P⁆ ⊓ [[Q]] ⊔ ~⁅P⁆ ⊓ [[Q]]] := by
+  apply le_antisymm
+  · intro s
+    rw [fslMax, Pi.sup_apply, fslMin, Pi.inf_apply, fslMin, Pi.inf_apply]
+    rw [le_sup_iff]
+    by_cases (P s)
+    case pos h =>
+      left
+      rw [le_inf_iff]
+      apply And.intro ?_ le_rfl
+      rw [fslIverson, iteOneZero_pos h]
+      exact le_one'
+    case neg h =>
+      right
+      rw [le_inf_iff]
+      apply And.intro ?_ le_rfl
+      rw [fslNot, fslIverson, iteOneZero_neg h, symm_zero]
+      exact le_one'
+  · intro s
+    rw [fslMax, Pi.sup_apply, fslMin, Pi.inf_apply, fslMin, Pi.inf_apply]
+    rw [sup_le_iff]
+    apply And.intro
+    · rw [inf_le_iff]
+      right
+      trivial
+    · rw [inf_le_iff]
+      right
+      trivial
+
 
 end Iverson
 
@@ -1022,9 +1121,14 @@ theorem pure_fslIverson_slExp : pure `[fsl| ⁅<e>⁆] := by
   intro s heap₁ heap₂
   simp only [fslIverson, SL.slExp]
 
+theorem pure_fslReal : pure `[fsl| <e> ] := by
+  intro s heap₁ heap₂
+  simp only [fslReal]
+
 theorem pure_fslMul (h_P : pure P) (h_Q : pure Q) : pure `[fsl| [[P]] ⬝ [[Q]]] := by
   intro s heap₁ heap₂
   simp only [fslMul, h_P s heap₁ heap₂, h_Q s heap₁ heap₂]
+
 
 theorem fslMul_fslSepMul_of_pure {P Q R : StateRV Var} (h : pure P) :
     `[fsl| [[P]] ⬝ [[Q]] ⋆ [[R]]] = `[fsl| ([[P]] ⬝ [[Q]]) ⋆ [[R]]] := by
@@ -1074,6 +1178,11 @@ theorem fslMul_eq_emp_fslSepMul_of_pure {P Q : StateRV Var} (h : pure P) :
         rw [h_union]
     case neg =>
       simp only [zero_le, inf_of_le_right, zero_mul]
+
+theorem fslMul_eq_fslSepMul_emp_of_pure {P Q : StateRV Var} (h : pure Q) :
+    `[fsl| [[P]] ⬝ [[Q]]] = `[fsl| [[P]] ⋆ ([[Q]] ⊓ emp)] := by
+  rw [fslMul_comm, fslSepMul_comm]
+  exact fslMul_eq_emp_fslSepMul_of_pure h
 
 theorem fslSepMul_fslTrue_of_pure {P : StateRV Var} (h : pure P) :
     `[fsl| [[P]] ⋆ fTrue] = P := by
