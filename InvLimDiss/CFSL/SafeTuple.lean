@@ -91,8 +91,8 @@ theorem safeTuple_conditionalBranching
   · exact fslMul_mono le_rfl h₂
 
 theorem safeTuple_while (Q : StateRV Var)
-    ( h_Q : ⊢ [[RI]] ⦃[[Q]]⦄ c ⦃[[inv]]⦄)
-    ( h_inv : inv ⊢ `[fsl| ⁅<e>⁆ ⬝ [[Q]] ⊔ ~⁅<e>⁆ ⬝ [[P]]]) :
+    ( h_inv : inv ⊢ `[fsl| ⁅<e>⁆ ⬝ [[Q]] ⊔ ~⁅<e>⁆ ⬝ [[P]]])
+    ( h_Q : ⊢ [[RI]] ⦃[[Q]]⦄ c ⦃[[inv]]⦄) :
     ⊢ [[RI]] ⦃[[inv]]⦄ while e begin [[c]] fi ⦃[[P]]⦄ :=
   wrle_while h_Q h_inv
 
@@ -175,8 +175,8 @@ theorem safeTuple_concur₃
   · exact h₃
 
 theorem safeTuple_atom
-    (h : ⊢ emp ⦃[[Q]] ⋆ [[RI]]⦄ c ⦃[[P]] ⋆ [[RI]]⦄)
-    (h_atom : atomicProgram c) :
+    (h_atom : atomicProgram c)
+    (h : ⊢ emp ⦃[[Q]] ⋆ [[RI]]⦄ c ⦃[[P]] ⋆ [[RI]]⦄) :
     ⊢ [[RI]] ⦃[[Q]]⦄ c ⦃[[P]]⦄ :=
   wrle_atom h h_atom
 

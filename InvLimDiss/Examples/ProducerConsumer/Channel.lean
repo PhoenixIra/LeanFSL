@@ -22,7 +22,6 @@ theorem channel_sound₁ (y : ℕ) (p : unitInterval) :
     apply Set.not_mem_subset this
     decide
   apply safeTuple_atom
-  swap
   · simp only [Atom.atomicProgram]
   apply safeTuple_monotonicty
     `[fsl| S (q : ℚ). add (var "z1") (var "y2") ↦ q ⋆ (add (var "z1") (var "y2") ↦ q
@@ -315,7 +314,309 @@ theorem channel_sound₂ (y : ℕ) (p : unitInterval) :
         ⬝ ((var "x2" === const 1) ⊔ var "x2" === const 2) ⦄
     add (var "z2") (var "y2") *≔ var "x2"
     ⦃ ⁅is_in_ico "y2" 1 ↑y⁆ ⬝ <exp (constP p) (var "y2")> ⊔ ⁅var "y2" === const 0⁆ ⦄ := by
-  sorry
+  apply safeTuple_atom
+  · simp only [Atom.atomicProgram]
+  · apply safeTuple_monotonicty
+      `[fsl| (S (q : ℚ). add (var "z2") (var "y2") ↦ q) ⋆ (add (var "z2") (var "y2") ↦ var "x2"
+        -⋆ (⁅is_in_ico "y2" 1 ↑y⁆ ⬝ <exp (constP p) (var "y2")> ⊔ ⁅var "y2" === const 0⁆) ⋆ [[rInv y]])]
+      _ ?_ le_rfl (safeTuple_mutate _)
+    rw [fslSepMul_comm, fslSepMul_fslMax_distr]
+    rw [entailment_iff_pi_le, fslMax_le_iff]
+    apply And.intro
+    · rw [conservative_equals, fslIverson_fslMin_eq_fslIverson_fslMul,
+        fslIverson_fslMin_eq_fslIverson_fslMul]
+      rw [fslMul_comm, ← fslMul_assoc, fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]
+      rw [fslSepMul_assoc]; nth_rw 2 [fslSepMul_comm]
+      rw [rInv]; nth_rw 1 [rInv2]; nth_rw 3 [fslSepMul_comm]; nth_rw 1 [fslSepMul_assoc]
+      rw [← fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]
+      rw [← fslIverson_fslMin_eq_fslIverson_fslMul]
+      rw [ico_fslBigSepMul, ← rInv2_wo]
+      rw [fslIverson_fslMin_eq_fslIverson_fslMul]
+      rw [fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]
+      nth_rw 4 [fslSepMul_comm]; rw [fslSepMul_fslSup_distr]
+      rw [fslSepMul_fslSup_distr]
+      nth_rw 2 [fslSepMul_comm]; rw [fslSepMul_fslSup_distr]
+      nth_rw 1 [fslSepMul_comm]; rw [fslSepMul_fslSup_distr]
+      apply fslSup_le
+      intro i
+      nth_rw 3 [fslSepMul_comm]; nth_rw 2 [fslSepMul_assoc]
+      nth_rw 4 [fslSepMul_comm]; nth_rw 1 [fslSepMul_assoc]
+      nth_rw 3 [fslSepMul_comm]; nth_rw 1 [fslSepMul_assoc]
+      nth_rw 3 [fslSepMul_comm]
+      simp only [← fslSepMul_assoc]
+      rw [← fslMin_self (`[fsl| var "y2" === const i]), fslMin_assoc]
+      rw [conservative_equals, fslIverson_fslMin_eq_fslIverson_fslMul]
+      rw [fslMul_eq_emp_fslSepMul_of_pure pure_fslIverson_slEquals]
+      nth_rw 2 [fslSepMul_comm]
+      rw [← fslSepMul_assoc]
+      apply fslSepMul_mono
+      · rw [fslMin_comm, fslMin_fslMax_right, fslMin_fslMax_right]
+        rw [entailment_iff_pi_le, fslMax_le_iff]
+        apply And.intro
+        · apply le_fslSup _ _ 0
+          rw [conservative_pointsTo, conservative_min, conservative_pointsTo, conservative_entail]
+          intro s ⟨h_pt, h_eq⟩
+          simp only [slPointsTo, add, var]
+          simp only [slPointsTo, add, var, const] at h_pt
+          simp only [slEquals, var, const] at h_eq
+          obtain ⟨l, h_l, h_heap⟩ := h_pt
+          use l
+          apply And.intro ?_ h_heap
+          rw [h_l, h_eq]
+        · rw [entailment_iff_pi_le, fslMax_le_iff]
+          apply And.intro
+          · apply le_fslSup _ _ 1
+            rw [conservative_pointsTo, conservative_min, conservative_pointsTo, conservative_entail]
+            intro s ⟨h_pt, h_eq⟩
+            simp only [slPointsTo, add, var]
+            simp only [slPointsTo, add, var, const] at h_pt
+            simp only [slEquals, var, const] at h_eq
+            obtain ⟨l, h_l, h_heap⟩ := h_pt
+            use l
+            apply And.intro ?_ h_heap
+            rw [h_l, h_eq]
+          · apply le_fslSup _ _ 2
+            rw [conservative_pointsTo, conservative_min, conservative_pointsTo, conservative_entail]
+            intro s ⟨h_pt, h_eq⟩
+            simp only [slPointsTo, add, var]
+            simp only [slPointsTo, add, var, const] at h_pt
+            simp only [slEquals, var, const] at h_eq
+            obtain ⟨l, h_l, h_heap⟩ := h_pt
+            use l
+            apply And.intro ?_ h_heap
+            rw [h_l, h_eq]
+      · rw [entailment_iff_pi_le, le_fslSepDiv_iff_fslSepMul_le]
+        nth_rw 6 [fslSepMul_comm]; rw [fslSepMul_fslMax_distr]
+        apply le_fslMax
+        right
+        nth_rw 3 [fslSepMul_assoc]; nth_rw 5 [fslSepMul_comm]
+        nth_rw 2 [fslSepMul_assoc]; nth_rw 2 [fslSepMul_assoc]
+        nth_rw 5 [fslSepMul_comm]
+        simp only [← fslSepMul_assoc]
+        nth_rw 1 [fslSepMul_assoc]; nth_rw 2 [fslSepMul_comm]
+        rw [← fslSepMul_assoc]
+        apply fslSepMul_mono le_rfl
+        rw [fslMul_comm, fslMul_eq_fslSepMul_emp_of_pure
+          (pure_fslMax pure_fslEquals pure_fslEquals)]
+        simp only [← fslSepMul_assoc]
+        nth_rw 2 [fslSepMul_assoc]; nth_rw 3 [fslSepMul_comm]
+        nth_rw 1 [← fslSepMul_assoc]; rw [fslSepMul_assoc]; nth_rw 2 [fslSepMul_comm]
+        simp only [← fslSepMul_assoc]
+        rw [fslSepMul_comm]
+        apply fslSepMul_mono ?_ le_rfl
+        have :
+            `[fsl| (⁅var "y2" === const ↑i⁆ ⊓ emp) ⋆ [[rInv2_wo y "y2"]]
+              ⋆ (((var "x2" === const 1) ⊔ var "x2" === const 2) ⊓ emp)
+              ⋆ (⁅is_in_ico "y2" 0 ↑y⁆ ⊓ emp) ⋆ add (var "z2") (var "y2") ↦ var "x2" ]
+            ≤ `[fsl| ⁅is_in_ico "y2" 0 y⁆ ⊓ (S (j : ℕ). (var "y2" === const j)
+              ⊓ ((add (var "z2") (const j) ↦ const 0)
+                ⊔ (add (var "z2") (const j) ↦ const 1)
+                ⊔ (add (var "z2") (const j) ↦ const 2)))
+            ⋆ [[rInv2_wo y "y2"]]] := by {
+          nth_rw 3 [fslSepMul_assoc]; nth_rw 4 [fslSepMul_comm]
+          nth_rw 1 [← fslSepMul_assoc]; nth_rw 2 [fslSepMul_assoc]
+          nth_rw 3 [fslSepMul_comm]
+          simp only [← fslSepMul_assoc]
+          rw [fslSepMul_assoc]; nth_rw 2 [fslSepMul_comm]; rw [← fslSepMul_assoc]
+          rw [← fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]
+          rw [← fslIverson_fslMin_eq_fslIverson_fslMul]
+          apply fslMin_le_fslMin le_rfl
+          rw [fslSepMul_assoc]; nth_rw 2 [fslSepMul_comm]; rw [← fslSepMul_assoc, fslSepMul_comm]
+          apply fslSepMul_mono ?_ le_rfl
+          rw [fslSepMul_comm]
+          rw [← fslMul_eq_fslSepMul_emp_of_pure pure_fslIverson_slEquals]
+          rw [fslSepMul_comm]
+          rw [← fslMul_eq_fslSepMul_emp_of_pure (pure_fslMax pure_fslEquals pure_fslEquals)]
+          rw [← fslMul_assoc]
+          simp only [conservative_pointsTo, conservative_equals, conservative_max, conservative_mul,
+            conservative_min, conservative_sup]
+          rw [conservative_entail]
+          rintro s ⟨h_pt, h_eq | h_eq, h_i⟩
+          · rw [slExists_apply]
+            use i
+            apply And.intro h_i
+            right; left
+            simp only [slPointsTo, add, var, const]
+            simp only [slPointsTo, add, var] at h_pt
+            simp only [slEquals, var, const] at h_i h_eq
+            obtain ⟨l, h_l, h_heap⟩ := h_pt
+            use l
+            rw [h_eq] at h_heap
+            rw [h_i] at h_l
+            exact ⟨h_l, h_heap⟩
+          · rw [slExists_apply]
+            use i
+            apply And.intro h_i
+            right; right
+            simp only [slPointsTo, add, var, const]
+            simp only [slPointsTo, add, var] at h_pt
+            simp only [slEquals, var, const] at h_i h_eq
+            obtain ⟨l, h_l, h_heap⟩ := h_pt
+            use l
+            rw [h_eq] at h_heap
+            rw [h_i] at h_l
+            exact ⟨h_l, h_heap⟩
+        }
+        apply le_trans this ; clear this
+        rw [rInv2_wo]
+        rw [← ico_fslBigSepMul, ← rInv2]
+        apply fslMin_le
+        right
+        exact le_rfl
+    · rw [fslMul_assoc]; nth_rw 2 [fslMul_comm]; rw [← fslMul_assoc]
+      rw [fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]; rw [fslSepMul_assoc]
+      nth_rw 2 [fslSepMul_comm]
+      rw [rInv]; nth_rw 3 [fslSepMul_comm]; nth_rw 1 [fslSepMul_assoc]
+      rw [← fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]
+      rw [← fslIverson_fslMin_eq_fslIverson_fslMul]
+      rw [rInv2, ico_fslBigSepMul, ← rInv2_wo]
+      rw [fslIverson_fslMin_eq_fslIverson_fslMul]
+      rw [fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]
+      simp only [← fslSepMul_assoc]; rw [fslSepMul_assoc]; nth_rw 2 [fslSepMul_comm]
+      rw [← fslSepMul_assoc]
+      apply fslSepMul_mono
+      · apply fslSup_le
+        intro i
+        rw [fslMin_comm, fslMin_fslMax_right, fslMin_fslMax_right]
+        rw [entailment_iff_pi_le, fslMax_le_iff]
+        apply And.intro
+        · apply le_fslSup _ _ 0
+          rw [conservative_pointsTo, conservative_equals, conservative_min,
+            conservative_pointsTo, conservative_entail]
+          intro s ⟨h_pt, h_eq⟩
+          simp only [slPointsTo, add, var]
+          simp only [slPointsTo, add, var, const] at h_pt
+          simp only [slEquals, var, const] at h_eq
+          obtain ⟨l, h_l, h_heap⟩ := h_pt
+          use l
+          apply And.intro ?_ h_heap
+          rw [h_l, h_eq]
+        · rw [entailment_iff_pi_le, fslMax_le_iff]
+          apply And.intro
+          · apply le_fslSup _ _ 1
+            rw [conservative_pointsTo, conservative_equals, conservative_min,
+              conservative_pointsTo, conservative_entail]
+            intro s ⟨h_pt, h_eq⟩
+            simp only [slPointsTo, add, var]
+            simp only [slPointsTo, add, var, const] at h_pt
+            simp only [slEquals, var, const] at h_eq
+            obtain ⟨l, h_l, h_heap⟩ := h_pt
+            use l
+            apply And.intro ?_ h_heap
+            rw [h_l, h_eq]
+          · apply le_fslSup _ _ 2
+            rw [conservative_pointsTo, conservative_equals, conservative_min,
+              conservative_pointsTo, conservative_entail]
+            intro s ⟨h_pt, h_eq⟩
+            simp only [slPointsTo, add, var]
+            simp only [slPointsTo, add, var, const] at h_pt
+            simp only [slEquals, var, const] at h_eq
+            obtain ⟨l, h_l, h_heap⟩ := h_pt
+            use l
+            apply And.intro ?_ h_heap
+            rw [h_l, h_eq]
+      · rw [entailment_iff_pi_le, le_fslSepDiv_iff_fslSepMul_le]
+        nth_rw 5 [fslSepMul_comm]; nth_rw 3 [fslSepMul_comm]
+        simp only [← fslSepMul_assoc]
+        rw [fslSepMul_assoc]; nth_rw 2 [fslSepMul_comm]; rw [← fslSepMul_assoc]
+        apply fslSepMul_mono le_rfl
+        rw [← fslMin_of_le _ _ ((conservative_entail _ _).mpr (is_in_ico_le_down _ 0 1 Int.one_nonneg))]
+        nth_rw 2 [fslIverson_fslMin_eq_fslIverson_fslMul]
+        have : `[fsl| ⁅is_in_ico "y2" 0 ↑y⁆ ⬝ ⁅is_in_ico "y2" 1 ↑y⁆ ⬝ <exp (constP p) (var "y2")> ]
+            ≤ `[fsl| ((⁅is_in_ico "y2" 0 ↑y⁆ ⬝ ⁅is_in_ico "y2" 1 ↑y⁆)
+              ⬝ <exp (constP p) (var "y2")> ⊔ ⁅var "y2" === const 0⁆)] := by {
+          apply le_fslMax
+          left
+          rw [fslMul_assoc]
+          exact le_rfl
+        }
+        apply le_trans ?_ (fslSepMul_mono le_rfl this ); clear this
+        rw [fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]
+        nth_rw 3 [fslSepMul_assoc]; nth_rw 5 [fslSepMul_comm]
+        nth_rw 2 [← fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]
+        rw [← fslIverson_fslMin_eq_fslIverson_fslMul]
+        rw [ico_fslBigSepMul, ← rInv2_wo]
+        nth_rw 2 [fslIverson_fslMin_eq_fslIverson_fslMul]
+        nth_rw 1 [fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]
+        simp only [← fslSepMul_assoc]
+        nth_rw 3 [fslSepMul_comm]; nth_rw 6 [fslSepMul_comm]
+        simp only [fslSepMul_assoc]
+        apply fslSepMul_mono ?_ le_rfl
+        nth_rw 3 [fslSepMul_comm]
+        nth_rw 1 [fslSepMul_assoc]
+        rw [← fslMul_eq_fslSepMul_emp_of_pure (pure_is_in_ico _ _ _)]
+        nth_rw 3 [fslMul_comm]; nth_rw 2 [fslMul_assoc]
+        rw [← fslIverson_fslMin_eq_fslIverson_fslMul]
+        rw [fslMin_of_le _ _ ((conservative_entail _ _).mpr (is_in_ico_le_down _ 0 1 Int.one_nonneg))]
+        simp only [← fslSepMul_assoc]
+        rw [fslSepMul_assoc]
+        rw [← fslMul_eq_emp_fslSepMul_of_pure (pure_is_in_ico _ _ _)]
+        rw [fslSepMul_eq_fslTrue_fslMul_of_pure]
+        swap
+        · apply pure_fslMul (pure_is_in_ico _ _ _)
+          apply pure_fslMul (pure_fslNot pure_fslEquals)
+          apply pure_fslMul pure_fslReal
+          exact pure_fslMax pure_fslEquals pure_fslEquals
+        nth_rw 2 [fslSepMul_eq_fslTrue_fslMul_of_pure]
+        swap
+        · exact pure_fslMul (pure_is_in_ico _ _ _) pure_fslReal
+        apply fslSepMul_mono le_rfl
+        nth_rw 6 [fslMul_comm]; nth_rw 2 [← fslMul_assoc]
+        nth_rw 2 [fslMul_assoc]; nth_rw 4 [fslMul_comm]; nth_rw 2 [← fslMul_assoc]
+        nth_rw 1 [fslMul_assoc]; nth_rw 3 [fslMul_comm]
+        simp only [← fslMul_assoc]
+        apply fslMul_mono le_rfl
+        simp only [conservative_equals, conservative_not, conservative_max, conservative_pointsTo,
+          conservative_mul, conservative_min, conservative_sup]
+        rw [conservative_entail]
+        intro s ⟨h_ico, h_neq, h_12, h_pt⟩
+        simp only [is_in_ico, slExists_apply, slEquals, const, var, Subtype.exists, Set.mem_Ico,
+            exists_prop] at h_ico
+        obtain ⟨i, ⟨h_il, h_iu⟩, h_i⟩ := h_ico
+        simp only [slNot, slEquals, var, const] at h_neq
+        simp only [slPointsTo, add, var] at h_pt
+        obtain ⟨l, h_l, h_heap⟩ := h_pt
+        apply And.intro
+        · simp only [is_in_ico, slExists_apply, slEquals, const, var, Subtype.exists, Set.mem_Ico,
+            exists_prop]
+          use i
+          apply And.intro (And.intro ?_ h_iu) h_i
+          rw [← Int.zero_add 1, Int.add_one_le_iff]
+          apply lt_of_le_of_ne h_il
+          qify
+          rw [h_i]
+          exact (Ne.symm h_neq)
+        · rw [slExists_apply]
+          have : ∃ n : ℕ, n = i := by {
+            use i.toNat
+            exact Int.toNat_of_nonneg h_il
+          }
+          obtain ⟨n, h_n⟩ := this
+          use n
+          apply And.intro
+          · simp only [slEquals, var, const]
+            rw [← h_i, ← h_n]
+            norm_cast
+          · right
+            cases h_12
+            case inl h_1 =>
+              left
+              simp only [slPointsTo, add, var, const]
+              use l
+              apply And.intro
+              · rw [h_l, ← h_i, ← h_n]
+                norm_cast
+              · simp only [slEquals, var, const] at h_1
+                rw [h_heap, h_1]
+            case inr h_2 =>
+              right
+              simp only [slPointsTo, add, var, const]
+              use l
+              apply And.intro
+              · rw [h_l, ← h_i, ← h_n]
+                norm_cast
+              · simp only [slEquals, var, const] at h_2
+                rw [h_heap, h_2]
 
 theorem channel_sound₃ (y : ℕ) (p : unitInterval) :
     ⊢ [[rInv y]]

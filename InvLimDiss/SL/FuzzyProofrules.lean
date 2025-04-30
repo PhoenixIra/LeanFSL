@@ -144,6 +144,18 @@ theorem fslMin_self (P : StateRV Var) :
   · rw [le_fslMin_iff]
     exact And.intro le_rfl le_rfl
 
+theorem fslMax_of_le (P Q : StateRV Var) (h : P ≤ Q) :
+    `[fsl| [[P]] ⊔ [[Q]]] = Q := by
+  funext s
+  rw [fslMax, Pi.sup_apply]
+  exact max_eq_right (h s)
+
+theorem fslMin_of_le (P Q : StateRV Var) (h : Q ≤ P) :
+    `[fsl| [[P]] ⊓ [[Q]]] = Q := by
+  funext s
+  rw [fslMin, Pi.inf_apply]
+  exact inf_eq_right.mpr (h s)
+
 theorem fslMin_fslMax_right (P Q R : StateRV Var) :
     `[fsl| ([[P]] ⊔ [[Q]]) ⊓ [[R]]] = `[fsl| ([[P]] ⊓ [[R]]) ⊔ ([[Q]] ⊓ [[R]])] := by
   funext s
@@ -1125,9 +1137,23 @@ theorem pure_fslReal : pure `[fsl| <e> ] := by
   intro s heap₁ heap₂
   simp only [fslReal]
 
+theorem pure_fslNot (h_P : pure P) : pure `[fsl| ~[[P]]] := by
+  intro s heap₁ heap₂
+  simp only [fslNot, h_P s heap₁ heap₂]
+
 theorem pure_fslMul (h_P : pure P) (h_Q : pure Q) : pure `[fsl| [[P]] ⬝ [[Q]]] := by
   intro s heap₁ heap₂
   simp only [fslMul, h_P s heap₁ heap₂, h_Q s heap₁ heap₂]
+
+theorem pure_fslMin (h_P : pure P) (h_Q : pure Q) : pure `[fsl| [[P]] ⊓ [[Q]]] := by
+  intro s heap₁ heap₂
+  rw [fslMin, Pi.inf_apply, Pi.inf_apply]
+  rw [h_P s heap₁ heap₂, h_Q s heap₁ heap₂]
+
+theorem pure_fslMax (h_P : pure P) (h_Q : pure Q) : pure `[fsl| [[P]] ⊔ [[Q]]] := by
+  intro s heap₁ heap₂
+  rw [fslMax, Pi.sup_apply, Pi.sup_apply]
+  rw [h_P s heap₁ heap₂, h_Q s heap₁ heap₂]
 
 
 theorem fslMul_fslSepMul_of_pure {P Q R : StateRV Var} (h : pure P) :

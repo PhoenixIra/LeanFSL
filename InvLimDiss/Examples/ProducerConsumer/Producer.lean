@@ -33,7 +33,6 @@ theorem producer_sound₂ (y : ℕ) :
     add (var "z1") (var "y1") *≔ var "x1"
     ⦃ ⁅is_in_ico "y1" 0 ↑y⁆ ⦄ := by
   apply safeTuple_atom
-  swap
   · simp only [Atom.atomicProgram]
   · apply safeTuple_monotonicty
       `[fsl| (S (q : ℚ). add (var "z1") (var "y1") ↦ q)

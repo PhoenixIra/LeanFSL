@@ -41,7 +41,7 @@ noncomputable def consumer : Program String :=
       else
         "l" ≔ inc (var "l")
       fi;
-      "y2" ≔ dec <| var "y2"
+      "y3" ≔ dec <| var "y3"
     fi
   fi]
 
@@ -179,6 +179,19 @@ theorem is_in_ico_le_up (v : String) (l : ℤ) {y y' : ℤ} (h : y ≤ y') :
   apply And.intro ?_ h_eq
   apply And.intro h_l
   exact lt_of_lt_of_le h_u h
+
+theorem is_in_ico_le_down (v : String) (l l' : ℤ) {u : ℤ} (h : l ≤ l') :
+    (is_in_ico v l' u) ⊢ (is_in_ico v l u) := by
+  intro s h_ico
+  simp only [is_in_ico, slExists_apply, slEquals, const, var, Subtype.exists, Set.mem_Ico,
+    exists_prop] at h_ico
+  simp only [is_in_ico, slExists_apply, slEquals, const, var, Subtype.exists, Set.mem_Ico,
+    exists_prop]
+  obtain ⟨i, ⟨h_l, h_u⟩, h_eq⟩ := h_ico
+  use i
+  apply And.intro ?_ h_eq
+  apply And.intro ?_ h_u
+  apply le_trans h h_l
 
 theorem is_in_ico_eq_or_last (v : String) {l u : ℤ} (h : l ≤ u) :
     is_in_ico v l (u+1) = `[sl| [[is_in_ico v l u]] ∨ (var v === const u)] := by

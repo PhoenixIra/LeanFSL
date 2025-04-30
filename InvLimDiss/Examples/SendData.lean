@@ -68,6 +68,7 @@ theorem sendData_left_proof :
   · exact le_rfl
   apply safeTuple_probabilisticBranching
   · apply safeTuple_atom
+    · simp only [Atom.atomicProgram]
     · apply safeTuple_monotonicty
        `[fsl| (S (q : ℚ). var "r" ↦ q)
         ⋆ (var "r" ↦ const 0 -⋆ fTrue ⋆ ((var "r" ↦ const 0) ⊔ (var "r" ↦ const (-1))))]
@@ -91,7 +92,6 @@ theorem sendData_left_proof :
           · exact le_rfl
       · exact le_rfl
       apply safeTuple_mutate
-    · simp only [Atom.atomicProgram]
   · apply safeTuple_monotonicty
       `[fsl| (S (q : ℚ). var "r" ↦ q) ⋆ (var "r" ↦ const 1 -⋆ fTrue)]
       `[fsl| fTrue]
@@ -105,6 +105,7 @@ theorem sendData_right_first_proof :
     "y" ≔* var "r"
     ⦃((var "y") === (const 0)) ⊔ ((var "y") === (const (-1)))⦄ := by
   apply safeTuple_atom
+  · simp only [Atom.atomicProgram]
   · apply safeTuple_monotonicty
       `[fsl|S (q : ℚ). var "r" ↦ q ⋆ (var "r" ↦ q -⋆
           (((var "y" === const 0) ⊔ var "y" === const (-1))
@@ -147,7 +148,6 @@ theorem sendData_right_first_proof :
     · apply safeTuple_lookup
       rw [varRV_of_fslEmp]
       trivial
-  · simp only [Atom.atomicProgram]
 
 theorem sendData_right_loop_body_proof :
     ⊢ (var "r" ↦ const 0) ⊔ (var "r" ↦ const (-1))
@@ -155,6 +155,7 @@ theorem sendData_right_loop_body_proof :
     "y" ≔* var "r"
     ⦃(var "y" === const 0) ⊔ var "y" === const (-1) ⦄ := by
   apply safeTuple_atom
+  · simp only [Atom.atomicProgram]
   · apply safeTuple_monotonicty
       `[fsl|S (q : ℚ). var "r" ↦ q ⋆ (var "r" ↦ q -⋆
           (((var "y" === const 0) ⊔ var "y" === const (-1))
@@ -206,7 +207,6 @@ theorem sendData_right_loop_body_proof :
     · apply safeTuple_lookup
       rw [varRV_of_fslEmp]
       trivial
-  · simp only [Atom.atomicProgram]
 
 theorem sendData_right_proof :
     ⊢ (var "r" ↦ const 0) ⊔ (var "r" ↦ const (-1))
