@@ -28,12 +28,12 @@ theorem init_sound (y : ℕ) (p : unitInterval) :
   · simp only [fslSubst_of_fslSepMul]
     apply fslSepMul_mono
     · unfold post_init
-      simp? [fslSubst_of_fslSepMul, fslSubst_of_fslTrue, fslSubst_of_fslMax, fslSubst_of_fslMul,
-        fslSubst_of_fslMin, fslSubst_of_fslIverson, substProp_of_slExp, substBool_of_leq,
-        substVal_of_const, ne_eq, String.reduceEq, not_false_eq_true, substVal_of_var_neq,
-        substBool_of_lt, fslSubst_of_fslReal, substProp_of_exp, substProp_of_constP,
-        substVal_of_inc, fslSubst_of_fslNot, substVal_of_var, fslSubst_of_fslEquals,
-        substVal_of_sub, substVal_of_dec, inc_dec_ident, substProp_ico_neq, substProp_ico_eq_dec_upper]
+      simp only [Int.reduceNeg, fslSubst_of_fslSepMul, fslSubst_of_fslIverson, ne_eq,
+        String.reduceEq, not_false_eq_true, substProp_ico_neq, fslSubst_of_fslMax,
+        fslSubst_of_fslMul, fslSubst_of_fslReal, substProp_of_exp, substProp_of_constP,
+        substVal_of_inc, substVal_of_var_neq, fslSubst_of_fslMin, fslSubst_of_fslNot,
+        substProp_of_slExp, substBool_of_leq, substVal_of_const, fslSubst_of_fslEquals,
+        substVal_of_sub, substVal_of_dec, substVal_of_var, inc_dec_ident]
       nth_rw 1 [← fslReal_fslSepMul_fslTrue, fslSepMul_comm]
       apply fslSepMul_mono
       · rw [substProp_ico_eq_dec_upper "y1" (-1 : ℤ) y]

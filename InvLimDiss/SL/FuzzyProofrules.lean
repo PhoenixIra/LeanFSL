@@ -772,6 +772,11 @@ theorem fslSepMul_fslMax_distr (P Q R : StateRV Var) :
         right
         rfl
 
+theorem fslMax_fslSepMul_distr (P Q R : StateRV Var) :
+    `[fsl| ([[Q]] ⊔ [[R]]) ⋆ [[P]]] = `[fsl| ([[Q]] ⋆ [[P]]) ⊔ ([[R]] ⋆ [[P]])] := by
+  rw [fslSepMul_comm, fslSepMul_fslMax_distr]
+  rw [fslSepMul_comm]; nth_rw 2 [fslSepMul_comm]
+
 theorem fslSepMul_fslAdd_subdistr (P Q R : StateRV Var) :
     `[fsl| [[P]] ⋆ ([[Q]] + [[R]])] ⊢ `[fsl| ([[P]] ⋆ [[Q]]) + ([[P]] ⋆ [[R]])] := by
   intro s
@@ -853,6 +858,12 @@ theorem fslSepMul_fslSup_distr (P : StateRV Var) (Q : α → StateRV Var) :
       rw [fslSup_apply, le_iSup_iff]
       intro _ h
       exact le_trans le_rfl (h x)
+
+theorem fslSup_fslSepMul_distr (P : StateRV Var) (Q : α → StateRV Var) :
+    `[fsl| (S (a : α). [[Q a]]) ⋆ [[P]] ] = `[fsl| S (a : α). [[Q a]] ⋆ [[P]]] := by
+  rw[fslSepMul_comm]
+  rw [fslSepMul_fslSup_distr _ _]
+  conv => left; right; intro a; rw [fslSepMul_comm]
 
 theorem fslSepMul_fslInf_subdistr (P : StateRV Var) (Q : α → StateRV Var) :
     `[fsl| [[P]] ⋆ I (a : α). [[Q a]] ⊢ I (a : α). [[P]] ⋆ [[Q a]]] := by

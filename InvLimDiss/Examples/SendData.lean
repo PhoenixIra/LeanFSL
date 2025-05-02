@@ -122,7 +122,7 @@ theorem sendData_right_first_proof :
         rw [substVal_of_var, substVal_of_const, substVal_of_const, substVal_of_var_neq (ne_of_beq_false rfl)]
         apply fslSepMul_mono
         · unfold const
-          rw [fslEquals_rfl, fslMax_fslTrue]
+          rw [fslEquals_rfl, fslTrue_fslMax]
           exact le_rfl
         · apply le_fslMax
           left
@@ -216,6 +216,7 @@ theorem sendData_right_proof :
   apply safeTuple_seq `[fsl| ((var "y") === (const 0)) ⊔ ((var "y") === (const (-1)))]
   · exact sendData_right_first_proof
   · apply safeTuple_while `[fsl| ((var "y") === (const 0)) ⊔ ((var "y") === (const (-1)))]
+    swap
     · apply sendData_right_loop_body_proof
     · rw [entailment_iff_pi_le, fslMax_le_iff]
       apply And.intro

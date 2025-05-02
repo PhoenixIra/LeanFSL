@@ -687,7 +687,6 @@ theorem channel_sound (y : ℕ) (p : unitInterval) :
     simp only [Int.reduceNeg, fslTrue]
     exact unitInterval.le_one'
   apply safeTuple_while `[fsl| ⁅is_in_ico "y2" 0 y⁆ ⬝ <exp (constP p) (inc $ var "y2")>]
-  swap
   · rw [entailment_iff_pi_le, fslMax_le_iff]
     apply And.intro
     · apply le_fslMax

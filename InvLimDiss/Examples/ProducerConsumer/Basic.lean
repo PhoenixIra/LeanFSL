@@ -49,7 +49,6 @@ noncomputable def producerConsumer (y : ℕ) (p : unitInterval) : Program String
   [Prog| [[init y]]; ([[producer]] || [[channel p]] || [[consumer]])]
 
 
-
 open CFSL FSL SL
 
 noncomputable def is_in_ico (v : String) (lower upper : ℤ) : StateProp String :=
@@ -601,4 +600,68 @@ noncomputable def rInv2_wo (y : ℕ) (v : String) : StateRV String :=
 noncomputable def rInv (y : ℕ) : StateRV String :=
   `[fsl| [[rInv1 y]] ⋆ [[rInv2 y]]]
 
-theorem rInv_subset : varRV (rInv y) ⊆ {"z1", "z2"} := by sorry
+theorem rInv_subset : varRV (rInv y) ⊆ {"z1", "z2"} := by
+  rw [rInv]
+  apply subset_trans varRV_of_fslSepMul
+  apply Set.union_subset
+  · rw [rInv1]
+    apply subset_trans varRV_of_fslBigSepMul
+    intro a ⟨i, h_i, h⟩
+    apply Set.mem_of_subset_of_mem ?_ h; clear h h_i
+    apply subset_trans varRV_of_fslMax
+    apply Set.union_subset
+    · apply subset_trans varRV_of_fslPointsTo
+      apply Set.union_subset
+      · apply subset_trans varValue_of_add
+        rw [varValue_of_var, varValue_of_const]
+        simp only [Set.union_empty, Set.singleton_subset_iff, Set.mem_insert_iff,
+          Set.mem_singleton_iff, String.reduceEq, or_false]
+      · rw [varValue_of_const]
+        exact Set.empty_subset {"z1", "z2"}
+    · apply subset_trans varRV_of_fslMax
+      apply Set.union_subset
+      · apply subset_trans varRV_of_fslPointsTo
+        apply Set.union_subset
+        · apply subset_trans varValue_of_add
+          rw [varValue_of_var, varValue_of_const]
+          simp only [Set.union_empty, Set.singleton_subset_iff, Set.mem_insert_iff,
+            Set.mem_singleton_iff, String.reduceEq, or_false]
+        · rw [varValue_of_const]
+          exact Set.empty_subset {"z1", "z2"}
+      · apply subset_trans varRV_of_fslPointsTo
+        apply Set.union_subset
+        · apply subset_trans varValue_of_add
+          rw [varValue_of_var, varValue_of_const]
+          simp only [Set.union_empty, Set.singleton_subset_iff, Set.mem_insert_iff,
+            Set.mem_singleton_iff, String.reduceEq, or_false]
+        · rw [varValue_of_const]
+          exact Set.empty_subset {"z1", "z2"}
+  · rw [rInv2]
+    apply subset_trans varRV_of_fslBigSepMul
+    intro a ⟨i, h_i, h⟩
+    apply Set.mem_of_subset_of_mem ?_ h; clear h h_i
+    apply subset_trans varRV_of_fslMax
+    apply Set.union_subset
+    · apply subset_trans varRV_of_fslPointsTo
+      apply Set.union_subset
+      · apply subset_trans varValue_of_add
+        rw [varValue_of_var, varValue_of_const]
+        simp only [Set.union_empty, Set.subset_insert]
+      · rw [varValue_of_const]
+        exact Set.empty_subset {"z1", "z2"}
+    · apply subset_trans varRV_of_fslMax
+      apply Set.union_subset
+      · apply subset_trans varRV_of_fslPointsTo
+        apply Set.union_subset
+        · apply subset_trans varValue_of_add
+          rw [varValue_of_var, varValue_of_const]
+          simp only [Set.union_empty, Set.subset_insert]
+        · rw [varValue_of_const]
+          exact Set.empty_subset {"z1", "z2"}
+      · apply subset_trans varRV_of_fslPointsTo
+        apply Set.union_subset
+        · apply subset_trans varValue_of_add
+          rw [varValue_of_var, varValue_of_const]
+          simp only [Set.union_empty, Set.subset_insert]
+        · rw [varValue_of_const]
+          exact Set.empty_subset {"z1", "z2"}

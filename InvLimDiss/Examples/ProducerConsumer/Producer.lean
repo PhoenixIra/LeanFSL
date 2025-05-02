@@ -289,7 +289,6 @@ theorem producer_sound (y : ℕ) :
     simp only [Int.reduceNeg, fslTrue]
     exact unitInterval.le_one'
   apply safeTuple_while `[fsl| ⁅is_in_ico "y1" 0 y⁆]
-  swap
   · intro s
     rw [fslMax, Pi.sup_apply]
     cases eq_or_ne (s.stack "y1") (-1)
