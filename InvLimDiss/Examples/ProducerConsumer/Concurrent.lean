@@ -98,24 +98,214 @@ theorem init_sound (y : ℕ) (p : unitInterval) :
     apply safeTuple_assign
     simp only [varRV_of_fslEmp, Set.mem_empty_iff_false, not_false_eq_true]
 
+theorem varProg_of_producer : varProg producer ⊆ {"z1", "y1", "x1"} := by
+  simp only [varProg, producer]
+  apply Set.union_subset
+  · apply subset_trans varBool_of_leq
+    rw [varValue_of_const, varValue_of_var]
+    simp
+  apply Set.union_subset
+  apply Set.union_subset
+  apply Set.union_subset
+  · rw [varProb_of_half]
+    exact Set.empty_subset _
+  · rw [varValue_of_const]
+    simp
+  · rw [varValue_of_const]
+    simp
+  apply Set.union_subset
+  · apply subset_trans (Set.union_subset_union varValue_of_add subset_rfl)
+    rw [varValue_of_var, varValue_of_var, varValue_of_var]
+    rintro v ((rfl | rfl) | rfl)
+    <;> decide
+  · rw [varValue_of_dec, varValue_of_var]
+    rintro v (rfl | rfl)
+    <;> decide
+
+theorem varProg_of_channel : varProg (channel p) ⊆ {"z1", "z2", "y2", "x2"} := by
+  simp only [varProg, channel]
+  apply Set.union_subset
+  · apply subset_trans varBool_of_leq
+    rw [varValue_of_const, varValue_of_var]
+    simp
+  apply Set.union_subset
+  · apply subset_trans (Set.union_subset_union le_rfl varValue_of_add)
+    rw [varValue_of_var, varValue_of_var]
+    rintro a (rfl | rfl | rfl)
+    <;> decide
+  apply Set.union_subset
+  · rw [Set.union_empty]
+    apply subset_trans varBool_of_eq
+    rw [varValue_of_var, varValue_of_const]
+    simp
+  apply Set.union_subset
+  apply Set.union_subset
+  apply Set.union_subset
+  · rw [varProb_of_constP]
+    exact Set.empty_subset _
+  apply Set.union_subset
+  · apply subset_trans varValue_of_add
+    rw [varValue_of_var, varValue_of_var]
+    rintro v (rfl | rfl)
+    <;> decide
+  · rw [varValue_of_var]
+    rintro v rfl
+    decide
+  apply Set.union_subset
+  · apply subset_trans varValue_of_add
+    rw [varValue_of_var, varValue_of_var]
+    rintro v ( rfl | rfl)
+    <;> decide
+  · rw [varValue_of_const]
+    exact Set.empty_subset _
+  · rw [varValue_of_dec, varValue_of_var]
+    rintro v (rfl | rfl)
+    <;> decide
+
+theorem varProg_of_consumer : varProg consumer ⊆ {"z2", "y3", "x3", "l"} := by
+  simp only [varProg, consumer]
+  apply Set.union_subset
+  · apply subset_trans varBool_of_leq
+    rw [varValue_of_const, varValue_of_var]
+    simp
+  apply Set.union_subset
+  apply Set.union_subset
+  · rintro v rfl
+    decide
+  · apply subset_trans varValue_of_add
+    rw [varValue_of_var, varValue_of_var]
+    rintro v (rfl | rfl)
+    <;> decide
+  apply Set.union_subset
+  · rw [Set.union_empty]
+    apply subset_trans varBool_of_eq
+    rw [varValue_of_var, varValue_of_const]
+    simp
+  apply Set.union_subset
+  apply Set.union_subset
+  · rw [Set.union_empty]
+    apply subset_trans varBool_of_eq
+    rw [varValue_of_var, varValue_of_const]
+    simp
+  · rw [varValue_of_inc, varValue_of_var]
+    rintro v (rfl | rfl)
+    <;> decide
+  · rw [varValue_of_dec, varValue_of_var]
+    rintro v (rfl | rfl)
+    <;> decide
+
 theorem var_disjoint₁ (y : ℕ) (p : unitInterval) :
     wrtProg producer ∩
       (varProg (channel p) ∪ varProg consumer ∪ varRV `[fsl| fTrue ]
       ∪ varRV `[fsl| var "l" === const ↑y ] ∪ varRV (rInv y))
     = ∅ := by
-  sorry
+  simp only [producer, wrtProg, Set.union_self, Set.union_singleton, insert_emptyc_eq]
+  have : (varProg (channel p) ∪ varProg consumer ∪ varRV `[fsl| fTrue ]
+      ∪ varRV `[fsl| var "l" === const ↑y ] ∪ varRV (rInv y))
+      ⊆ {"z1", "z2", "y2", "y3", "x2", "x3", "l"} := by {
+    apply Set.union_subset
+    apply Set.union_subset
+    apply Set.union_subset
+    apply Set.union_subset
+    · apply subset_trans varProg_of_channel
+      simp
+    · apply subset_trans varProg_of_consumer
+      rintro a (rfl | rfl | rfl | rfl)
+      <;> decide
+    · rw [varRV_of_fslTrue]
+      exact Set.empty_subset _
+    · apply subset_trans varRV_of_fslEquals
+      apply Set.union_subset
+      · rw [varValue_of_var]
+        intro a h
+        rw [h]
+        decide
+      · rw [varValue_of_const]
+        exact Set.empty_subset _
+    · apply subset_trans rInv_subset
+      rintro a (rfl | rfl)
+      <;> decide
+  }
+  rw [← Set.subset_empty_iff]
+  apply subset_trans (Set.inter_subset_inter_right _ this); clear this
+  rw [← Set.disjoint_iff]
+  rw [Set.disjoint_left]
+  rintro v (rfl | rfl)
+  <;> decide
 
 theorem var_disjoint₂ (y : ℕ) (p : unitInterval) :
     wrtProg (channel p) ∩
       (varProg producer ∪ varProg consumer ∪ varRV `[fsl| fTrue ]
       ∪ varRV `[fsl| var "l" === const ↑y ] ∪ varRV (rInv y))
-    = ∅ := sorry
+    = ∅ := by
+  simp only [channel, wrtProg, Set.union_self, Set.union_singleton, insert_emptyc_eq]
+  have : (varProg producer ∪ varProg consumer ∪ varRV `[fsl| fTrue ]
+      ∪ varRV `[fsl| var "l" === const ↑y ] ∪ varRV (rInv y))
+      ⊆ {"z1", "z2", "y1", "y3", "x1", "x3", "l"} := by {
+    apply Set.union_subset
+    apply Set.union_subset
+    apply Set.union_subset
+    apply Set.union_subset
+    · apply subset_trans varProg_of_producer
+      rintro v (rfl | rfl | rfl)
+      <;> decide
+    · apply subset_trans varProg_of_consumer
+      rintro a (rfl | rfl | rfl | rfl)
+      <;> decide
+    · rw [varRV_of_fslTrue]
+      exact Set.empty_subset _
+    · apply subset_trans varRV_of_fslEquals
+      apply Set.union_subset
+      · rw [varValue_of_var]
+        rintro a rfl
+        decide
+      · rw [varValue_of_const]
+        exact Set.empty_subset _
+    · apply subset_trans rInv_subset
+      rintro a (rfl | rfl)
+      <;> decide
+  }
+  rw [← Set.subset_empty_iff]
+  apply subset_trans (Set.inter_subset_inter_right _ this); clear this
+  rw [← Set.disjoint_iff]
+  rw [Set.disjoint_left]
+  rintro v (rfl | rfl)
+  <;> decide
 
 theorem var_disjoint₃ (y : ℕ) (p : unitInterval) :
     wrtProg consumer ∩
       (varProg producer ∪ varProg (channel p) ∪ varRV `[fsl| fTrue ]
       ∪ varRV `[fsl| fTrue ] ∪ varRV (rInv y))
-    = ∅ := sorry
+    = ∅ := by
+  simp only [consumer, wrtProg, Set.union_self, Set.union_singleton, insert_emptyc_eq]
+  have : (varProg producer ∪ varProg (channel p) ∪ varRV `[fsl| fTrue ]
+      ∪ varRV `[fsl| fTrue ] ∪ varRV (rInv y))
+      ⊆ {"z1", "z2", "y1", "y2", "x1", "x2"} := by {
+    apply Set.union_subset
+    apply Set.union_subset
+    apply Set.union_subset
+    apply Set.union_subset
+    · apply subset_trans varProg_of_producer
+      rintro v (rfl | rfl | rfl)
+      <;> decide
+    · apply subset_trans varProg_of_channel
+      rintro a (rfl | rfl | rfl | rfl)
+      <;> decide
+    · rw [varRV_of_fslTrue]
+      exact Set.empty_subset _
+    · rw [varRV_of_fslTrue]
+      exact Set.empty_subset _
+    · apply subset_trans rInv_subset
+      rintro a (rfl | rfl)
+      <;> decide
+  }
+  rw [← Set.subset_empty_iff]
+  apply subset_trans (Set.inter_subset_inter_right _ this); clear this
+  simp only [Set.union_insert, Set.union_singleton, insert_emptyc_eq]
+  rw [← Set.disjoint_iff]
+  rw [Set.disjoint_left]
+  rintro v (rfl | rfl | rfl)
+  <;> decide
 
 theorem producerConsumer_sound (y : ℕ) (p : unitInterval) :
     ⊢ emp
