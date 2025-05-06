@@ -63,7 +63,7 @@ theorem tsum_probChoice_of_deterministic (s : State Var) (inner : Program Var �
         | inr h_c₂ =>
           rw [dif_neg h_c₂, if_neg h_c₂, Set.union_singleton]
           simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, reachState.prog, reachState.state]
-          have : (⟨⟨c₁, s⟩,h_c₁⟩ : reachState Var) ≠ ⟨⟨c₂, s⟩, h_c₂⟩ := by simp [Prod.mk.inj_iff, Ne.symm h_ne]
+          have : (⟨⟨c₁, s⟩,h_c₁⟩ : reachState Var) ≠ ⟨⟨c₂, s⟩, h_c₂⟩ := by simp [Prod.mk_inj, Ne.symm h_ne]
           rw [tsum_pair (fun cs => semantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) this.symm]
           unfold programSmallStepSemantics probabilisticBranchingSmallStepSemantics
           simp only [and_self, ↓reduceIte, and_true, ite_mul, one_mul, true_and]

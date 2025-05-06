@@ -199,7 +199,7 @@ theorem var_disjoint₁ (y : ℕ) (p : unitInterval) :
       (varProg (channel p) ∪ varProg consumer ∪ varRV `[fsl| fTrue ]
       ∪ varRV `[fsl| var "l" === const ↑y ] ∪ varRV (rInv y))
     = ∅ := by
-  simp only [producer, wrtProg, Set.union_self, Set.union_singleton, insert_emptyc_eq]
+  simp only [producer, wrtProg, Set.union_self, Set.union_singleton, insert_empty_eq]
   have : (varProg (channel p) ∪ varProg consumer ∪ varRV `[fsl| fTrue ]
       ∪ varRV `[fsl| var "l" === const ↑y ] ∪ varRV (rInv y))
       ⊆ {"z1", "z2", "y2", "y3", "x2", "x3", "l"} := by {
@@ -238,7 +238,7 @@ theorem var_disjoint₂ (y : ℕ) (p : unitInterval) :
       (varProg producer ∪ varProg consumer ∪ varRV `[fsl| fTrue ]
       ∪ varRV `[fsl| var "l" === const ↑y ] ∪ varRV (rInv y))
     = ∅ := by
-  simp only [channel, wrtProg, Set.union_self, Set.union_singleton, insert_emptyc_eq]
+  simp only [channel, wrtProg, Set.union_self, Set.union_singleton, insert_empty_eq]
   have : (varProg producer ∪ varProg consumer ∪ varRV `[fsl| fTrue ]
       ∪ varRV `[fsl| var "l" === const ↑y ] ∪ varRV (rInv y))
       ⊆ {"z1", "z2", "y1", "y3", "x1", "x3", "l"} := by {
@@ -277,7 +277,7 @@ theorem var_disjoint₃ (y : ℕ) (p : unitInterval) :
       (varProg producer ∪ varProg (channel p) ∪ varRV `[fsl| fTrue ]
       ∪ varRV `[fsl| fTrue ] ∪ varRV (rInv y))
     = ∅ := by
-  simp only [consumer, wrtProg, Set.union_self, Set.union_singleton, insert_emptyc_eq]
+  simp only [consumer, wrtProg, Set.union_self, Set.union_singleton, insert_empty_eq]
   have : (varProg producer ∪ varProg (channel p) ∪ varRV `[fsl| fTrue ]
       ∪ varRV `[fsl| fTrue ] ∪ varRV (rInv y))
       ⊆ {"z1", "z2", "y1", "y2", "x1", "x2"} := by {
@@ -301,7 +301,7 @@ theorem var_disjoint₃ (y : ℕ) (p : unitInterval) :
   }
   rw [← Set.subset_empty_iff]
   apply subset_trans (Set.inter_subset_inter_right _ this); clear this
-  simp only [Set.union_insert, Set.union_singleton, insert_emptyc_eq]
+  simp only [Set.union_insert, Set.union_singleton, insert_empty_eq]
   rw [← Set.disjoint_iff]
   rw [Set.disjoint_left]
   rintro v (rfl | rfl | rfl)

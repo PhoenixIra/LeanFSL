@@ -369,8 +369,14 @@ theorem unit_mul_div {i j k : I} : i * (j / k) ≤ i * j / k := by
     exact mul_le_right
   case pos h_kj h_ijk =>
     rw [not_lt, Subtype.mk_le_mk] at h_kj
+    rw [Subtype.mk_lt_mk, coe_mul] at h_ijk
     rw [← mul_div]
-    rw [← one_le_div (lt_of_le_of_lt nonneg' h_ijk)] at h_kj
+    -- rw [← one_le_div (lt_of_le_of_lt nonneg' h_ijk)] at h_kj
+    rw [← one_le_div ?_] at h_kj
+    swap
+    · apply lt_of_le_of_lt ?_ h_ijk
+      rw [← coe_mul]
+      exact nonneg'
     apply le_trans ?_ <| mul_le_mul le_rfl h_kj zero_le_one nonneg'
     simp only [mul_one, le_refl]
   case neg => exact le_one'
@@ -717,7 +723,7 @@ theorem truncatedAdd_zero (i : I) : i + 0 = i := by
 @[simp]
 theorem one_truncatedAdd (i : I) : 1 + i = 1 := by
   rw [Subtype.mk_eq_mk, coe_truncatedAdd]
-  simp only [coe_one, min_def, le_add_iff_nonneg_right, ite_eq_left_iff, not_le, add_right_eq_self,
+  simp only [coe_one, min_def, le_add_iff_nonneg_right, ite_eq_left_iff, not_le, add_eq_left,
     coe_eq_zero]
   intro h
   exfalso
@@ -726,7 +732,7 @@ theorem one_truncatedAdd (i : I) : 1 + i = 1 := by
 @[simp]
 theorem truncatedAdd_one (i : I) : i + 1 = 1 := by
   rw [Subtype.mk_eq_mk, coe_truncatedAdd]
-  simp only [coe_one, min_def, le_add_iff_nonneg_left, ite_eq_left_iff, not_le, add_left_eq_self,
+  simp only [coe_one, min_def, le_add_iff_nonneg_left, ite_eq_left_iff, not_le, add_eq_left,
     coe_eq_zero]
   intro h
   exfalso
@@ -800,12 +806,14 @@ theorem truncatedAdd_le_truncatedAdd (i₁ i₂ j₁ j₂ : I) (h_i : i₁ ≤ i
   right
   apply add_le_add h_i h_j
 
-noncomputable instance : OrderedAddCommMonoid unitInterval where
+noncomputable instance : AddCommMonoid unitInterval where
   add_assoc := truncatedAdd_assoc
   add_comm := truncatedAdd_comm
   zero_add := zero_truncatedAdd
   add_zero := truncatedAdd_zero
   nsmul := nsmulRec
+
+noncomputable instance : IsOrderedAddMonoid unitInterval where
   add_le_add_left := truncatedAdd_le_truncatedAdd_left
 
 theorem truncatedSub_mem_unitInterval {i j : I} : max 0 ((i:ℝ) - j) ∈ I := by
@@ -905,7 +913,7 @@ theorem iInf_finsetsum_le_finsetsum_iInf_of_antitone [LinearOrder ι] [Nonempty 
     ⨅ (i : ι), ∑ (a ∈ s), c a i ≤ ∑ (a ∈ s), ⨅ (i : ι), c a i := by
   induction s using Finset.induction with
   | empty => simp only [Finset.sum_empty, ciInf_const, le_refl]
-  | insert h_a ih =>
+  | insert _ _ h_a ih =>
     rw [Finset.sum_insert h_a]
     conv => left; right; intro i; rw [Finset.sum_insert h_a]
     apply le_trans

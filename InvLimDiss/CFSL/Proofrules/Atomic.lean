@@ -66,7 +66,7 @@ theorem wrle_atom (h : `[fsl| [[Q]] ⋆ [[resource]] ⊢ wrle [c] ([[P]] ⋆ [[r
   rw[← tsum_subtype_eq_of_support_subset <| support_wrle_of_atom h_atom s P resource]
   rw[← tsum_subtype_eq_of_support_subset <| support_wrle'_of_atom h_atom s P resource]
   apply le_antisymm
-  · apply tsum_mono (isSummable _) (isSummable _)
+  · apply Summable.tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]
     intro cs
     cases eq_or_ne (programSmallStepSemantics c s a cs.val.prog cs.val.state) 0 with
@@ -78,7 +78,7 @@ theorem wrle_atom (h : `[fsl| [[Q]] ⋆ [[resource]] ⊢ wrle [c] ([[P]] ⋆ [[r
       have := cs.prop
       simp only [Set.mem_setOf_eq] at this
       rw [this, wrle_eq_of_term, wrle_eq_of_term, fslSepMul_fslEmp_eq]
-  · apply tsum_mono (isSummable _) (isSummable _)
+  · apply Summable.tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]
     intro cs
     cases eq_or_ne (programSmallStepSemantics c s a cs.val.prog cs.val.state) 0 with

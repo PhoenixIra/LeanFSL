@@ -20,7 +20,7 @@ theorem step_mono (c : Program Var) : Monotone (step c) := by
         use a
       }
   apply sInf_le_of_le this; clear this
-  apply tsum_mono (isSummable _) (isSummable _)
+  apply Summable.tsum_mono (isSummable _) (isSummable _)
   intro cs
   simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state]
   cases eq_or_ne (semantics c s a cs.prog cs.state) 0 with
@@ -54,7 +54,7 @@ theorem step_mono_of_state_of_semantics_support {c : Program Var} {s : State Var
     pick_goal 2
     · apply mul_support_superset_left
       exact tsum_semantics_support_superset
-    apply tsum_mono (isSummable _) (isSummable _)
+    apply Summable.tsum_mono (isSummable _) (isSummable _)
     rintro ⟨⟨⟨c', s'⟩, h_abort⟩, h_semantics⟩
     simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, reachState.prog, reachState.state]
     simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq] at h_semantics

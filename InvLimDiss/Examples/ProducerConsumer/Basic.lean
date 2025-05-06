@@ -378,7 +378,7 @@ theorem ico_fslBigSepMul (n : ℕ) (v : String) {f : ℕ → StateRV String} :
   induction n
   case zero =>
     funext s
-    simp only [fslMin, is_in_ico, Int.Nat.cast_ofNat_Int]
+    simp only [fslMin, is_in_ico, Int.cast_ofNat_Int]
     rw [Pi.inf_apply, Pi.inf_apply]
     simp only [fslIverson, slExists_apply, lt_self_iff_false, not_false_eq_true, Set.Ico_eq_empty,
       Set.isEmpty_coe_sort, IsEmpty.exists_iff, unitInterval.iteOneZero_false, zero_le,

@@ -46,7 +46,7 @@ theorem tsum_skip_support_superset (s : State Var) :
   rw [iteOneZero_eq_zero_def] at h
   simp only [reachState.prog, ne_eq, Set.mem_setOf_eq, reachState.state, true_and, not_and,
     Classical.not_imp, not_not] at h
-  rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk.inj_iff]
+  rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk_inj]
   exact ⟨h.left, h.right.symm⟩
 
 theorem tsum_assign_support_superset (s : State Var) :
@@ -58,7 +58,7 @@ theorem tsum_assign_support_superset (s : State Var) :
   split at h
   case h_1 h_c =>
     simp only [substituteStack, true_and, iteOneZero_eq_zero_def, not_not] at h
-    rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk.inj_iff]
+    rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk_inj]
     exact ⟨h_c, h.symm⟩
   case h_2 _ =>
     simp only [not_true_eq_false] at h
@@ -77,7 +77,7 @@ theorem tsum_mutate_support_superset (s : State Var)
     obtain ⟨l', h_l', h_alloc', h⟩ := h
     rw [h_l] at h_l'
     rw [Nat.cast_inj, PNat.coe_inj] at h_l'
-    rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk.inj_iff, h_l']
+    rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk_inj, h_l']
     exact ⟨h_c, h.symm⟩
   case h_2 _ =>
     simp only [not_exists, true_and, iteOneZero_eq_zero_def, not_and, not_or, not_forall,
@@ -128,7 +128,7 @@ theorem tsum_lookup_support_superset (s : State Var)
     rw [h_l] at h_l'
     rw [Nat.cast_inj, PNat.coe_inj] at h_l'
     rw [h_l', h_alloc, val.injEq] at h_alloc'
-    rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk.inj_iff, h_alloc']
+    rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk_inj, h_alloc']
     exact ⟨h_c, h.symm⟩
   case h_2 _ =>
     simp only [Bool.not_eq_true, true_and, iteOneZero_eq_zero_def, not_and, not_or, not_exists,
@@ -183,7 +183,7 @@ theorem tsum_cas_of_eq_support_superset (s : State Var)
     rw [Nat.cast_inj, PNat.coe_inj] at h_l'
     obtain ⟨_, h⟩ | ⟨h_value', h⟩ := h
     · rw [h_l'] at h
-      rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk.inj_iff]
+      rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk_inj]
       exact ⟨h_c, h.symm⟩
     · rw [h_l', h_alloc, val.injEq] at h_alloc'
       exfalso
@@ -223,7 +223,7 @@ theorem tsum_cas_of_neq_support_superset (s : State Var)
       apply h_ne
       rw [val.injEq]
       exact h_value'
-    · rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk.inj_iff]
+    · rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk_inj]
       exact ⟨h_c, h.symm⟩
   case h_2 _ =>
     simp only [not_exists, true_and, iteOneZero_eq_zero_def, not_and, not_or, not_forall,
@@ -274,7 +274,7 @@ theorem tsum_alloc_support_superset (s : State Var)
     obtain ⟨l', h_l', n', h_n', h_notAlloc, h⟩ := h
     rw [allocation.injEq] at h_l'
     rw [← h_n', Nat.cast_inj] at h_n
-    rw [h_l', h_n.symm, Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk.inj_iff]
+    rw [h_l', h_n.symm, Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk_inj]
     exact ⟨h_c, h.symm⟩
   case h_2 _ =>
     simp only [not_exists, true_and, iteOneZero_eq_zero_def, not_and, not_or, not_forall,
@@ -318,7 +318,7 @@ theorem tsum_free_support_superset (s : State Var)
     obtain ⟨l', h_l', n', h_n', h_alloc', h⟩ := h
     rw [← h_l, Nat.cast_inj, PNat.coe_inj] at h_l'
     rw [← h_n, Nat.cast_inj] at h_n'
-    rw [← h_l', ← h_n', Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk.inj_iff]
+    rw [← h_l', ← h_n', Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk_inj]
     exact ⟨h_c, h.symm⟩
   case h_2 _ =>
     simp only [not_exists, true_and, iteOneZero_eq_zero_def, not_and, not_or, not_forall,
@@ -374,7 +374,7 @@ theorem tsum_probChoice_support_superset (s : State Var) :
     simp only [reachState.prog, ne_eq, Set.mem_setOf_eq] at h_c
     rw [h_c.left, dif_neg cs.prop]
     simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, Set.mem_singleton_iff]
-    rw [Subtype.mk_eq_mk, Prod.mk.inj_iff]
+    rw [Subtype.mk_eq_mk, Prod.mk_inj]
     simp only [h_s, and_self]
   case isFalse h_ne_c =>
     simp only [reachState.prog, ne_eq, Set.mem_setOf_eq, not_and] at h_ne_c
@@ -384,7 +384,7 @@ theorem tsum_probChoice_support_superset (s : State Var) :
       simp only [reachState.prog, ne_eq, Set.mem_setOf_eq] at h_c₁
       rw [h_c₁, dif_neg cs.prop]
       simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, Set.mem_singleton_iff]
-      rw [Subtype.mk_eq_mk, Prod.mk.inj_iff]
+      rw [Subtype.mk_eq_mk, Prod.mk_inj]
       simp only [h_s, and_self]
     case isFalse h_ne_c₁ =>
       simp only [reachState.prog, ne_eq, Set.mem_setOf_eq] at h_ne_c₁
@@ -394,7 +394,7 @@ theorem tsum_probChoice_support_superset (s : State Var) :
         simp only [reachState.prog, ne_eq, Set.mem_setOf_eq] at h_c₂
         rw [h_c₂, dif_neg cs.prop]
         simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, Set.mem_singleton_iff]
-        rw [Subtype.mk_eq_mk, Prod.mk.inj_iff]
+        rw [Subtype.mk_eq_mk, Prod.mk_inj]
         simp only [h_s, and_self]
       case isFalse h_ne_c₂ => simp only [not_true_eq_false] at h
 
@@ -410,7 +410,7 @@ theorem tsum_condChoice_left_support_superset (s : State Var) (h : (e s.stack) =
   simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq]
   obtain ⟨h_s, ⟨_, h'⟩ | ⟨h', _⟩⟩ := h'
   · rw [h', dif_neg cs.prop]
-    rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk.inj_iff]
+    rw [Set.mem_singleton_iff, Subtype.mk_eq_mk, Prod.mk_inj]
     simp only [h_s, and_self]
   · simp only [h, Bool.true_eq_false] at h'
 
@@ -438,7 +438,7 @@ theorem tsum_loop_cont_support_superset (s : State Var) (h : (e s.stack) = true)
   unfold programSmallStepSemantics loopSmallStepSemantics at h'
   simp only [h, not_true_eq_false, and_false, iteOneZero_false, and_true, true_and] at h'
   simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, Set.mem_singleton_iff]
-  rw [Subtype.mk_eq_mk, Prod.mk.inj_iff]
+  rw [Subtype.mk_eq_mk, Prod.mk_inj]
   split at h'
   case h_1 _ => simp only [not_true_eq_false] at h'
   case h_2 =>
@@ -455,7 +455,7 @@ theorem tsum_loop_term_support_superset (s : State Var) (h : (e s.stack) = false
   simp only [reachState.prog, ne_eq, Set.mem_setOf_eq, reachState.state, h, Bool.false_eq_true,
     not_false_eq_true, and_true, true_and, and_false, iteOneZero_false] at h'
   simp only [Set.mem_insert_iff, Set.mem_singleton_iff]
-  rw [Subtype.mk_eq_mk, Prod.mk.inj_iff]
+  rw [Subtype.mk_eq_mk, Prod.mk_inj]
   split at h'
   case h_1 h_c =>
     simp only [iteOneZero_eq_zero_def, not_not] at h'
@@ -473,7 +473,7 @@ theorem tsum_sequential_term_support_superset (s : State Var) :
     iteOneZero_eq_zero_def, Decidable.not_not] at h'
   rw [← h'.right, dif_neg cs.prop]
   simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, Set.mem_singleton_iff]
-  rw [Subtype.mk_eq_mk, Prod.mk.inj_iff]
+  rw [Subtype.mk_eq_mk, Prod.mk_inj]
   exact ⟨rfl, h'.left.symm⟩
 
 theorem tsum_sequential_abort_support_superset (s : State Var) :
@@ -517,7 +517,7 @@ theorem tsum_sequential_cont_support_superset (s : State Var) (inner : Program V
         case isTrue h_c₂ =>
           rw [← h_c₂] at h_cs
           use c₁', cs.state
-          rw [Subtype.mk_eq_mk, Prod.mk.inj_iff]
+          rw [Subtype.mk_eq_mk, Prod.mk_inj]
           use ⟨h_cs, rfl⟩
           simp only [mul_eq_zero, not_or, h_cs] at h'
           apply And.intro
@@ -541,7 +541,7 @@ theorem tsum_concurrent_term_support_superset (s : State Var) :
   simp only [↓reduceIte, reachState.state, ne_eq, Set.mem_setOf_eq, reachState.prog, true_and,
     iteOneZero_eq_zero_def, Decidable.not_not] at h'
   simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, Set.mem_singleton_iff]
-  rw [Subtype.mk_eq_mk, Prod.mk.inj_iff]
+  rw [Subtype.mk_eq_mk, Prod.mk_inj]
   use h'.left, h'.right.symm
 
 theorem tsum_concurrent_abort_left_support_superset (s : State Var) :
@@ -603,7 +603,7 @@ theorem tsum_concurrent_cont_left_support_superset {a : Action}
           use c₁', cs.state
           simp only [reachState.state, ne_eq, Set.mem_setOf_eq]
           apply And.intro
-          · rw [Subtype.mk_eq_mk, Prod.mk.inj_iff, h_cs]
+          · rw [Subtype.mk_eq_mk, Prod.mk_inj, h_cs]
             trivial
           · apply And.intro
             · unfold programSmallStepSemantics
@@ -649,7 +649,7 @@ theorem tsum_concurrent_cont_right_support_superset {a : Action}
           use c₂', cs.state
           simp only [reachState.state, ne_eq, Set.mem_setOf_eq]
           apply And.intro
-          · rw [Subtype.mk_eq_mk, Prod.mk.inj_iff, h_cs]
+          · rw [Subtype.mk_eq_mk, Prod.mk_inj, h_cs]
             trivial
           · apply And.intro
             · unfold programSmallStepSemantics

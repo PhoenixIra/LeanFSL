@@ -9,10 +9,10 @@ package «InvLimDiss» where
   ]
 
 require mathlib from git
-  "https://github.com/leanprover-community/mathlib4.git"@"v4.16.0"
+  "https://github.com/leanprover-community/mathlib4.git"@"v4.19.0"
 
 meta if get_config? env = some "dev" then -- dev is so not everyone has to build it
-require «doc-gen4» from git "https://github.com/leanprover/doc-gen4" @ "v4.16.0"
+require «doc-gen4» from git "https://github.com/leanprover/doc-gen4" @ "v4.19.0"
 
 @[default_target]
 lean_lib «InvLimDiss» where

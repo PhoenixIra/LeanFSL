@@ -32,7 +32,7 @@ theorem bstep_mono (c : Program Var) : Monotone (bstep c) := by
         use a
       }
   apply sInf_le_of_le this; clear this
-  apply tsum_mono (isSummable _) (isSummable _)
+  apply Summable.tsum_mono (isSummable _) (isSummable _)
   intro cs
   simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state]
   cases eq_or_ne (semantics c s a cs.1 cs.2) 0 with
@@ -59,7 +59,7 @@ theorem step_le_bstep {c : Program Var} (h : cp₁ ≤ cp₂):
   apply sInf_le_of_le
   · use a, h_a
   · rw [tsum_subtype' (fun cs => CFSL.semantics _ _ _ _ _ * cp₁ _ _)]
-    apply tsum_mono (isSummable _) (isSummable _)
+    apply Summable.tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]; intro cs
     simp only [Set.indicator, Set.mem_setOf_eq]
     split_ifs
@@ -75,7 +75,7 @@ theorem bstep_le_step {c : Program Var} (h : cp₁ ≤ cp₂) (h_abort : ∀ s, 
   apply sInf_le_of_le
   · use a, h_a
   · rw [tsum_subtype' (fun cs => CFSL.semantics _ _ _ _ _ * cp₂ _ _)]
-    apply tsum_mono (isSummable _) (isSummable _)
+    apply Summable.tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]; intro cs
     simp only [Set.indicator, Set.mem_setOf_eq]
     split_ifs
