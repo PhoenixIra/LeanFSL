@@ -1,7 +1,7 @@
 import Lake
 open Lake DSL
 
-package «InvLimDiss» where
+package «LeanFSL» where
   -- Settings applied to both builds and interactive editing
   leanOptions := #[
     ⟨`pp.unicode.fun, true⟩, -- pretty-prints `fun a ↦ b`
@@ -15,5 +15,5 @@ meta if get_config? env = some "dev" then -- dev is so not everyone has to build
 require «doc-gen4» from git "https://github.com/leanprover/doc-gen4" @ "v4.19.0"
 
 @[default_target]
-lean_lib «InvLimDiss» where
+lean_lib «LeanFSL» where
   -- add any library configuration options here

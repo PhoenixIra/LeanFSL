@@ -1,5 +1,0 @@
-import InvLimDiss.Examples.ProducerConsumer.Basic
-import InvLimDiss.Examples.ProducerConsumer.Channel
-import InvLimDiss.Examples.ProducerConsumer.Concurrent
-import InvLimDiss.Examples.ProducerConsumer.Consumer
-import InvLimDiss.Examples.ProducerConsumer.Producer
