@@ -135,8 +135,8 @@ noncomputable def semanticsNonRec (q : QSLFormula Var Symbols Length)
   match q with
   | QSLFormula.emp' => `[qsl| emp]
   | QSLFormula.pointsTo x y => `[qsl| x ↦ y]
-  | QSLFormula.equals x y => `[qsl| x = y]
-  | QSLFormula.disEquals x y => `[qsl| x ≠ y]
+  | QSLFormula.equals x y => `[qsl| x === y]
+  | QSLFormula.disEquals x y => `[qsl| x =≠= y]
   | QSLFormula.rat r => `[qsl| <r>]
   | QSLFormula.max f g => `[qsl| [[semanticsNonRec f 𝕏]] ⊔ [[semanticsNonRec g 𝕏]]]
   | QSLFormula.add f g => `[qsl| [[semanticsNonRec f 𝕏]] + [[semanticsNonRec g 𝕏]]]
@@ -173,7 +173,7 @@ theorem predicate_chara_mono
   induction (defs p) generalizing s
   <;> simp only [semanticsNonRec, le_refl]
   case max f g ih_f ih_g =>
-    simp only [qslMax, Sup.sup,  max_le_iff]
+    rw [qslMax, Pi.sup_apply, sup_le_iff]
     exact ⟨le_max_of_le_left <| ih_f s, le_max_of_le_right <| ih_g s⟩
   case add f g ih_f ih_g =>
     simp only [qslAdd]
