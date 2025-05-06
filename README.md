@@ -8,7 +8,7 @@ We provide the following:
 3. a framework to transform a subset of fuzzy separation logic into classical separation logic in `LeanFSL.Entailments.FSL2SL.lean` and a counter example for one naïve transformation in `LeanFSL.Entailments.FSL2SLCounter.lean`;
 4. some initial, but unfinished work on a syntax for quantitative separation logic with recursively-defined predicates in `LeanFSL.Entailments.QSLSystem.lean`;
 5. a framework to reason about concurrent and probabilistic programs using fuzzy separation logic in `LeanFSL.CFSL`; and
-6. two examples for the use of CFSL in `LeanFSL.Examples`
+6. two examples for the use of CFSL in `LeanFSL.Examples`.
 
 The main focus of this repository is about concurrent fuzzy separation logic, which is a logic to reason about programs that support concurrency, probabilistic branching and heap-manipulation.
 
