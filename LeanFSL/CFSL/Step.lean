@@ -3,4 +3,7 @@ import LeanFSL.CFSL.Step.Basic
 import LeanFSL.CFSL.Step.Concurrent
 import LeanFSL.CFSL.Step.Defs
 import LeanFSL.CFSL.Step.Flow
+import LeanFSL.CFSL.Step.Framing
+import LeanFSL.CFSL.Step.ReachState
 import LeanFSL.CFSL.Step.Sequential
+import LeanFSL.CFSL.Step.Weighted

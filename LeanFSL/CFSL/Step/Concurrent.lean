@@ -10,14 +10,14 @@ open Syntax Semantics FSL unitInterval Action State HeapValue Classical Function
 
 theorem tsum_concurrent_term_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : reachState Var,
-    (semantics [Prog| ↓ || ↓] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
+    (programSmallStepSemantics [Prog| ↓ || ↓] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
     = inner [Prog| ↓] s := by
   rw [← tsum_subtype_eq_of_support_subset]
   pick_goal 2
   · apply mul_support_superset_left
     exact tsum_concurrent_term_support_superset s
   · rw [tsum_singleton (⟨⟨[Prog| ↓], s⟩, by simp⟩ : reachState Var)
-        (fun cs => semantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2)]
+        (fun cs => programSmallStepSemantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2)]
     unfold programSmallStepSemantics
     simp only [and_self, ↓reduceIte, iteOneZero_true, one_mul]
 
@@ -39,7 +39,7 @@ theorem step_concurrent_term (s : State Var) (inner : Program Var → StateRV Va
 
 theorem tsum_concurrent_abort_left_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : reachState Var,
-    (semantics [Prog| ↯ || [[c]]] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
+    (programSmallStepSemantics [Prog| ↯ || [[c]]] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
     = 0 := by
   rw [← tsum_subtype_eq_of_support_subset]
   pick_goal 2
@@ -64,7 +64,7 @@ theorem step_concurrent_abort_left (s : State Var) (inner : Program Var → Stat
 
 theorem tsum_concurrent_abort_right_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : reachState Var,
-    (semantics [Prog| [[c]] || ↯] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
+    (programSmallStepSemantics [Prog| [[c]] || ↯] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
     = 0 := by
   rw [← tsum_subtype_eq_of_support_subset]
   pick_goal 2
@@ -90,7 +90,7 @@ theorem step_concurrent_abort_right (s : State Var) (inner : Program Var → Sta
 section cont_left
 
 private def inj_left (c₁ c₂ : Program Var) (s : State Var) (a : Action) (inner : Program Var → StateRV Var) :
-  ↑(support (fun cs : reachState Var => semantics c₁ s a cs.prog cs.state
+  ↑(support (fun cs : reachState Var => programSmallStepSemantics c₁ s a cs.prog cs.state
                       * inner ([Prog| [[cs.prog]] || [[c₂]]]) cs.state))
   → @reachState Var :=
   fun cs => match cs with
@@ -109,10 +109,10 @@ private theorem inj_left_injective (c₁ c₂ : Program Var) (s : State Var) (a 
 theorem tsum_concurrent_cont_left (s : State Var) (inner : Program Var → StateRV Var)
     (h_term : c₁ ≠ [Prog| ↓]) (h_abort₁ : c₁ ≠ [Prog| ↯]) (h_abort₂ : c₂ ≠ [Prog| ↯]) :
     (∑' cs : reachState Var,
-    (semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentLeft cs.prog cs.state)
+    (programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentLeft cs.prog cs.state)
       * inner cs.prog cs.state)
     = (∑' cs : reachState Var,
-    (semantics c₁ s a cs.prog cs.state) * inner [Prog| [[cs.prog]] || [[c₂]]] cs.state) := by
+    (programSmallStepSemantics c₁ s a cs.prog cs.state) * inner [Prog| [[cs.prog]] || [[c₂]]] cs.state) := by
   apply tsum_eq_tsum_of_ne_zero_bij (inj_left c₁ c₂ s a inner) (inj_left_injective c₁ c₂ s a inner)
   · apply subset_trans (tsum_concurrent_cont_left_support_superset s inner h_abort₁ h_abort₂)
     rintro ⟨⟨c, s⟩,h⟩ ⟨c₁', _, ⟨rfl, rfl⟩, h_sem, h_inner⟩
@@ -178,7 +178,7 @@ end cont_left
 section cont_right
 
 private def inj_right (c₁ c₂ : Program Var) (s : State Var) (a : Action) (inner : Program Var → StateRV Var) :
-  ↑(support (fun cs : reachState Var => semantics c₂ s a cs.prog cs.state
+  ↑(support (fun cs : reachState Var => programSmallStepSemantics c₂ s a cs.prog cs.state
                       * inner ([Prog| [[c₁]] || [[cs.prog]]]) cs.state))
   → @reachState Var :=
   fun cs => match cs with
@@ -196,10 +196,10 @@ private theorem inj_right_injective (c₁ c₂ : Program Var) (s : State Var) (a
 theorem tsum_concurrent_cont_right (s : State Var) (inner : Program Var → StateRV Var)
     (h_term : c₂ ≠ [Prog| ↓]) (h_abort₁ : c₁ ≠ [Prog| ↯]) (h_abort₂ : c₂ ≠ [Prog| ↯]) :
     (∑' cs : reachState Var,
-    (semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentRight cs.prog cs.state)
+    (programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentRight cs.prog cs.state)
       * inner cs.prog cs.state)
     = (∑' cs : reachState Var,
-    (semantics c₂ s a cs.prog cs.state) * inner [Prog| [[c₁]] || [[cs.prog]]] cs.state) := by
+    (programSmallStepSemantics c₂ s a cs.prog cs.state) * inner [Prog| [[c₁]] || [[cs.prog]]] cs.state) := by
   apply tsum_eq_tsum_of_ne_zero_bij (inj_right c₁ c₂ s a inner) (inj_right_injective c₁ c₂ s a inner)
   · apply subset_trans (tsum_concurrent_cont_right_support_superset s inner h_abort₁ h_abort₂)
     rintro ⟨⟨c, s⟩,h⟩ ⟨c₂', _, ⟨rfl, rfl⟩, h_sem, h_inner⟩
