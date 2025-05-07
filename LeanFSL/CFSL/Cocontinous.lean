@@ -10,7 +10,7 @@ open OmegaCompletePartialOrder FSL Syntax Semantics Bellman State
 
 theorem wrleFinite₂ (c : Program Var) (s : State Var) (a : Action) (h_a : a ∈ enabledAction c s) :
     ∃ i j : unitInterval, ∃ c₁ c₂ : Program Var, ∃ σ₁ σ₂ : State Var, ∀ post : Program Var → StateRV Var,
-    ∑' (cs : reachState Var), semantics c s a cs.prog cs.state * post cs.prog cs.state
+    ∑' (cs : reachState Var), programSmallStepSemantics c s a cs.prog cs.state * post cs.prog cs.state
     = i * post c₁ σ₁ + j * post c₂ σ₂ := by
   induction c generalizing a with
   | terminated => simp only [enabledAction, Set.mem_empty_iff_false] at h_a

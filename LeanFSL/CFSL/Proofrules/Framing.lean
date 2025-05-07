@@ -1,4 +1,5 @@
 import LeanFSL.CFSL.Step.Framing
+import LeanFSL.CFSL.WeakExpectation
 import Mathlib.SetTheory.Ordinal.FixedPointApproximants
 
 namespace CFSL

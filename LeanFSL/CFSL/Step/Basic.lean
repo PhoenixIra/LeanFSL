@@ -14,16 +14,16 @@ theorem step_mono (c : Program Var) : Monotone (step c) := by
   intro s
   apply le_sInf
   rintro _ ⟨a, h_a, rfl⟩
-  have : ∑' cs : reachState Var, (semantics c s a cs.prog cs.state) * X cs.prog cs.state
+  have : ∑' cs : reachState Var, (programSmallStepSemantics c s a cs.prog cs.state) * X cs.prog cs.state
     ∈ { x | ∃ a ∈ enabledAction c s,
-      ∑' cs : reachState Var, (semantics c s a cs.prog cs.state) * X cs.prog cs.state = x} := by {
+      ∑' cs : reachState Var, (programSmallStepSemantics c s a cs.prog cs.state) * X cs.prog cs.state = x} := by {
         use a
       }
   apply sInf_le_of_le this; clear this
   apply Summable.tsum_mono (isSummable _) (isSummable _)
   intro cs
   simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state]
-  cases eq_or_ne (semantics c s a cs.prog cs.state) 0 with
+  cases eq_or_ne (programSmallStepSemantics c s a cs.prog cs.state) 0 with
   | inl h_eq =>
     rw [h_eq, zero_mul, zero_mul]
   | inr h_ne =>
@@ -40,9 +40,9 @@ theorem step_mono_of_state_of_semantics_support {c : Program Var} {s : State Var
     step c P s ≤ step c Q s := by
   apply le_sInf
   rintro _ ⟨a, h_a, rfl⟩
-  have : ∑' cs : reachState Var, (semantics c s a cs.prog cs.state) * P cs.prog cs.state
+  have : ∑' cs : reachState Var, (programSmallStepSemantics c s a cs.prog cs.state) * P cs.prog cs.state
     ∈ { x | ∃ a ∈ enabledAction c s,
-      ∑' cs : reachState Var, (semantics c s a cs.prog cs.state) * P cs.prog cs.state = x} := by {
+      ∑' cs : reachState Var, (programSmallStepSemantics c s a cs.prog cs.state) * P cs.prog cs.state = x} := by {
         use a
       }
   apply sInf_le_of_le this

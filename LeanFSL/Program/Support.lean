@@ -13,9 +13,6 @@ open Action Syntax unitInterval State HeapValue Classical
 
 variable {Var : Type}
 
-/-- For nicer theorems, we abbreviate the probability transition function by semantics -/
-noncomputable abbrev semantics := @programSmallStepSemantics Var
-
 theorem mul_support_superset_left {f g : α → I} {s : Set α} (h : f.support ⊆ s) :
     (fun x => f x * g x).support ⊆ s := by
   rintro x h_x
@@ -29,8 +26,8 @@ theorem mul_support_superset_right {f g : α → I} {s : Set α} (h : g.support 
   exact mul_support_superset_left h
 
 theorem tsum_semantics_support_superset :
-    (fun cs : reachState Var => semantics c s a cs.prog cs.state).support
-    ⊆ { ⟨⟨c',s'⟩,_⟩ : reachState Var | semantics c s a c' s' ≠ 0 } := by
+    (fun cs : reachState Var => programSmallStepSemantics c s a cs.prog cs.state).support
+    ⊆ { ⟨⟨c',s'⟩,_⟩ : reachState Var | programSmallStepSemantics c s a c' s' ≠ 0 } := by
   rintro ⟨⟨c',s'⟩,h_abort⟩ h
   simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, reachState.prog, reachState.state,
     Function.mem_support] at h
@@ -38,7 +35,7 @@ theorem tsum_semantics_support_superset :
   exact h
 
 theorem tsum_skip_support_superset (s : State Var) :
-    (fun cs : reachState Var => semantics [Prog| skip] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| skip] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], s⟩, by simp⟩} := by
   intro cs h
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
@@ -50,7 +47,7 @@ theorem tsum_skip_support_superset (s : State Var) :
   exact ⟨h.left, h.right.symm⟩
 
 theorem tsum_assign_support_superset (s : State Var) :
-    (fun cs : reachState Var => semantics [Prog| v ≔ e] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| v ≔ e] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], (substituteStack s v (e s.stack))⟩, by simp⟩} := by
   intro cs h
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
@@ -65,7 +62,7 @@ theorem tsum_assign_support_superset (s : State Var) :
 
 theorem tsum_mutate_support_superset (s : State Var)
     {l : PNat} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l ≠ undef) :
-    (fun cs : reachState Var => semantics [Prog| e_loc *≔ e_val] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| e_loc *≔ e_val] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], (substituteHeap s l (e_val s.stack))⟩, by simp⟩} := by
   intro cs h
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
@@ -95,7 +92,7 @@ theorem tsum_mutate_support_superset (s : State Var)
 
 theorem tsum_mutate_abort_support_superset (s : State Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
-    (fun cs : reachState Var => semantics [Prog| e_loc *≔ e_val] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| e_loc *≔ e_val] s deterministic cs.prog cs.state).support
     ⊆ ∅ := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -115,7 +112,7 @@ theorem tsum_mutate_abort_support_superset (s : State Var)
 
 theorem tsum_lookup_support_superset (s : State Var)
     {l : PNat} {value : ℚ} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l = value) :
-    (fun cs : reachState Var => semantics [Prog| v ≔* e_loc] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| v ≔* e_loc] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], (substituteStack s v value)⟩, by simp⟩} := by
   intro cs h
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
@@ -147,7 +144,7 @@ theorem tsum_lookup_support_superset (s : State Var)
 
 theorem tsum_lookup_abort_support_superset (s : State Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
-    (fun cs : reachState Var => semantics [Prog| v ≔* e_loc] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| v ≔* e_loc] s deterministic cs.prog cs.state).support
     ⊆ ∅ := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -169,7 +166,7 @@ theorem tsum_lookup_abort_support_superset (s : State Var)
 theorem tsum_cas_of_eq_support_superset (s : State Var)
     {l : PNat} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l = e_cmp s.stack) :
     (fun cs : reachState Var =>
-      semantics [Prog| v ≔ cas(e_loc, e_cmp, e_val)] s deterministic cs.prog cs.state).support
+      programSmallStepSemantics [Prog| v ≔ cas(e_loc, e_cmp, e_val)] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], (substituteStack (substituteHeap s l (e_val s.stack)) v 1)⟩, by simp⟩} := by
   intro cs h
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
@@ -205,7 +202,7 @@ theorem tsum_cas_of_eq_support_superset (s : State Var)
 theorem tsum_cas_of_neq_support_superset (s : State Var)
     {l : PNat} (h_l : e_loc s.stack = ↑l) (h_alloc: s.heap l ≠ undef) (h_ne : s.heap l ≠ e_cmp s.stack) :
     (fun cs : reachState Var =>
-      semantics [Prog| v ≔ cas(e_loc, e_cmp, e_val)] s deterministic cs.prog cs.state).support
+      programSmallStepSemantics [Prog| v ≔ cas(e_loc, e_cmp, e_val)] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], (substituteStack s v 0)⟩, by simp⟩} := by
   intro cs h
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
@@ -242,7 +239,7 @@ theorem tsum_cas_of_neq_support_superset (s : State Var)
 theorem tsum_cas_abort_support_superset (s : State Var)
     (h : ∀ l : ℕ+, e_loc s.stack = ↑l → s.heap l = undef) :
     (fun cs : reachState Var =>
-      semantics [Prog| v ≔ cas(e_loc, e_cmp, e_val)] s deterministic cs.prog cs.state).support
+      programSmallStepSemantics [Prog| v ≔ cas(e_loc, e_cmp, e_val)] s deterministic cs.prog cs.state).support
     ⊆ ∅ := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -262,7 +259,7 @@ theorem tsum_cas_abort_support_superset (s : State Var)
 
 theorem tsum_alloc_support_superset (s : State Var)
     {l : ℕ+} {n : ℕ} ( h_n : e s.stack = ↑n) :
-    (fun cs : reachState Var => semantics [Prog| v ≔ alloc(e)] s (allocation l) cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| v ≔ alloc(e)] s (allocation l) cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], (substituteStack (allocateHeap s l n) v l)⟩, by simp⟩} := by
   intro cs h
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
@@ -287,7 +284,7 @@ theorem tsum_alloc_support_superset (s : State Var)
 
 
 theorem tsum_alloc_abort_support_superset (s : State Var) :
-    (fun cs : reachState Var => semantics [Prog| v ≔ alloc(e)] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| v ≔ alloc(e)] s deterministic cs.prog cs.state).support
     ⊆ ∅ := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -306,7 +303,7 @@ theorem tsum_free_support_superset (s : State Var)
     {l : ℕ+} (h_l : ↑l = e_loc s.stack) {n : ℕ}
     ( h_n : ↑n = e_val s.stack) (h_alloc : isAlloc s.heap l n) :
     (fun cs : reachState Var =>
-      semantics [Prog| free(e_loc, e_val)] s deterministic cs.prog cs.state).support
+      programSmallStepSemantics [Prog| free(e_loc, e_val)] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], (freeHeap s l n)⟩, by simp⟩} := by
   intro cs h
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h
@@ -340,7 +337,7 @@ theorem tsum_free_support_superset (s : State Var)
 theorem tsum_free_error_support_superset (s : State Var)
     (h : ∀ (x : ℕ+), ↑↑x = e_loc s.stack → ∀ (x_1 : ℕ), ↑x_1 = e_val s.stack → ¬isAlloc s.heap x x_1) :
     (fun cs : reachState Var =>
-      semantics [Prog| free(e_loc, e_val)] s deterministic cs.prog cs.state).support
+      programSmallStepSemantics [Prog| free(e_loc, e_val)] s deterministic cs.prog cs.state).support
     ⊆ ∅ := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -359,7 +356,7 @@ theorem tsum_free_error_support_superset (s : State Var)
     simp only [not_true_eq_false] at h'
 
 theorem tsum_probChoice_support_superset (s : State Var) :
-    (fun cs : reachState Var => semantics [Prog| pif e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| pif e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state).support
     ⊆ (if h : c₁ = [Prog|↯] then ∅ else {⟨⟨c₁, s⟩, by simp [h]⟩})
     ∪ (if h : c₂ = [Prog|↯] then ∅ else {⟨⟨c₂, s⟩, by simp [h]⟩}) := by
   intro cs h
@@ -400,7 +397,7 @@ theorem tsum_probChoice_support_superset (s : State Var) :
 
 theorem tsum_condChoice_left_support_superset (s : State Var) (h : (e s.stack) = true):
     (fun cs : reachState Var =>
-      semantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state).support
+      programSmallStepSemantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state).support
     ⊆ if h : c₁ = [Prog| ↯] then ∅ else {⟨⟨c₁, s⟩, by simp [h]⟩} := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -416,7 +413,7 @@ theorem tsum_condChoice_left_support_superset (s : State Var) (h : (e s.stack) =
 
 theorem tsum_condChoice_right_support_superset (s : State Var) (h : (e s.stack) = false):
     (fun cs : reachState Var =>
-      semantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state).support
+      programSmallStepSemantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state).support
     ⊆ if h : c₂ = [Prog| ↯] then ∅ else {⟨⟨c₂, s⟩, by simp [h]⟩} := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -431,7 +428,7 @@ theorem tsum_condChoice_right_support_superset (s : State Var) (h : (e s.stack) 
 
 theorem tsum_loop_cont_support_superset (s : State Var) (h : (e s.stack) = true):
     (fun cs : reachState Var =>
-      semantics [Prog| while e begin [[c]] fi] s deterministic cs.prog cs.state).support
+      programSmallStepSemantics [Prog| while e begin [[c]] fi] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| [[c]] ; while e begin [[c]] fi], s⟩, by simp⟩} := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -447,7 +444,7 @@ theorem tsum_loop_cont_support_superset (s : State Var) (h : (e s.stack) = true)
 
 theorem tsum_loop_term_support_superset (s : State Var) (h : (e s.stack) = false) :
     (fun cs : reachState Var =>
-      semantics [Prog| while e begin [[c]] fi] s deterministic cs.prog cs.state).support
+      programSmallStepSemantics [Prog| while e begin [[c]] fi] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], s⟩, by simp⟩} := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -464,7 +461,7 @@ theorem tsum_loop_term_support_superset (s : State Var) (h : (e s.stack) = false
     simp only [not_true_eq_false] at h'
 
 theorem tsum_sequential_term_support_superset (s : State Var) :
-    (fun cs : reachState Var => semantics [Prog| ↓ ; [[c]]] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| ↓ ; [[c]]] s deterministic cs.prog cs.state).support
     ⊆ if h : c = [Prog|↯] then ∅ else {⟨⟨c, s⟩, by simp [h]⟩} := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -477,7 +474,7 @@ theorem tsum_sequential_term_support_superset (s : State Var) :
   exact ⟨rfl, h'.left.symm⟩
 
 theorem tsum_sequential_abort_support_superset (s : State Var) :
-    (fun cs : reachState Var => semantics [Prog| ↯ ; [[c]]] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| ↯ ; [[c]]] s deterministic cs.prog cs.state).support
     ⊆ ∅ := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -492,9 +489,9 @@ open FSL
 theorem tsum_sequential_cont_support_superset (s : State Var) (inner : Program Var → StateRV Var)
     (h_term : c₁ ≠ [Prog| ↓]) (h_abort : c₁ ≠ [Prog| ↯]) :
     (fun cs : reachState Var =>
-      semantics [Prog| [[c₁]] ; [[c₂]]] s a cs.prog cs.state * inner cs.prog cs.state).support
+      programSmallStepSemantics [Prog| [[c₁]] ; [[c₂]]] s a cs.prog cs.state * inner cs.prog cs.state).support
     ⊆ {x | ∃ c₁' s', x = ⟨⟨[Prog| [[c₁']] ; [[c₂]]], s'⟩, by simp⟩
-      ∧ semantics [Prog| [[c₁]] ; [[c₂]]] s a [Prog| [[c₁']] ; [[c₂]]] s' ≠ 0
+      ∧ programSmallStepSemantics [Prog| [[c₁]] ; [[c₂]]] s a [Prog| [[c₁']] ; [[c₂]]] s' ≠ 0
       ∧ inner [Prog| [[c₁']] ; [[c₂]]] s' ≠ 0 } := by
   intro cs h'
   simp only [Function.mem_support, ne_eq] at h'
@@ -533,7 +530,7 @@ theorem tsum_sequential_cont_support_superset (s : State Var) (inner : Program V
 
 
 theorem tsum_concurrent_term_support_superset (s : State Var) :
-    (fun cs : reachState Var => semantics [Prog| ↓ || ↓] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| ↓ || ↓] s deterministic cs.prog cs.state).support
     ⊆ {⟨⟨[Prog| ↓], s⟩, by simp⟩} := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -545,7 +542,7 @@ theorem tsum_concurrent_term_support_superset (s : State Var) :
   use h'.left, h'.right.symm
 
 theorem tsum_concurrent_abort_left_support_superset (s : State Var) :
-    (fun cs : reachState Var => semantics [Prog| ↯ || [[c]]] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| ↯ || [[c]]] s deterministic cs.prog cs.state).support
     ⊆ ∅ := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -557,7 +554,7 @@ theorem tsum_concurrent_abort_left_support_superset (s : State Var) :
   exact cs.prop h'.right
 
 theorem tsum_concurrent_abort_right_support_superset (s : State Var) :
-    (fun cs : reachState Var => semantics [Prog| [[c]] || ↯] s deterministic cs.prog cs.state).support
+    (fun cs : reachState Var => programSmallStepSemantics [Prog| [[c]] || ↯] s deterministic cs.prog cs.state).support
     ⊆ ∅ := by
   intro cs h'
   simp only [Function.support, ne_eq, Set.mem_setOf_eq] at h'
@@ -572,10 +569,10 @@ theorem tsum_concurrent_cont_left_support_superset {a : Action}
     (s : State Var) (inner : Program Var → StateRV Var)
     (h_abort₁ : c₁ ≠ [Prog| ↯]) (h_abort₂ : c₂ ≠ [Prog| ↯]) :
     (fun cs : reachState Var =>
-      semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentLeft cs.prog cs.state
+      programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentLeft cs.prog cs.state
       * inner cs.prog cs.state).support
     ⊆ {x | ∃ c₁' s', x = ⟨⟨[Prog| [[c₁']] || [[c₂]]], s'⟩, by simp⟩
-      ∧ semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentLeft [Prog| [[c₁']] || [[c₂]]] s' ≠ 0
+      ∧ programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentLeft [Prog| [[c₁']] || [[c₂]]] s' ≠ 0
       ∧ inner [Prog| [[c₁']] || [[c₂]]] s' ≠ 0 } := by
   intro cs h'
   simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,
@@ -619,10 +616,10 @@ theorem tsum_concurrent_cont_right_support_superset {a : Action}
     (s : State Var) (inner : Program Var → StateRV Var)
     (h_abort₁ : c₁ ≠ [Prog| ↯]) (h_abort₂ : c₂ ≠ [Prog| ↯]) :
     (fun cs : reachState Var =>
-      semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentRight cs.prog cs.state
+      programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentRight cs.prog cs.state
       * inner cs.prog cs.state).support
     ⊆ {x | ∃ c₂' s', x = ⟨⟨[Prog| [[c₁]] || [[c₂']]], s'⟩, by simp⟩
-      ∧ semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentRight [Prog| [[c₁]] || [[c₂']]] s' ≠ 0
+      ∧ programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentRight [Prog| [[c₁]] || [[c₂']]] s' ≠ 0
       ∧ inner [Prog| [[c₁]] || [[c₂']]] s' ≠ 0 } := by
   intro cs h'
   simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state,

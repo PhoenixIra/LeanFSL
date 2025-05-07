@@ -10,7 +10,7 @@ open Syntax Semantics FSL unitInterval Action State HeapValue Classical
 
 theorem tsum_probChoice_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : reachState Var,
-      (semantics [Prog| pif e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state)
+      (programSmallStepSemantics [Prog| pif e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state)
       * inner cs.prog cs.state)
     = (if c₁ = [Prog|↯] then 0 else (e s.stack) * inner c₁ s)
       + (if c₂ = [Prog|↯] then 0 else σ (e s.stack) * inner c₂ s) := by
@@ -30,7 +30,7 @@ theorem tsum_probChoice_of_deterministic (s : State Var) (inner : Program Var �
       | inr h_c₁ =>
         rw [dif_neg h_c₁, if_neg h_c₁, if_neg h_c₁, Set.union_self]
         rw [tsum_singleton (⟨⟨c₁, s⟩, h_c₁⟩ : reachState Var)
-          (fun cs : reachState Var => semantics _ s deterministic cs.prog cs.state * inner cs.prog cs.state)]
+          (fun cs : reachState Var => programSmallStepSemantics _ s deterministic cs.prog cs.state * inner cs.prog cs.state)]
         unfold programSmallStepSemantics probabilisticBranchingSmallStepSemantics
         simp only [reachState.state, and_self, ↓reduceIte, reachState.prog, one_mul]
         rw [truncatedAdd_sym_mul_eq]
@@ -43,7 +43,7 @@ theorem tsum_probChoice_of_deterministic (s : State Var) (inner : Program Var �
         simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, reachState.prog, reachState.state,
           zero_add]
         rw [tsum_singleton (⟨⟨c₂, s⟩, h_c₂⟩ : reachState Var)
-          (fun cs : reachState Var => semantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2)]
+          (fun cs : reachState Var => programSmallStepSemantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2)]
         unfold programSmallStepSemantics probabilisticBranchingSmallStepSemantics
         simp only [and_self, ↓reduceIte, and_true, ite_mul, one_mul, if_neg (Ne.symm h_ne)]
       | inr h_c₁ =>
@@ -54,7 +54,7 @@ theorem tsum_probChoice_of_deterministic (s : State Var) (inner : Program Var �
           simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, reachState.prog, reachState.state,
             add_zero]
           rw [tsum_singleton (⟨⟨c₁, s⟩, h_c₁⟩ : reachState Var)
-            (fun cs : reachState Var => semantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2)]
+            (fun cs : reachState Var => programSmallStepSemantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2)]
           unfold programSmallStepSemantics probabilisticBranchingSmallStepSemantics
           simp only [and_self, ↓reduceIte, true_and, ite_mul, one_mul, ite_eq_right_iff]
           intro h_eq
@@ -64,7 +64,7 @@ theorem tsum_probChoice_of_deterministic (s : State Var) (inner : Program Var �
           rw [dif_neg h_c₂, if_neg h_c₂, Set.union_singleton]
           simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, reachState.prog, reachState.state]
           have : (⟨⟨c₁, s⟩,h_c₁⟩ : reachState Var) ≠ ⟨⟨c₂, s⟩, h_c₂⟩ := by simp [Prod.mk_inj, Ne.symm h_ne]
-          rw [tsum_pair (fun cs => semantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) this.symm]
+          rw [tsum_pair (fun cs => programSmallStepSemantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) this.symm]
           unfold programSmallStepSemantics probabilisticBranchingSmallStepSemantics
           simp only [and_self, ↓reduceIte, and_true, ite_mul, one_mul, true_and]
           rw [if_neg h_ne, if_neg h_ne.symm, if_neg h_ne.symm]
@@ -89,7 +89,7 @@ theorem step_probChoice (s : State Var) (inner : Program Var → StateRV Var) :
 theorem tsum_condChoice_left_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     (h : (e s.stack) = true) :
     (∑' cs : reachState Var,
-      (semantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state)
+      (programSmallStepSemantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state)
       * inner cs.prog cs.state)
     = if c₁ = [Prog|↯] then 0 else inner c₁ s := by
   rw[← tsum_subtype_eq_of_support_subset]
@@ -104,7 +104,7 @@ theorem tsum_condChoice_left_of_deterministic (s : State Var) (inner : Program V
     | inr h_c₁ =>
       rw [dif_neg h_c₁, if_neg h_c₁]
       rw [tsum_singleton (⟨⟨c₁, s⟩, h_c₁⟩ : reachState Var)
-        (fun cs => semantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) ]
+        (fun cs => programSmallStepSemantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) ]
       unfold programSmallStepSemantics conditionalBranchingSmallStepSemantics
       simp only [h, and_self, not_true_eq_false, false_and, or_false, iteOneZero_true, one_mul]
 
@@ -126,7 +126,7 @@ theorem step_condChoice_left (s : State Var) (inner : Program Var → StateRV Va
 theorem tsum_condChoice_right_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     (h : (e s.stack) = false) :
     (∑' cs : reachState Var,
-      (semantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state)
+      (programSmallStepSemantics [Prog| if e then [[c₁]] else [[c₂]] fi] s deterministic cs.prog cs.state)
       * inner cs.prog cs.state)
     = if c₂ = [Prog|↯] then 0 else inner c₂ s := by
   rw[← tsum_subtype_eq_of_support_subset]
@@ -141,7 +141,7 @@ theorem tsum_condChoice_right_of_deterministic (s : State Var) (inner : Program 
     | inr h_c₂ =>
       rw [dif_neg h_c₂, if_neg h_c₂]
       rw [tsum_singleton (⟨⟨c₂, s⟩, h_c₂⟩ : reachState Var)
-        (fun cs => semantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) ]
+        (fun cs => programSmallStepSemantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) ]
       unfold programSmallStepSemantics conditionalBranchingSmallStepSemantics
       simp only [h, Bool.false_eq_true, false_and, not_false_eq_true, and_self, or_true,
         iteOneZero_true, one_mul]
@@ -164,7 +164,7 @@ theorem step_condChoice_right (s : State Var) (inner : Program Var → StateRV V
 theorem tsum_loop_cont_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     (h : (e s.stack) = true) :
     (∑' cs : reachState Var,
-      (semantics [Prog| while e begin [[c]] fi] s deterministic cs.prog cs.state)
+      (programSmallStepSemantics [Prog| while e begin [[c]] fi] s deterministic cs.prog cs.state)
       * inner cs.prog cs.state)
     = inner [Prog| [[c]] ; while e begin [[c]] fi] s := by
   rw[← tsum_subtype_eq_of_support_subset]
@@ -172,7 +172,7 @@ theorem tsum_loop_cont_of_deterministic (s : State Var) (inner : Program Var →
   · apply mul_support_superset_left
     exact tsum_loop_cont_support_superset s h
   · rw [tsum_singleton (⟨⟨[Prog| [[c]] ; while e begin [[c]] fi], s⟩, by simp⟩ : reachState Var)
-      (fun cs => semantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) ]
+      (fun cs => programSmallStepSemantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) ]
     unfold programSmallStepSemantics loopSmallStepSemantics
     simp only [h, and_self, iteOneZero_true, one_mul]
 
@@ -194,14 +194,14 @@ theorem step_loop_cont (s : State Var) (inner : Program Var → StateRV Var)
 theorem tsum_loop_term_of_deterministic (s : State Var) (inner : Program Var → StateRV Var)
     (h : (e s.stack) = false) :
     (∑' cs : reachState Var,
-    (semantics [Prog| while e begin [[c]] fi] s deterministic cs.1.1 cs.1.2) * inner cs.1.1 cs.1.2)
+    (programSmallStepSemantics [Prog| while e begin [[c]] fi] s deterministic cs.1.1 cs.1.2) * inner cs.1.1 cs.1.2)
     = inner [Prog| ↓] s := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
   · apply mul_support_superset_left
     exact tsum_loop_term_support_superset s h
   · rw [tsum_singleton (⟨⟨[Prog| ↓], s⟩, by simp⟩ : reachState Var)
-      (fun cs => semantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) ]
+      (fun cs => programSmallStepSemantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2) ]
     unfold programSmallStepSemantics loopSmallStepSemantics
     simp only [h, Bool.false_eq_true, not_false_eq_true, and_self, iteOneZero_true, one_mul]
 

@@ -10,7 +10,7 @@ open Syntax Semantics FSL unitInterval Action State HeapValue Classical Function
 
 theorem tsum_sequential_term_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : reachState Var,
-    (semantics [Prog| ↓ ; [[c]]] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
+    (programSmallStepSemantics [Prog| ↓ ; [[c]]] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
     = if c = [Prog| ↯] then 0 else inner c s := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
@@ -23,7 +23,7 @@ theorem tsum_sequential_term_of_deterministic (s : State Var) (inner : Program V
       rw [dif_neg h_ne_abort]
       simp only [Set.coe_setOf, ne_eq, Set.mem_setOf_eq, reachState.prog, reachState.state]
       rw [tsum_singleton (⟨⟨c, s⟩, h_ne_abort⟩ : reachState Var)
-        (fun cs => semantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2)]
+        (fun cs => programSmallStepSemantics _ s deterministic cs.1.1 cs.1.2 * inner cs.1.1 cs.1.2)]
       unfold programSmallStepSemantics
       simp only [↓reduceIte, and_self, iteOneZero_true, one_mul]
 
@@ -44,7 +44,7 @@ theorem step_sequential_term (s : State Var) (inner : Program Var → StateRV Va
 
 theorem tsum_sequential_abort_of_deterministic (s : State Var) (inner : Program Var → StateRV Var) :
     (∑' cs : reachState Var,
-    (semantics [Prog| ↯ ; [[c]]] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
+    (programSmallStepSemantics [Prog| ↯ ; [[c]]] s deterministic cs.prog cs.state) * inner cs.prog cs.state)
     = 0 := by
   rw[← tsum_subtype_eq_of_support_subset]
   pick_goal 2
@@ -70,7 +70,7 @@ theorem step_sequential_abort (s : State Var) (inner : Program Var → StateRV V
 
 
 private def inj (c₁ c₂ : Program Var) (s : State Var) (a : Action) (inner : Program Var → StateRV Var) :
-  ↑(support (fun cs : reachState Var => semantics c₁ s a cs.prog cs.state
+  ↑(support (fun cs : reachState Var => programSmallStepSemantics c₁ s a cs.prog cs.state
                       * inner ([Prog| [[cs.prog]] ; [[c₂]]]) cs.state))
   → @reachState Var :=
   fun cs => match cs with
@@ -88,9 +88,9 @@ private theorem inj_injective (c₁ c₂ : Program Var) (s : State Var) (a : Act
 theorem tsum_sequential_cont (s : State Var) (inner : Program Var → StateRV Var)
     (h_term : c₁ ≠ [Prog| ↓]) (h_abort : c₁ ≠ [Prog| ↯]) :
     (∑' cs : reachState Var,
-        (semantics [Prog| [[c₁]] ; [[c₂]]] s a cs.prog cs.state) * inner cs.prog cs.state)
+        (programSmallStepSemantics [Prog| [[c₁]] ; [[c₂]]] s a cs.prog cs.state) * inner cs.prog cs.state)
     = (∑' cs : reachState Var,
-        (semantics c₁ s a cs.prog cs.state) * inner [Prog| [[cs.prog]] ; [[c₂]]] cs.state) := by
+        (programSmallStepSemantics c₁ s a cs.prog cs.state) * inner [Prog| [[cs.prog]] ; [[c₂]]] cs.state) := by
     apply tsum_eq_tsum_of_ne_zero_bij (inj c₁ c₂ s a inner) (inj_injective c₁ c₂ s a inner)
     · apply subset_trans (tsum_sequential_cont_support_superset s inner h_term h_abort)
       rintro ⟨⟨c, s⟩,h⟩ ⟨c₁', _, ⟨rfl, rfl⟩, h_sem, h_inner⟩

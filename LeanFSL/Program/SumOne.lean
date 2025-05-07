@@ -1,6 +1,6 @@
 import LeanFSL.Program.Semantics
 import LeanFSL.Program.Enabled
-import Mathlib.Data.Real.EReal
+import Mathlib.Data.EReal.Basic
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import LeanFSL.Mathlib.Tsum
 
@@ -10,13 +10,10 @@ open Syntax State Action Program unitInterval
 
 variable {Var : Type}
 
-noncomputable abbrev semantics := @programSmallStepSemantics Var
-
 theorem skip_sum_one (s : State Var) :
     ∑' (cs : (Program Var) × (State Var)),
-    ENNReal.ofReal (semantics skip' s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics skip' s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics
   have : (Function.support fun cs ↦ ENNReal.ofReal (skipSmallStepSemantics s deterministic cs.1 cs.2))
       ⊆ {(⟨[Prog| ↓ ], s⟩ : (Program Var) × (State Var))} := by {
     simp only [Function.support, skipSmallStepSemantics, true_and, ne_eq, ENNReal.ofReal_eq_zero,
@@ -31,15 +28,15 @@ theorem skip_sum_one (s : State Var) :
     · simp only
       exact h_s.symm
   }
-  rw [← tsum_subtype_eq_of_support_subset this]; clear this
+  rw [programSmallStepSemantics, ← tsum_subtype_eq_of_support_subset this]; clear this
   rw [tsum_singleton _ (fun cs => ENNReal.ofReal ↑(skipSmallStepSemantics _ _ _ _))]
   simp only [skipSmallStepSemantics, and_self, iteOneZero_true, Set.Icc.coe_one, ENNReal.ofReal_one]
 
 theorem assign_sum_one (s : State Var) :
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| v ≔ e]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| v ≔ e]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   have : (Function.support fun cs => ENNReal.ofReal ↑(assignSmallStepSemantics v e s deterministic cs.1 cs.2))
       ⊆ {(⟨[Prog| ↓ ], ⟨substituteVar s.stack v (e s.stack), s.heap⟩⟩ : (Program Var) × (State Var))} := by {
     simp only [Function.support, ne_eq, ENNReal.ofReal_eq_zero, not_le]
@@ -63,9 +60,9 @@ theorem assign_sum_one (s : State Var) :
 
 theorem mutate_sum_one (s : State Var) :
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| e *≔ e']) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| e *≔ e']) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   by_cases ∃ l : ℕ+, l = e s.stack ∧  s.heap l ≠ HeapValue.undef
   case pos h =>
     obtain ⟨l, h_e, h_undef⟩ := h
@@ -132,9 +129,9 @@ theorem mutate_sum_one (s : State Var) :
 
 theorem lookup_sum_one (s : State Var) :
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| v ≔* e]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| v ≔* e]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   by_cases ∃ l : ℕ+, l = e s.stack ∧  s.heap l ≠ HeapValue.undef
   case pos h =>
     obtain ⟨l, h_e, h_undef⟩ := h
@@ -204,9 +201,9 @@ theorem lookup_sum_one (s : State Var) :
 
 theorem compareAndSet_sum_one (s : State Var) :
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| v ≔ cas(e_l, e_c, e_s)]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| v ≔ cas(e_l, e_c, e_s)]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   by_cases ∃ l : ℕ+, l = e_l s.stack ∧ s.heap l ≠ HeapValue.undef
   case pos h =>
     obtain ⟨l, h_e, h_undef⟩ := h
@@ -232,7 +229,7 @@ theorem compareAndSet_sum_one (s : State Var) :
             rw [← h_e, Nat.cast_inj, PNat.coe_inj] at h_e'
             rw [h_e', h_q, HeapValue.val.injEq] at h_q'
             rw [← h_c] at h_c'
-            exact h_c' h_q'
+            exact h_c' h_q'.symm
         case h_2 _ s' =>
           exfalso
           rw [zero_lt_iteOneZero] at h
@@ -322,9 +319,9 @@ theorem compareAndSet_sum_one (s : State Var) :
 
 theorem alloc_sum_one (s : State Var) (h_n : ↑n = e s.stack) (h_not_alloc : isNotAlloc s.heap m n) :
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| v ≔ alloc(e)]) s (allocation m) cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| v ≔ alloc(e)]) s (allocation m) cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   have : (Function.support fun cs ↦ ENNReal.ofReal (allocateSmallStepSemantics v e s (allocation m) cs.1 cs.2))
       ⊆ {(⟨[Prog| ↓ ], ⟨substituteVar s.stack v m, allocateLoc s.heap m n⟩⟩ : (Program Var) × (State Var))} := by {
     simp only [Function.support, allocateSmallStepSemantics, allocation.injEq, substituteStack,
@@ -350,9 +347,9 @@ theorem alloc_sum_one (s : State Var) (h_n : ↑n = e s.stack) (h_not_alloc : is
 
 theorem alloc_sum_one_abort (s : State Var) (h_n : ∀ n: ℕ, ↑n ≠ e s.stack) :
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| v ≔ alloc(e)]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| v ≔ alloc(e)]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   have : (Function.support fun cs ↦ ENNReal.ofReal (allocateSmallStepSemantics v e s deterministic cs.1 cs.2))
       ⊆ {(⟨[Prog| ↯ ], s⟩ : (Program Var) × (State Var))} := by {
     simp only [allocateSmallStepSemantics, reduceCtorEq, substituteStack, allocateHeap, false_and,
@@ -375,9 +372,9 @@ theorem alloc_sum_one_abort (s : State Var) (h_n : ∀ n: ℕ, ↑n ≠ e s.stac
 
 theorem free_sum_one (s : State Var):
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| free(e_l, e_n)]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| free(e_l, e_n)]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   by_cases h : ∃ l : ℕ+, l = e_l s.stack ∧ ∃ n : ℕ, n = e_n s.stack ∧ isAlloc s.heap l n
   case pos =>
     obtain ⟨l, h_l, n, h_n, h_alloc⟩ := h
@@ -463,9 +460,9 @@ theorem free_sum_one (s : State Var):
 
 theorem probabilisticBranching_sum_one (s : State Var):
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| pif e then [[c₁]] else [[c₂]] fi]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| pif e then [[c₁]] else [[c₂]] fi]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   by_cases h_c : c₁ = c₂
   case pos =>
     have : (Function.support fun cs ↦ ENNReal.ofReal
@@ -519,9 +516,9 @@ theorem probabilisticBranching_sum_one (s : State Var):
 
 theorem conditionalBranching_sum_one (s : State Var):
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| if e then [[c₁]] else [[c₂]] fi]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| if e then [[c₁]] else [[c₂]] fi]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   cases eq_or_ne c₁ c₂
   case inl h_c =>
     have : (Function.support fun cs ↦ ENNReal.ofReal
@@ -579,9 +576,9 @@ theorem conditionalBranching_sum_one (s : State Var):
 
 theorem loop_sum_one (s : State Var):
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| while e begin [[c]] fi]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| while e begin [[c]] fi]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   by_cases h : e s.stack
   case pos =>
     have : (Function.support fun cs ↦ ENNReal.ofReal
@@ -630,9 +627,9 @@ theorem loop_sum_one (s : State Var):
 
 theorem sequential_sum_one_term (s : State Var):
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| ↓ ; [[c₂]]]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| ↓ ; [[c₂]]]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   simp only [↓reduceIte, true_and]
   have : (Function.support fun cs ↦ ENNReal.ofReal (iteOneZero (s = cs.2 ∧ cs.1 = c₂)))
       ⊆ {(⟨c₂, s⟩ : (Program Var) × (State Var))} := by simp
@@ -643,9 +640,9 @@ theorem sequential_sum_one_term (s : State Var):
 
 theorem sequential_sum_one_abort (s : State Var):
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| ↯ ; [[c₂]]]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| ↯ ; [[c₂]]]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   simp only [reduceCtorEq, ↓reduceIte, true_and]
   have : (Function.support fun cs ↦ ENNReal.ofReal (iteOneZero (s = cs.2 ∧ cs.1 = [Prog| ↯])))
       ⊆ {(⟨[Prog| ↯], s⟩ : (Program Var) × (State Var))} := by simp
@@ -658,7 +655,7 @@ open Classical
 
 private noncomputable def inj (c₁ c₂ : Program Var) (s : State Var) (a : Action) :
   ↑(Function.support (fun cs : (Program Var) × (State Var) =>
-    ENNReal.ofReal ↑(semantics c₁ s a cs.1 cs.2)))
+    ENNReal.ofReal ↑(programSmallStepSemantics c₁ s a cs.1 cs.2)))
   → (Program Var) × (State Var):=
   fun cs => match cs with
   | ⟨⟨c, s⟩, _⟩ => if c = [Prog| ↯] then ⟨[Prog| ↯], s⟩ else ⟨[Prog| [[c]] ; [[c₂]]], s⟩
@@ -685,9 +682,9 @@ private theorem inj_injective (c₁ c₂ : Program Var) (s : State Var) (a : Act
 theorem tsum_sequential_cont (s : State Var)
     (h_term : c₁ ≠ [Prog| ↓]) (h_abort : c₁ ≠ [Prog| ↯]) :
     (∑' cs : (Program Var) × (State Var),
-        ENNReal.ofReal ↑(semantics [Prog| [[c₁]] ; [[c₂]]] s a cs.1 cs.2))
+        ENNReal.ofReal ↑(programSmallStepSemantics [Prog| [[c₁]] ; [[c₂]]] s a cs.1 cs.2))
     = (∑' cs : (Program Var) × (State Var),
-        ENNReal.ofReal ↑(semantics c₁ s a cs.1 cs.2)) := by
+        ENNReal.ofReal ↑(programSmallStepSemantics c₁ s a cs.1 cs.2)) := by
   apply tsum_eq_tsum_of_ne_zero_bij (inj c₁ c₂ s a) (inj_injective c₁ c₂ s a)
   · simp only [Function.support_subset_iff, ne_eq, Set.mem_range, Subtype.exists,
       Function.mem_support, Prod.exists, Prod.forall]
@@ -696,7 +693,7 @@ theorem tsum_sequential_cont (s : State Var)
     case pos =>
       obtain ⟨c₁', rfl⟩ := h_c
       use c₁', s'
-      unfold semantics programSmallStepSemantics at h
+      unfold programSmallStepSemantics at h
       simp only [reduceCtorEq, and_false, iteOneZero_false, ↓reduceIte, if_neg h_abort,
         if_neg h_term, not_le, coe_pos] at h
       split at h
@@ -709,13 +706,12 @@ theorem tsum_sequential_cont (s : State Var)
       case inl h_c_abort =>
         rw [h_c_abort] at h
         use [Prog| ↯], s'
-        unfold semantics programSmallStepSemantics at h
+        unfold programSmallStepSemantics at h
         simp only [and_true, ↓reduceIte, if_neg h_abort, if_neg h_term] at h
-        unfold semantics
         use h
         simp only [inj, ↓reduceIte, h_c_abort]
       case inr h_c_abort =>
-        unfold semantics programSmallStepSemantics at h
+        unfold programSmallStepSemantics at h
         simp only [if_neg h_c_abort, if_neg h_abort, if_neg h_term] at h
         split at h
         case h_1 =>
@@ -727,7 +723,7 @@ theorem tsum_sequential_cont (s : State Var)
           case neg => simp only [Set.Icc.coe_zero, ENNReal.ofReal_zero, not_true_eq_false] at h
         case h_2 => simp only [Set.Icc.coe_zero, ENNReal.ofReal_zero, not_true_eq_false] at h
   · intro cs
-    unfold semantics inj
+    unfold inj
     rw [programSmallStepSemantics]
     simp only [h_term, ↓reduceIte, h_abort]
     split_ifs
@@ -738,9 +734,9 @@ theorem tsum_sequential_cont (s : State Var)
 
 theorem concurrent_sum_one_term (s : State Var):
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| ↓ || ↓]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| ↓ || ↓]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   simp only [↓reduceIte, true_and]
   have : (Function.support fun cs ↦ ENNReal.ofReal (iteOneZero (cs.1 = [Prog| ↓] ∧ s = cs.2)))
       ⊆ {(⟨[Prog| ↓], s⟩ : (Program Var) × (State Var))} := by simp
@@ -751,9 +747,9 @@ theorem concurrent_sum_one_term (s : State Var):
 
 theorem concurrent_sum_one_abort_left (s : State Var):
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| ↯ || [[c₂]]]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| ↯ || [[c₂]]]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   simp only [reduceCtorEq, false_and, ↓reduceIte, true_or, true_and]
   have : (Function.support fun cs ↦ ENNReal.ofReal (iteOneZero (s = cs.2 ∧ cs.1 = [Prog| ↯])))
       ⊆ {(⟨[Prog| ↯], s⟩ : (Program Var) × (State Var))} := by simp
@@ -764,9 +760,9 @@ theorem concurrent_sum_one_abort_left (s : State Var):
 
 theorem concurrent_sum_one_abort_right (s : State Var):
     ∑' (cs : Program Var × State Var),
-    ENNReal.ofReal (semantics ([Prog| [[c₁]] || ↯]) s deterministic cs.1 cs.2)
+    ENNReal.ofReal (programSmallStepSemantics ([Prog| [[c₁]] || ↯]) s deterministic cs.1 cs.2)
     = 1 := by
-  unfold semantics programSmallStepSemantics
+  unfold programSmallStepSemantics
   simp only [reduceCtorEq, and_false, ↓reduceIte, or_true, true_and]
   have : (Function.support fun cs ↦ ENNReal.ofReal (iteOneZero (s = cs.2 ∧ cs.1 = [Prog| ↯])))
       ⊆ {(⟨[Prog| ↯], s⟩ : (Program Var) × (State Var))} := by simp
@@ -777,7 +773,7 @@ theorem concurrent_sum_one_abort_right (s : State Var):
 
 private noncomputable def inj_left (c₁ c₂ : Program Var) (s : State Var) (a : Action) :
   ↑(Function.support (fun cs : (Program Var) × (State Var) =>
-    ENNReal.ofReal ↑(semantics c₁ s a cs.1 cs.2)))
+    ENNReal.ofReal ↑(programSmallStepSemantics c₁ s a cs.1 cs.2)))
   → (Program Var) × (State Var):=
   fun cs => match cs with
   | ⟨⟨c, s⟩, _⟩ => if c = [Prog| ↯] then ⟨[Prog| ↯], s⟩ else ⟨[Prog| [[c]] || [[c₂]]], s⟩
@@ -804,9 +800,9 @@ private theorem inj_left_injective (c₁ c₂ : Program Var) (s : State Var) (a 
 theorem tsum_concurrent_cont_left (s : State Var)
     (h_term₁ : c₁ ≠ [Prog| ↓]) (h_abort₁ : c₁ ≠ [Prog| ↯]) (h_abort₂ : c₂ ≠ [Prog| ↯]) :
     (∑' cs : (Program Var) × (State Var),
-        ENNReal.ofReal ↑(semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentLeft cs.1 cs.2))
+        ENNReal.ofReal ↑(programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentLeft cs.1 cs.2))
     = (∑' cs : (Program Var) × (State Var),
-        ENNReal.ofReal ↑(semantics c₁ s a cs.1 cs.2)) := by
+        ENNReal.ofReal ↑(programSmallStepSemantics c₁ s a cs.1 cs.2)) := by
   apply tsum_eq_tsum_of_ne_zero_bij (inj_left c₁ c₂ s a) (inj_left_injective c₁ c₂ s a)
   · simp only [Function.support_subset_iff, ne_eq, ENNReal.ofReal_eq_zero, not_le, coe_pos,
     Set.mem_range, Subtype.exists, Function.mem_support, Prod.exists, Prod.forall]
@@ -815,7 +811,7 @@ theorem tsum_concurrent_cont_left (s : State Var)
     case pos =>
       obtain ⟨c₁', rfl⟩ := h_c
       use c₁', s'
-      unfold semantics programSmallStepSemantics at h
+      unfold programSmallStepSemantics at h
       simp only [h_term₁, false_and, ↓reduceIte, h_abort₁, h_abort₂, or_self, reduceCtorEq] at h
       split at h
       case isTrue => simp only [lt_self_iff_false] at h
@@ -827,13 +823,12 @@ theorem tsum_concurrent_cont_left (s : State Var)
       case inl h_c_abort =>
         rw [h_c_abort] at h
         use [Prog| ↯], s'
-        unfold semantics programSmallStepSemantics at h
+        unfold programSmallStepSemantics at h
         simp only [h_term₁, false_and, ↓reduceIte, h_abort₁, h_abort₂, or_self] at h
-        unfold semantics
         use h
         simp only [inj_left, ↓reduceIte, h_c_abort]
       case inr h_c_abort =>
-        unfold semantics programSmallStepSemantics at h
+        unfold programSmallStepSemantics at h
         simp only [h_term₁, false_and, ↓reduceIte, h_abort₁, h_abort₂, or_self, h_c_abort] at h
         split at h
         case h_1 =>
@@ -845,7 +840,7 @@ theorem tsum_concurrent_cont_left (s : State Var)
           case neg => simp only [lt_self_iff_false] at h
         case h_2 => simp only [lt_self_iff_false] at h
   · intro cs
-    unfold semantics inj_left
+    unfold inj_left
     rw [programSmallStepSemantics]
     simp only [h_term₁, false_and, ↓reduceIte, h_abort₁, h_abort₂, or_self]
     split_ifs
@@ -856,7 +851,7 @@ theorem tsum_concurrent_cont_left (s : State Var)
 
 private noncomputable def inj_right (c₁ c₂ : Program Var) (s : State Var) (a : Action) :
   ↑(Function.support (fun cs : (Program Var) × (State Var) =>
-    ENNReal.ofReal ↑(semantics c₂ s a cs.1 cs.2)))
+    ENNReal.ofReal ↑(programSmallStepSemantics c₂ s a cs.1 cs.2)))
   → (Program Var) × (State Var):=
   fun cs => match cs with
   | ⟨⟨c, s⟩, _⟩ => if c = [Prog| ↯] then ⟨[Prog| ↯], s⟩ else ⟨[Prog| [[c₁]] || [[c]]], s⟩
@@ -883,9 +878,9 @@ private theorem inj_right_injective (c₁ c₂ : Program Var) (s : State Var) (a
 theorem tsum_concurrent_cont_right (s : State Var)
     (h_term₂ : c₂ ≠ [Prog| ↓]) (h_abort₁ : c₁ ≠ [Prog| ↯]) (h_abort₂ : c₂ ≠ [Prog| ↯]) :
     (∑' cs : (Program Var) × (State Var),
-        ENNReal.ofReal ↑(semantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentRight cs.1 cs.2))
+        ENNReal.ofReal ↑(programSmallStepSemantics [Prog| [[c₁]] || [[c₂]]] s a.concurrentRight cs.1 cs.2))
     = (∑' cs : (Program Var) × (State Var),
-        ENNReal.ofReal ↑(semantics c₂ s a cs.1 cs.2)) := by
+        ENNReal.ofReal ↑(programSmallStepSemantics c₂ s a cs.1 cs.2)) := by
   apply tsum_eq_tsum_of_ne_zero_bij (inj_right c₁ c₂ s a) (inj_right_injective c₁ c₂ s a)
   · simp only [Function.support_subset_iff, ne_eq, ENNReal.ofReal_eq_zero, not_le, coe_pos,
     Set.mem_range, Subtype.exists, Function.mem_support, Prod.exists, Prod.forall]
@@ -894,7 +889,7 @@ theorem tsum_concurrent_cont_right (s : State Var)
     case pos =>
       obtain ⟨c₂', rfl⟩ := h_c
       use c₂', s'
-      unfold semantics programSmallStepSemantics at h
+      unfold programSmallStepSemantics at h
       simp only [h_term₂, and_false, ↓reduceIte, h_abort₁, h_abort₂, or_self, reduceCtorEq] at h
       split at h
       case isTrue => simp only [lt_self_iff_false] at h
@@ -906,13 +901,12 @@ theorem tsum_concurrent_cont_right (s : State Var)
       case inl h_c_abort =>
         rw [h_c_abort] at h
         use [Prog| ↯], s'
-        unfold semantics programSmallStepSemantics at h
+        unfold programSmallStepSemantics at h
         simp only [h_term₂, and_false, ↓reduceIte, h_abort₁, h_abort₂, or_self] at h
-        unfold semantics
         use h
         simp only [inj_right, ↓reduceIte, h_c_abort]
       case inr h_c_abort =>
-        unfold semantics programSmallStepSemantics at h
+        unfold programSmallStepSemantics at h
         simp only [h_term₂, and_false, ↓reduceIte, h_abort₁, h_abort₂, or_self, h_c_abort] at h
         split at h
         case h_1 =>
@@ -924,7 +918,7 @@ theorem tsum_concurrent_cont_right (s : State Var)
           case neg => simp only [lt_self_iff_false] at h
         case h_2 => simp only [lt_self_iff_false] at h
   · intro cs
-    unfold semantics inj_right
+    unfold inj_right
     rw [programSmallStepSemantics]
     simp only [h_term₂, and_false, ↓reduceIte, h_abort₁, h_abort₂, or_self]
     split_ifs
@@ -936,7 +930,7 @@ theorem tsum_concurrent_cont_right (s : State Var)
 theorem sum_one (c : Program Var) (s : State Var) :
     ∀ a ∈ enabledAction c s,
     ∑' (cs : (Program Var) × (State Var)),
-    ENNReal.ofReal (semantics c s a cs.1 cs.2) = 1 := by
+    ENNReal.ofReal (programSmallStepSemantics c s a cs.1 cs.2) = 1 := by
   intro a h_a
   induction c generalizing s a with
   | terminated => simp only [enabledAction, Set.mem_empty_iff_false] at h_a

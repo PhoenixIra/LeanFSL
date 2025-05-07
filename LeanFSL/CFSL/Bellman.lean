@@ -13,29 +13,26 @@ open FSL Syntax OrderHom unitInterval Atom Semantics CFSL
 
 variable {Var : Type}
 
-/-- We introduce the abbreviation `semantics` for the probability transition function. -/
-noncomputable abbrev semantics := @programSmallStepSemantics Var
-
 /-- One step in the probability transition function -- essentially the bellman-operator. -/
 noncomputable def bstep (c : Program Var) (inner : Program Var → StateRV Var) : StateRV Var :=
     fun s => sInf { x | ∃ a ∈ enabledAction c s,
-      ∑' cs : (Program Var) × (State Var), (semantics c s a cs.1 cs.2) * inner cs.1 cs.2 = x}
+      ∑' cs : (Program Var) × (State Var), (programSmallStepSemantics c s a cs.1 cs.2) * inner cs.1 cs.2 = x}
 
 theorem bstep_mono (c : Program Var) : Monotone (bstep c) := by
   intro X X' h_X
   intro s
   apply le_sInf
   rintro _ ⟨a, h_a, rfl⟩
-  have : ∑' cs : (Program Var) × (State Var), (semantics c s a cs.1 cs.2) * X cs.1 cs.2
+  have : ∑' cs : (Program Var) × (State Var), (programSmallStepSemantics c s a cs.1 cs.2) * X cs.1 cs.2
     ∈ { x | ∃ a ∈ enabledAction c s,
-      ∑' cs : (Program Var) × (State Var), (semantics c s a cs.1 cs.2) * X cs.1 cs.2 = x} := by {
+      ∑' cs : (Program Var) × (State Var), (programSmallStepSemantics c s a cs.1 cs.2) * X cs.1 cs.2 = x} := by {
         use a
       }
   apply sInf_le_of_le this; clear this
   apply Summable.tsum_mono (isSummable _) (isSummable _)
   intro cs
   simp only [Set.coe_setOf, ne_eq, reachState.prog, Set.mem_setOf_eq, reachState.state]
-  cases eq_or_ne (semantics c s a cs.1 cs.2) 0 with
+  cases eq_or_ne (programSmallStepSemantics c s a cs.1 cs.2) 0 with
   | inl h_eq =>
     rw [h_eq, zero_mul, zero_mul]
   | inr h_ne =>
@@ -58,7 +55,7 @@ theorem step_le_bstep {c : Program Var} (h : cp₁ ≤ cp₂):
   rintro _ ⟨a, h_a, rfl⟩
   apply sInf_le_of_le
   · use a, h_a
-  · rw [tsum_subtype' (fun cs => CFSL.semantics _ _ _ _ _ * cp₁ _ _)]
+  · rw [tsum_subtype' (fun cs => programSmallStepSemantics _ _ _ _ _ * cp₁ _ _)]
     apply Summable.tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]; intro cs
     simp only [Set.indicator, Set.mem_setOf_eq]
@@ -74,7 +71,7 @@ theorem bstep_le_step {c : Program Var} (h : cp₁ ≤ cp₂) (h_abort : ∀ s, 
   rintro _ ⟨a, h_a, rfl⟩
   apply sInf_le_of_le
   · use a, h_a
-  · rw [tsum_subtype' (fun cs => CFSL.semantics _ _ _ _ _ * cp₂ _ _)]
+  · rw [tsum_subtype' (fun cs => programSmallStepSemantics _ _ _ _ _ * cp₂ _ _)]
     apply Summable.tsum_mono (isSummable _) (isSummable _)
     rw [Pi.le_def]; intro cs
     simp only [Set.indicator, Set.mem_setOf_eq]

@@ -2,7 +2,6 @@ import LeanFSL.CFSL.Step.Atomic
 import LeanFSL.CFSL.Step.Flow
 import LeanFSL.CFSL.Step.Sequential
 import LeanFSL.CFSL.Step.Concurrent
-import LeanFSL.CFSL.WeakExpectation
 import LeanFSL.SL.Framing.Basic
 
 namespace CFSL
